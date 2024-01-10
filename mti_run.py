@@ -3,17 +3,17 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-duration = 60
+duration = 30
 
 with mti.MtwAwinda(120, 19) as mtw:
     data = mtw.mtwRecord(duration, plot=True, analyze=True)
-    #returns a tuple containing an array of n elements one for each MtwDevice containing all the recorded samples and an index for each
-    data0 = data[0][0]
-    data1 = data[0][1]
-    index0 = data[1][0]
-    index1 = data[1][1]
 
-print("total size of buffers: {:d} {:d}".format(sys.getsizeof(data0), sys.getsizeof(data1)))
+data0 = data[0][0]
+data1 = data[0][1]
+index0 = data[1][0]
+index1 = data[1][1]
+
+print("total size of buffers: 0: {:d} 1: {:d}".format(data0.size * data0.itemsize, data1.size * data1.itemsize))
 
 pitch0 = data0[:index0]
 pitch1 = data1[:index1]
@@ -50,12 +50,12 @@ axs[1].set_title("FFT")
 plt.show()
 
 #get maximum FFT coefficient
-sf0 = np.argmax(fftPitch0Mod[0:len(fftPitch0Mod)//2])/len(fftPitch0Mod)*Fs0
-sf1 = np.argmax(fftPitch1Mod[0:len(fftPitch0Mod)//2])/len(fftPitch1Mod)*Fs1
+# sf0 = np.argmax(fftPitch0Mod[0:len(fftPitch0Mod)//2])/len(fftPitch0Mod)*Fs0
+# sf1 = np.argmax(fftPitch1Mod[0:len(fftPitch0Mod)//2])/len(fftPitch1Mod)*Fs1
 
-print("fundamental frequency 0: (steps/s) {:0.3f}".format(sf0))
-print("fundamental frequency 1: (steps/s) {:0.3f}".format(sf0))
-print("Total number of steps (Frequency): {:0.1f}".format((sf0 + sf1)*duration))
+# print("fundamental frequency 0: (steps/s) {:0.3f}".format(sf0))
+# print("fundamental frequency 1: (steps/s) {:0.3f}".format(sf0))
+# print("Total number of steps (Frequency): {:0.1f}".format((sf0 + sf1)*duration))
 
 #zero crossings count
 steps0 = (pitch0[:-1] * pitch0[1:] < 0).sum()/2

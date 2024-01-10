@@ -31,9 +31,11 @@
 #  
 
 import sys
+import time
 import xsensdeviceapi as xda
 import multiprocessing as mp
 import numpy as np
+import matplotlib.pyplot as plt
 from multiprocessing.sharedctypes import RawValue, RawArray
 from getch import getch
 from plotter import Plotter
@@ -125,11 +127,11 @@ class MtwAwinda(object):
         return cls.instance
     
     def __init__(self, desiredUpdateRate, desiredRadioChannel):
-        self.updateRate = desiredUpdateRate
-        self.radioChannel = desiredRadioChannel
-        self.maxNumberofCoords = 72000 #equivalent to 10 minutes at 120Hz
-        self.eulerData = np.zeros((2, self.maxNumberofCoords), dtype=np.float64) #we have only two Mtw devices
-        self.index = np.zeros(2, dtype=np.uint32)
+        self.__updateRate = desiredUpdateRate
+        self.__radioChannel = desiredRadioChannel
+        self.__maxNumberofCoords = 72000 #equivalent to 10 minutes at 120Hz
+        self.__eulerData = np.zeros((2, self.__maxNumberofCoords), dtype=np.float64) #we have only two Mtw devices
+        self.__index = np.zeros(2, dtype=np.uint32)
 
     def __enter__(self):
         print("Creating XsControl object...")
@@ -183,12 +185,9 @@ class MtwAwinda(object):
             rates = self.masterDevice.supportedUpdateRates()
             for rate in rates:
                 print("%d " % (rate))
-            
-            #ASSIGN NEW UPDATE RATE
-            newUpdateRate = self.updateRate
 
-            print("Setting update rate to %d Hz..." % newUpdateRate)
-            if not self.masterDevice.setUpdateRate(newUpdateRate):
+            print("Setting update rate to %d Hz..." % self.__updateRate)
+            if not self.masterDevice.setUpdateRate(self.__updateRate):
                 raise RuntimeError("Could not set desired update rate. Aborting")
             
             print("Disabling radio channel if previously enabled...")
@@ -196,8 +195,8 @@ class MtwAwinda(object):
                 if not self.masterDevice.disableRadio():
                     raise RuntimeError("Failed to disable radio channel. Aborting")
             
-            print("Setting radio channel to %d and enabling radio..." % self.radioChannel)
-            if not self.masterDevice.enableRadio(self.radioChannel):
+            print("Setting radio channel to %d and enabling radio..." % self.__radioChannel)
+            if not self.masterDevice.enableRadio(self.__radioChannel):
                 raise RuntimeError("Failed to set radio channel. Aborting")
             
             print("Waiting for MTWs to wirelessly connect...")
@@ -264,9 +263,8 @@ class MtwAwinda(object):
                     packet = self.mtwCallbacks[i].getOldestPacket()
                     #packet always contains orientation NO NEED TO CHECK (Mtw Awinda)
                     euler = packet.orientationEuler()
-                   
-                    self.eulerData[i][self.index[i]] = euler.y() #pitch only is written into the class buffer
-                    self.index[i] += 1 % self.maxNumberofCoords
+                    self.__eulerData[i][self.__index[i]] = euler.y() #pitch only is written into the class buffer
+                    self.__index[i] += 1 % self.__maxNumberofCoords
 
             return avail
     
@@ -277,11 +275,27 @@ class MtwAwinda(object):
             print(error)
             sys.exit(1)
 
-    def cleanBuffer(self):
-        self.eulerData = np.zeros((2, self.maxNumberofCoords), dtype=np.float64)
-        self.index = np.zeros(2, dtype=np.uint32)
+    def __cleanBuffer(self):
+        self.__eulerData = np.zeros((2, self.__maxNumberofCoords), dtype=np.float64)
+        self.__index = np.zeros(2, dtype=np.uint32)
 
-    def mtwRecord(self, duration, plot:bool=True, analyze:bool=True):
+    def __resetOrientation(self):
+        try:
+            #RESET ORIENTATION
+            print("Scheduling Orientation reset...")
+            for i in range(len(self.mtwDevices)):
+                self.mtwDevices[i].resetOrientation(xda.XRM_Inclination)
+        except RuntimeError as error:
+            print(error)
+            sys.exit(1)
+        except Exception as error:
+            print(error)
+            sys.exit(1)
+        else:
+            print("...Orientation reset succesfully scheduled")
+
+
+    def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True):
         #record for 'duration' seconds (buffer data)
         #if plot (default) it spawns a daemon that handles plotting
         #if analyze (default) it spawns a daemon that performs step counting
@@ -302,7 +316,7 @@ class MtwAwinda(object):
                     data1[index1.value] = coords[1]
                     index1.value = (index1.value + 1) % 1000
 
-        self.cleanBuffer()
+        self.__cleanBuffer()
 
         if any((plot, analyze)):
             #Declare and initialize unsynchronized shared memory (not lock protected)
@@ -324,15 +338,22 @@ class MtwAwinda(object):
                 analyzer_process0.start()
                 analyzer_process1.start()
             
+            time.sleep(1) #wait one second before starting orientation reset and to allow processes to properly start
+            self.__resetOrientation()
+
+            print("Recording started...")
             startTime = xda.XsTimeStamp_nowMs()
             while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
                 
                 avail = self.__getEuler()
                 if any(avail):
-                    coords = [self.eulerData[0][self.index[0]-1], self.eulerData[1][self.index[1]-1]]
+                    coords = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
                     coords = [a*b for a,b in zip(coords,avail)] #send only new data
                     write_shared(data0, data1, index0, index1, coords)
-            
+                #allow other processes to run
+                #sleep 3ms (a new packet is received roughly every 8.33ms)
+                xda.msleep(3)
+
             write_shared(data0, data1, index0, index1, None, terminate=True)
             
             if plot:
@@ -349,7 +370,7 @@ class MtwAwinda(object):
             startTime = xda.XsTimeStamp_nowMs()
             while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
                 _ = self.__getEuler() #fills object buffer with data from Mtw devices
-        return (self.eulerData, self.index)
+        return (self.__eulerData, self.__index)
     
     def __clean(self):
         try:

@@ -7,8 +7,9 @@ class Analyzer():
         self.__wave = sa.WaveObject.from_wave_file("audio_samples/beep.wav")
         self.__winsize = 15 #window duration is 8.33ms * 15 ~ 125 ms
         self.__peak = 0.0
-        self.__offset = 0.0 #needs to be less than threshold otherwise signal will not cross zero
-        self.__theshold = 3.5 #TODO: make peak theshold ADAPTIVE
+        self.__history_sz = 10 #last three steps
+        self.__threshold = 5.0
+        self.__peakHistory = np.full(self.__history_sz, 2.0, dtype=np.float64) #start with threshold value low to filter noise
         self.__timeThreshold = 0.1 #seconds (100 ms)
         self.__swingPhase = False
         self.__active = False
@@ -32,29 +33,47 @@ class Analyzer():
             self.__pitch = np.array(self.__data[self.__index.value-self.__winsize:self.__index.value])
         else:
             self.__pitch = np.concatenate((np.array(self.__data[-(self.__winsize - self.__index.value):]), np.array(self.__data[:self.__index.value])))
-
-        #subtract offset to trigger sound earlier in the cycle
-        self.__pitch = self.__pitch - self.__offset 
-
+            
+        # update peak (only in swing phase : after a positive zero-crossing is encountered 
+        # - until the next zero-crossing with negative gradient)
+        if self.__swingPhase == True:
+            self.__peak = np.max([self.__peak, np.max(self.__pitch)])
+        
         # zero crossings count
         cross =  np.diff(np.signbit(self.__pitch))
         if np.sum(cross) == 1: #If more than 1 zero crossing is found then it's noise
+            # determine position of zero crossing
             crossPosition = np.where(cross)[0][0]
-            # DETERMINE POLARITY OF ZC AFTER FINDING IT (use np.gradient at index of zero crossing + 1 (the value where zero is crossed))
+            # determine polarity of zero-crossing (use np.gradient at index of zero crossing + 1 (the value where zero is crossed))
             negativeZc = np.signbit(np.gradient(self.__pitch)[crossPosition + 1])
             if negativeZc:
                 if self.__swingPhase == True:
                     elapsed_time = time.time() - self.__timestamp
-                    if self.__peak >= self.__theshold and elapsed_time > self.__timeThreshold:
-                        self.__swingPhase = False
-                        self.__timestamp = time.time()
-                        playObject = self.__wave.play()
+                    if self.__peak >= self.__threshold - 3.0 and elapsed_time > self.__timeThreshold:
+                        # a step is valid only if last peak is greater than adaptive threshold 
+                        # minus a constant angle to allow angles less than the minimum to be re gistered
+                        self.__swingPhase = False #swing phase is set to false only when step is valid
+                        self.__timestamp = time.time() # reset timestamp (new step)
+                        _ = self.__wave.play()
+
+                        # print(self.__peakHistory)
+                        # print("threshold: ", self.__threshold)
+                        # print("peak: ", self.__peak)
+
+                        # update peak history with last peak
+                        self.__peakHistory[self.__steps % self.__history_sz] = self.__peak
+
+                        # update threshold
+                        newthresh = np.min(self.__peakHistory)
+                        # ensure that threshold cannot go below 2.0
+                        self.__threshold = newthresh if newthresh > 2.0 else 2.0
+
+                        # increment step count
                         self.__steps += 1
-                        self.__peak = 0.0
-                        print(self.__stg) 
-            else:
+                        print(self.__stg)
+                    self.__peak = 0.0 #reset peak whenever a zero crossing is encountered (negative gradient)
+            else: #positiveZc
                 self.__swingPhase = True
-                self.__peak = np.max([self.__peak, np.max(self.__pitch)])
 
     def stepDetector(self):
         while self.__active:

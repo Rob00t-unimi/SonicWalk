@@ -121,6 +121,12 @@ class WirelessMasterCallback(xda.XsCallback):
         self.m_lock.release()
 
 class MtwAwinda(object):
+    """Class that allows mtwAwinda devices handling
+    
+    must be used in a with block to properly initialize and close devices
+    desiredUpdaterate and desiredRadioChannel are mandatory arguments to the constructor
+    (see device documentation for a list of supported update rates and radio channels)
+    """
     def __new__(cls, desiredUpdateRate, desiredRadioChannel):
         if not hasattr(cls, 'instance'):
             cls.instance = super(MtwAwinda, cls).__new__(cls)
@@ -251,8 +257,15 @@ class MtwAwinda(object):
             print("Successful init.")
     
     def __getEuler(self):
-        #get Euler has to consume data from the callback buffers
-        #very fast otherwise callback buffers fill and packets are lost
+        """Get data from callback buffers, 
+        
+        returns a list of two bools one for each buffer
+        the corresponding element is True if data was available, False otherwise
+        
+        Has to consume data faster than it is produced otherwise data is lost
+        (buffersize is 300 packets for each device)
+        """
+
         avail = [False, False]
         try:
     
@@ -296,9 +309,15 @@ class MtwAwinda(object):
 
 
     def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True):
-        #record for 'duration' seconds (buffer data)
-        #if plot (default) it spawns a daemon that handles plotting
-        #if analyze (default) it spawns a daemon that performs step counting
+        """Record pitch data for duration seconds
+        
+        Returns a numpy.array object containing the data for each device and the relative index
+        Additional flags can be supplied:
+
+        if plot=True it spawns a daemon that handles plotting
+        if analyze=True (default) it spawns a daemon that performs step counting
+        """
+        
         if not isinstance(duration, int) or duration < 10:
             raise ValueError("duration must be a positive integer (> 10) indicating the number of seconds")
         

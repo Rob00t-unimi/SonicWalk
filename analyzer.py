@@ -1,15 +1,14 @@
-import simpleaudio as sa
+import simpleaudio
 import time
 import numpy as np
 
 class Analyzer():
     def __init__(self) -> None:
-        self.__wave = sa.WaveObject.from_wave_file("audio_samples/beep.wav")
         self.__winsize = 15 #window duration is 8.33ms * 15 ~ 125 ms
         self.__peak = 0.0
         self.__history_sz = 10 #last three steps
         self.__threshold = 5.0
-        self.__peakHistory = np.full(self.__history_sz, 2.0, dtype=np.float64) #start with threshold value low to filter noise
+        self.__peakHistory = np.full(self.__history_sz, 5.0, dtype=np.float64) #start with threshold value low to filter noise
         self.__timeThreshold = 0.1 #seconds (100 ms)
         self.__swingPhase = False
         self.__active = False
@@ -54,11 +53,8 @@ class Analyzer():
                         # minus a constant angle to allow angles less than the minimum to be re gistered
                         self.__swingPhase = False #swing phase is set to false only when step is valid
                         self.__timestamp = time.time() # reset timestamp (new step)
-                        _ = self.__wave.play()
-
-                        # print(self.__peakHistory)
-                        # print("threshold: ", self.__threshold)
-                        # print("peak: ", self.__peak)
+                        _ = self.__samples[self.__sharedIndex.value()].play()
+                        self.__sharedIndex.increment()
 
                         # update peak history with last peak
                         self.__peakHistory[self.__steps % self.__history_sz] = self.__peak
@@ -66,7 +62,7 @@ class Analyzer():
                         # update threshold
                         newthresh = np.min(self.__peakHistory)
                         # ensure that threshold cannot go below 2.0
-                        self.__threshold = newthresh if newthresh > 2.0 else 2.0
+                        self.__threshold = newthresh if newthresh > 5.0 else 5.0
 
                         # increment step count
                         self.__steps += 1
@@ -83,7 +79,7 @@ class Analyzer():
             time.sleep(0.003)
         
 
-    def __call__(self, data, index, num):
+    def __call__(self, data, index, num, sharedIndex, samples):
         print('starting analyzer daemon.. {:d}'.format(num))
 
         if num == 0:
@@ -94,6 +90,8 @@ class Analyzer():
         self.__num = num
         self.__data = data
         self.__index = index
+        self.__sharedIndex = sharedIndex
+        self.__samples = samples
         self.__timestamp = time.time()
         self.__active = True
 

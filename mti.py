@@ -32,11 +32,14 @@
 
 import sys
 import time
+import os
+import gc
 import xsensdeviceapi as xda
 import multiprocessing as mp
 import numpy as np
-import matplotlib.pyplot as plt
+import simpleaudio as sa
 from multiprocessing.sharedctypes import RawValue, RawArray
+from sharedCircularIndex import SharedCircularIndex
 from getch import getch
 from plotter import Plotter
 from analyzer import Analyzer
@@ -127,14 +130,15 @@ class MtwAwinda(object):
     desiredUpdaterate and desiredRadioChannel are mandatory arguments to the constructor
     (see device documentation for a list of supported update rates and radio channels)
     """
-    def __new__(cls, desiredUpdateRate, desiredRadioChannel):
+    def __new__(cls, desiredUpdateRate, desiredRadioChannel, samplesPath):
         if not hasattr(cls, 'instance'):
             cls.instance = super(MtwAwinda, cls).__new__(cls)
         return cls.instance
     
-    def __init__(self, desiredUpdateRate, desiredRadioChannel):
+    def __init__(self, desiredUpdateRate:int, desiredRadioChannel:int, samplesPath:str = ""):
         self.__updateRate = desiredUpdateRate
         self.__radioChannel = desiredRadioChannel
+        self.__samplesPath = samplesPath
         self.__maxNumberofCoords = 72000 #equivalent to 10 minutes at 120Hz
         self.__eulerData = np.zeros((2, self.__maxNumberofCoords), dtype=np.float64) #we have only two Mtw devices
         self.__index = np.zeros(2, dtype=np.uint32)
@@ -292,6 +296,29 @@ class MtwAwinda(object):
         self.__eulerData = np.zeros((2, self.__maxNumberofCoords), dtype=np.float64)
         self.__index = np.zeros(2, dtype=np.uint32)
 
+    def __loadSamples(self):
+        #check if sample list is empty before returning
+        try:
+            files = [os.path.join(self.__samplesPath, f) for f in os.listdir(self.__samplesPath) 
+                    if os.path.isfile(os.path.join(self.__samplesPath, f))]
+            files.sort() #sort filenames in order
+            samples = []
+            print("loading wave samples...")
+            for f in files:
+                if f.lower().endswith(".wav"):
+                    samples.append(sa.WaveObject.from_wave_file(f))
+        except:
+            print("samples could not be loaded...Aborting. Check pathname syntax")
+            sys.exit(1)
+        else:
+            print("...wave samples loaded successfully")
+
+        if not samples:
+            print("No wav file was found at given pathname...Aborting. Check file extensions")
+            sys.exit(1)
+    
+        return samples 
+
     def __resetOrientation(self):
         try:
             #RESET ORIENTATION
@@ -305,7 +332,7 @@ class MtwAwinda(object):
             print(error)
             sys.exit(1)
         else:
-            print("...Orientation reset succesfully scheduled")
+            print("...Orientation reset successfully scheduled")
 
 
     def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True):
@@ -350,12 +377,18 @@ class MtwAwinda(object):
                 plotter_process.start()
                 
             if analyze:
+                #samples are loaded only if analyzer is has to spawn
+                samples = self.__loadSamples()
+                sharedIndex = SharedCircularIndex(len(samples))
                 analyzer0 = Analyzer()
                 analyzer1 = Analyzer()
-                analyzer_process0 = mp.Process(target=analyzer0, args=(data0, index0, 0), daemon=True)
-                analyzer_process1 = mp.Process(target=analyzer1, args=(data1, index1, 1), daemon=True)
+                analyzer_process0 = mp.Process(target=analyzer0, args=(data0, index0, 0, sharedIndex, samples), daemon=True)
+                analyzer_process1 = mp.Process(target=analyzer1, args=(data1, index1, 1, sharedIndex, samples), daemon=True)
                 analyzer_process0.start()
                 analyzer_process1.start()
+                #delete local version of samples 
+                del samples
+                gc.collect()
             
             time.sleep(1) #wait one second before starting orientation reset and to allow processes to properly start
             self.__resetOrientation()

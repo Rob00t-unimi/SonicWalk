@@ -1,11 +1,11 @@
 import mti
-import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
 duration = 30
+samplesPath = "audio_samples/cammino_1_fase_2"
 
-with mti.MtwAwinda(120, 19) as mtw:
+with mti.MtwAwinda(120, 19, samplesPath) as mtw:
     data = mtw.mtwRecord(duration, plot=True, analyze=True)
 
 data0 = data[0][0]
@@ -43,19 +43,10 @@ axs[0].plot(pitch0, label = 'pitch0')
 axs[0].plot(pitch1, label = 'pitch1')
 axs[0].set_title("Pitch angle")
 
-
 axs[1].plot(fftPitch0Mod[0:len(fftPitch0Mod)//2], label = 'fftPitch0')
 axs[1].plot(fftPitch1Mod[0:len(fftPitch0Mod)//2], label = 'fftPitch1')
 axs[1].set_title("FFT")
 plt.show()
-
-#get maximum FFT coefficient
-# sf0 = np.argmax(fftPitch0Mod[0:len(fftPitch0Mod)//2])/len(fftPitch0Mod)*Fs0
-# sf1 = np.argmax(fftPitch1Mod[0:len(fftPitch0Mod)//2])/len(fftPitch1Mod)*Fs1
-
-# print("fundamental frequency 0: (steps/s) {:0.3f}".format(sf0))
-# print("fundamental frequency 1: (steps/s) {:0.3f}".format(sf0))
-# print("Total number of steps (Frequency): {:0.1f}".format((sf0 + sf1)*duration))
 
 #zero crossings count
 steps0 = (pitch0[:-1] * pitch0[1:] < 0).sum()/2

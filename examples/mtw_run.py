@@ -1,12 +1,12 @@
 import sys
-sys.path.append("../src")
+sys.path.append("../sonicwalk")
 
 import mtw
 import numpy as np
 import matplotlib.pyplot as plt
 
-duration = 30
-samplesPath = "../src/audio_samples/cammino_1_fase_2"
+duration = 60
+samplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2"
 
 with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
     data = mtw.mtwRecord(duration, plot=True, analyze=True)

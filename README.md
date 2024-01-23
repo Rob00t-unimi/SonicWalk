@@ -16,8 +16,8 @@ This gives the possibility to partition a music track into samples that will be 
 A usage example can be found in the examples directory
 
 ```python
-duration = 30
-samplesPath = "audio_samples/cammino_1_fase_2"
+duration = 60
+samplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2"
 
 with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
     data = mtw.mtwRecord(duration, plot=True, analyze=True)
@@ -42,3 +42,22 @@ Two additional flags can be provided:
 Recorded data is returned by the function as a tuple of Numpy.arrays. 
 With the first element consisting of two buffers of pitch angles of a maximum lenght of 72000 samples, and the second being the index at witch the recording has stopped.
 The two buffers of length 72000 samples can contain roughly 10 minutes of recording (at 120Hz) after witch the buffers are overwritten.
+
+### Installation
+Python version 3.9 is required, (it is recommended to create a conda virtual environment using the python version 3.9)\
+Installing the *xsensdeviceapi* dependency:
+
+```
+pip install wheels/xsensdeviceapi-2022.0.0-cp39-none-linux_x86_64.whl
+```
+Installing the package:
+```
+pip install dist/sonicwalk-1.0.0.dev1-py3-none-any.whl
+```
+
+### Usage
+You can find a usage example in the examples directory
+```python
+from sonicwalk import mtw
+
+```

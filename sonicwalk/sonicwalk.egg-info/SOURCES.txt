@@ -1,0 +1,8 @@
+LICENSE
+README.md
+setup.py
+sonicwalk/sonicwalk.egg-info/PKG-INFO
+sonicwalk/sonicwalk.egg-info/SOURCES.txt
+sonicwalk/sonicwalk.egg-info/dependency_links.txt
+sonicwalk/sonicwalk.egg-info/requires.txt
+sonicwalk/sonicwalk.egg-info/top_level.txt

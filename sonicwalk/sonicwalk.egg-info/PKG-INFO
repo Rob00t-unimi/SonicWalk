@@ -18,7 +18,7 @@ License-File: LICENSE
 Requires-Dist: matplotlib>=3.8.2
 Requires-Dist: numpy>=1.26.3
 Requires-Dist: simpleaudio>=1.0.4
-Requires-Dist: xsensdeviceapi@ file://{wheelpath}/xsensdeviceapi-2022.0.0-cp39-none-linux_x86_64.whl
+Requires-Dist: xsensdeviceapi@ https://github.com/xyzxyzxyzxy/SonicWalk/tree/master/wheels/xsensdeviceapi-2022.0.0-cp39-none-linux_x86_64.whl
 
 # SonicWalk
 

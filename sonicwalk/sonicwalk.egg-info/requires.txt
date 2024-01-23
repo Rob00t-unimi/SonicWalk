@@ -1,4 +1,4 @@
 matplotlib>=3.8.2
 numpy>=1.26.3
 simpleaudio>=1.0.4
-xsensdeviceapi@ file://{wheelpath}/xsensdeviceapi-2022.0.0-cp39-none-linux_x86_64.whl
+xsensdeviceapi@ https://github.com/xyzxyzxyzxy/SonicWalk/tree/master/wheels/xsensdeviceapi-2022.0.0-cp39-none-linux_x86_64.whl

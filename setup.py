@@ -113,7 +113,7 @@ setup(
     #
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/discussions/install-requires-vs-requirements/
-    install_requires=["matplotlib>=3.8.2", "numpy>=1.26.3", "simpleaudio>=1.0.4", "xsensdeviceapi @ https://github.com/xyzxyzxyzxy/SonicWalk/wheels/xsensdeviceapi-2022.0.0-cp39-none-linux_x86_64.whl"],  # Optional
+    install_requires=["matplotlib>=3.8.2", "numpy>=1.26.3", "simpleaudio>=1.0.4", "xsensdeviceapi @ https://github.com/xyzxyzxyzxy/SonicWalk/tree/master/wheels/xsensdeviceapi-2022.0.0-cp39-none-linux_x86_64.whl"],  # Optional
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"
     # syntax, for example:

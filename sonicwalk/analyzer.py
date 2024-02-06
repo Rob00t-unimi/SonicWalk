@@ -32,7 +32,10 @@ class Analyzer():
             self.__pitch = np.array(self.__data[self.__index.value-self.__winsize:self.__index.value])
         else:
             self.__pitch = np.concatenate((np.array(self.__data[-(self.__winsize - self.__index.value):]), np.array(self.__data[:self.__index.value])))
-            
+        
+        #TEST: subtract a certain angle to trigger sound earlier in the cycle
+        self.__pitch = self.__pitch - 5
+
         # update peak (only in swing phase : after a positive zero-crossing is encountered 
         # - until the next zero-crossing with negative gradient)
         if self.__swingPhase == True:

@@ -353,6 +353,9 @@ class MtwAwinda(object):
         else:
             print("...Orientation reset successfully scheduled")
 
+    ## WRITE HERE MTWCALIBRATE()
+    def mtwCalibrate():
+        pass
 
     def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True):
         """Record pitch data for duration seconds

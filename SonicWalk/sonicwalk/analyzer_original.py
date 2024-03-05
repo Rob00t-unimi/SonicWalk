@@ -66,7 +66,7 @@ class Analyzer():
                         newthresh = np.min(self.__peakHistory)
                         # ensure that threshold cannot go below 2.0
                         self.__threshold = newthresh if newthresh > 5.0 else 5.0
-
+                        #print("threshold: " + str(self.__threshold))
                         # increment step count
                         self.__steps += 1
                         print(self.__stg)

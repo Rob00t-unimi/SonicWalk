@@ -9,8 +9,8 @@ duration = 60
 samplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2"
 
 with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
-    data = mtw.mtwRecord(duration, plot=True, analyze=True)
-
+    data = mtw.mtwRecord(duration, plot=True, analyze=True, exType = 0)
+    
 data0 = data[0][0]
 data1 = data[0][1]
 index0 = data[1][0]
@@ -20,6 +20,25 @@ print("total size of buffers: 0: {:d} 1: {:d}".format(data0.size * data0.itemsiz
 
 pitch0 = data0[:index0]
 pitch1 = data1[:index1]
+
+# Saving signal
+# Find the maximum length
+max_length = max(len(pitch0), len(pitch1))
+
+# Add zero-padding
+new_pitch0 = np.pad(pitch0, (0, max_length - len(pitch0)), mode='constant')
+new_pitch1 = np.pad(pitch1, (0, max_length - len(pitch1)), mode='constant')
+
+# Combine both arrays
+combined_data = np.vstack((new_pitch0, new_pitch1))
+
+# Ask user for filename with path
+filename = input("Enter filename with path to save (without extension): ")
+
+# Save the combined data
+np.save("/home/phuselab/Desktop/RobertoTallarini/savedSignals/" + f'{filename}.npy', combined_data)
+
+print(f"{filename}.npy saved successfully.")
 
 print(pitch0.shape)
 print(pitch1.shape)

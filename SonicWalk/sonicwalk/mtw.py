@@ -357,7 +357,7 @@ class MtwAwinda(object):
     def mtwCalibrate():
         pass
 
-    def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True):
+    def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True, exType:int=0):
         """Record pitch data for duration seconds
         
         Returns a numpy.array object containing the data for each device and the relative index
@@ -365,6 +365,7 @@ class MtwAwinda(object):
 
         if plot=True it spawns a daemon that handles plotting
         if analyze=True (default) it spawns a daemon that performs step counting
+        exType defines the type of analysis to be performed
         """
         
         if not isinstance(duration, int) or duration < 10:
@@ -404,8 +405,8 @@ class MtwAwinda(object):
                 sharedIndex = SharedCircularIndex(len(samples))
                 analyzer0 = Analyzer()
                 analyzer1 = Analyzer()
-                analyzer_process0 = mp.Process(target=analyzer0, args=(data0, index0, 0, sharedIndex, samples), daemon=True)
-                analyzer_process1 = mp.Process(target=analyzer1, args=(data1, index1, 1, sharedIndex, samples), daemon=True)
+                analyzer_process0 = mp.Process(target=analyzer0, args=(data0, index0, 0, sharedIndex, samples, exType), daemon=True)
+                analyzer_process1 = mp.Process(target=analyzer1, args=(data1, index1, 1, sharedIndex, samples, exType), daemon=True)
                 analyzer_process0.start()
                 analyzer_process1.start()
                 #delete local version of samples 

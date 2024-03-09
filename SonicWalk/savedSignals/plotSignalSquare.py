@@ -5,7 +5,7 @@ def enlarge_numbers(numbers):
     enlarged_numbers = []
     for num in numbers:
         if num > 0:
-            enlarged_numbers.append(num ** 1.5)  # Eleva al quadrato solo i numeri positivi
+            enlarged_numbers.append(num ** 2)  # Eleva al quadrato solo i numeri positivi
         else:
             enlarged_numbers.append(num)  # Mantieni gli zeri e i numeri negativi invariati
     return enlarged_numbers

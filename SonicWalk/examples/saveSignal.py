@@ -36,7 +36,7 @@ combined_data = np.vstack((new_pitch0, new_pitch1))
 filename = input("Enter filename with path to save (without extension): ")
 
 # Save the combined data
-np.save("/home/phuselab/Desktop/RobertoTallarini/savedSignals/" + f'{filename}.npy', combined_data)
+np.save("/home/phuselab/Desktop/RobertoTallarini/SonicWalk/savedSignals/" + f'{filename}.npy', combined_data)
 
 print(f"{filename}.npy saved successfully.")
 
@@ -58,6 +58,10 @@ fftPitch1 = np.fft.fft(balanced_data1)
 #get modulo of FFT coefficients
 fftPitch0Mod = np.abs(fftPitch0)
 fftPitch1Mod = np.abs(fftPitch1)
+
+# Calcola le FFT per entrambi i segnali (pitch0 e pitch1)
+fft_pitch0 = np.fft.fft(pitch0)
+fft_pitch1 = np.fft.fft(pitch1)
 
 fig, axs = plt.subplots(2)
 

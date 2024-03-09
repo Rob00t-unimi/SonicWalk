@@ -9,7 +9,7 @@ duration = 45
 samplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2"
 
 with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
-    data = mtw.mtwRecord(duration, plot=True, analyze=True, exType = 2)
+    data = mtw.mtwRecord(duration, plot=True, analyze=True, exType = 4)
 
 data0 = data[0][0]
 data1 = data[0][1]

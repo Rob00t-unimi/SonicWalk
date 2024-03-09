@@ -23,6 +23,7 @@ class Analyzer():
         self.__pos = True
         self.__min = 0.0
         self.__minHistory = np.full(self.__history_sz, -5.0, dtype=np.float64)
+        self.__firstWindow = True
 
     def __terminate(self):
         print("analyzer daemon {:d} terminated...".format(self.__num))
@@ -186,15 +187,20 @@ class Analyzer():
 
     def __detectUnknown(self):
 
+        ### Le due gambe hanno segnali differenti che quindi devono essere distinti e analizzati in modo diverso
+
         if self.__endController() : return
         self.__nextWindow()
         
-        if self.__legDetected!=True:
+        if self.__legDetected==False and self.__firstWindow==False:
             leg_index = self.detectLeg()
             self.__leg_index = leg_index
+        
+        if self.__firstWindow==True:
+            self.__firstWindow=False
+            return
 
         if self.__legDetected == True : 
-            self.__leg_index = 1
             if self.__leg_index == 0 :
                 self.otherLeg()
             elif self.__leg_index == 1:
@@ -202,13 +208,19 @@ class Analyzer():
 
         return
     
+    # RILEVAZIONE MOVIMENTO GAMBA "CHE SI MOUOVE"
     def stepLeg(self):
+            
+            ## la gamba che si muove fa un doppio picco positivo poi doppio negativo etc..
+            # a noi interessa solo quando poggia terra ovvero per ogni coppia solo il primo dei 2 picchi
+            # quando rilevo un picco positivo quindi imposto la ricerca sul negativo e viceversa
+            # quando rilevo un picco valido suono
 
             if self.__endController() : return
             self.__nextWindow()
 
-            pos = self.__pitch -5
-            neg = self.__pitch +5
+            pos = self.__pitch -2
+            neg = self.__pitch +2
             for index, s in enumerate(self.__pitch):
                 if s <= 0:
                     pos[index] = 0
@@ -224,7 +236,7 @@ class Analyzer():
                 if lastPeak > self.__peak:
 
                     elapsed_time = time.time() - self.__timestamp
-                    if self.__peak >= self.__threshold - self.__trasholdRange and elapsed_time > 0.2:
+                    if self.__peak >= self.__threshold - self.__trasholdRange and elapsed_time > 0.3:
 
                         # a step is valid only if last peak is greater than adaptive threshold 
                         # minus a constant angle to allow angles less than the minimum to be re gistered
@@ -242,20 +254,22 @@ class Analyzer():
                         self.__pos = False
 
             else:
+
                 lastMin = self.__min
                 self.__min = np.min(neg)
-                if lastMin > self.__min:
+                if lastMin < self.__min:
 
                     elapsed_time = time.time() - self.__timestamp
-                    if self.__min <=  self.__trasholdRange - self.__threshold and elapsed_time > 0.2:
+                    if self.__min <=  self.__trasholdRange - self.__threshold and elapsed_time > 0.3:
                     
                         # a step is valid only if last peak is greater than adaptive threshold 
                         # minus a constant angle to allow angles less than the minimum to be re gistered
                         self.__timestamp = time.time() # reset timestamp (new step)
+                        #time.sleep(0.01)
                         _ = self.__samples[self.__sharedIndex.value()].play()
                         self.__sharedIndex.increment()
                         # update peak history with last peak
-                        self.__minHistory[self.__completeMovements % self.__history_sz] = self.__peak
+                        self.__minHistory[self.__completeMovements % self.__history_sz] = self.__min
 
                         # update threshold
                         newthresh = - np.min(self.__peakHistory)
@@ -265,15 +279,20 @@ class Analyzer():
                         self.__pos = True
 
         
+    # RILEVAZIONE MOVIMENTO GAMBA "FERMA"
     def otherLeg(self):
+
+        ## questa gamba ha un'andamenso tipo sinusoidale quindi mi interessano gli zero crossing
+        # in questo caso però mi interessano entrambi gli zero crossing che si verificano uno prima e uno dopo il picco
+        # quindi cerco uno zero crossing positivo, faccio suonare
+        # cerco un picco valido, quando lo trovo cerco uno zero crossing negativo
+        # quando trovo lo zero crossing negativo faccio suonare e cerco lo zero crossing positivo
         
         if self.__endController() : return
         self.__nextWindow()
 
         self.__pitch = abs(self.__pitch)
-        self.__threshold = 10
-        self.__pitch = self.__pitch - self.__threshold
-
+        self.__pitch = self.__pitch - 5
         if self.__secondCrossDetected == True: 
             cross =  np.diff(np.signbit(self.__pitch))
             if np.sum(cross) == 1: #If more than 1 zero crossing is found then it's noise
@@ -283,11 +302,12 @@ class Analyzer():
                 positiveZc = np.signbit(np.gradient(self.__pitch)[crossPosition + 1])
                 if positiveZc:
                     elapsed_time = time.time() - self.__timestamp
-                    self.__timestamp = time.time()
-                    _ = self.__samples[self.__sharedIndex.value()].play()
-                    self.__sharedIndex.increment()
-                    self.__completeMovements += 1
-                    self.__secondCrossDetected = False
+                    if elapsed_time > self.__timeThreshold * 2:
+                        self.__timestamp = time.time()
+                        _ = self.__samples[self.__sharedIndex.value()].play()
+                        self.__sharedIndex.increment()
+                        self.__completeMovements += 1
+                        self.__secondCrossDetected = False
                 else:
                     self.__swingPhase = False
 
@@ -326,59 +346,36 @@ class Analyzer():
                 self.__swingPhase = True
         return
 
-
+    # DISTINGUERE AUTOMATICAMENTE LE GAMBE
     def detectLeg(self):
-        ### DA RISOLVERE
 
-        def normalized_cross_correlation(signal1, signal2):
-            # Calcola la cross-correlazione tra i due segnali utilizzando la modalità 'full'
-            correlation = correlate(signal1, signal2, mode='full')
-            
-            # Controlla se le deviazioni standard dei segnali sono entrambe non zero
-            std_signal1 = np.std(signal1)
-            std_signal2 = np.std(signal2)
-            if std_signal1 == 0 or std_signal2 == 0:
-                return np.nan  # Restituisci "nan" se uno dei segnali ha deviazione standard zero
-            
-            # Normalizza il risultato nel range [-1, 1]
-            norm_correlation = correlation / (std_signal1 * std_signal2)
-            # Calcola la media delle correlazioni normalizzate
-            avg_correlation = np.mean(norm_correlation)
-            return avg_correlation
+        # normalmente un'esercizio parte con il passo in avanti non con quello indietro quindi
+        # tramite questa assunzione i 2 segnali hanno come primo zero crossing valido 2 gradienti opposti
+        # posso quindi riconoscere quale gamba produrrà quale tipo di segnale
+              
+        neg = np.diff(np.signbit(self.__pitch + 2))
+        pos = np.diff(np.signbit(self.__pitch - 2))
 
-        
-        print("Leg Detection...")
-        if self.__completeSignal is None:
-            self.__completeSignal = self.__pitch
-        else:
-            self.__completeSignal = np.concatenate((self.__completeSignal, self.__pitch))
+        negative = False
+        positive = False
+        if np.sum(neg) == 1:
+            crossPosition = np.where(neg)[0][0]
+            positiveZc = np.signbit(np.gradient(self.__pitch +2 )[crossPosition + 1])
+            if positiveZc != True:
+                negative = True
+        if np.sum(pos) == 1:
+            crossPosition = np.where(pos)[0][0]
+            positiveZc = np.signbit(np.gradient(self.__pitch -2 )[crossPosition + 1])
+            if positiveZc == True:
+                positive = True
 
-        # carica un array bidimensionale con dentro le fft di due segnali da un file chiamato fft_signals.npy
-        fft_signals = np.load('pattern/fft_signals.npy')
-        # calcola la fft di self.__completeSignal
-        fft_complete_signal = np.fft.fft(self.__completeSignal)
-        # confronta la fft calcolata con entrambe le fft caricate dal file
-        similarity_scores = []
-        for fft_signal in fft_signals:
-            #similarity = np.corrcoef(fft_complete_signal, fft_signal)[0, 1]
-            # confrontare le fft di segnali con lunghezza diversa
-            similarity = normalized_cross_correlation(fft_complete_signal , fft_signal)
-            similarity_scores.append(similarity)
-        # verifica che la somiglianza superi una soglia ragionevole
-
-        threshold = 0.99  # Adjust as needed
-        if similarity_scores[0] > threshold and similarity_scores[1] > threshold:
-            return
-        # se la somiglianza supera la soglia per entrambe le fft con cui avviene il confronto prendi la fft con cui si assiomiglia di piu
-
-        if similarity_scores[0]==similarity_scores[1]:
-           return
-
-        leg_index = np.argmax(similarity_scores)
-        self.__legDetected = True
-        print ("Leg detected")
-        return leg_index
-    
+        if negative and not positive:
+            self.__legDetected = True 
+            return 1
+        elif positive and not negative:
+            self.__legDetected = True 
+            return 0
+        return    
 
     ## rob walk
 
@@ -459,6 +456,15 @@ class Analyzer():
             print("Rob's Step Analyzer")
             print('...analyzer daemon {:d} started'.format(num))
             self.stepDetector_Rob()
+
+
+
+
+
+
+
+
+
 
 
 
@@ -735,6 +741,59 @@ class Analyzer():
                     break
                 else:
                     self.__swingPhase = False
+
+
+         # IPOTESI SU COME DISTINGUERE LE GAMBE AUTOMATICAMENTE (NON FUNZIONA COME VORREI)
+    def detectLegV1(self):
+
+        def normalized_cross_correlation(signal1, signal2):
+            # Calcola la cross-correlazione tra i due segnali utilizzando la modalità 'full'
+            correlation = correlate(signal1, signal2, mode='full')
+            
+            # Controlla se le deviazioni standard dei segnali sono entrambe non zero
+            std_signal1 = np.std(signal1)
+            std_signal2 = np.std(signal2)
+            if std_signal1 == 0 or std_signal2 == 0:
+                return np.nan  # Restituisci "nan" se uno dei segnali ha deviazione standard zero
+            
+            # Normalizza il risultato nel range [-1, 1]
+            norm_correlation = correlation / (std_signal1 * std_signal2)
+            # Calcola la media delle correlazioni normalizzate
+            avg_correlation = np.mean(norm_correlation)
+            return avg_correlation
+
+        
+        print("Leg Detection...")
+        if self.__completeSignal is None:
+            self.__completeSignal = self.__pitch
+        else:
+            self.__completeSignal = np.concatenate((self.__completeSignal, self.__pitch))
+
+        # carica un array bidimensionale con dentro le fft di due segnali da un file chiamato fft_signals.npy
+        fft_signals = np.load('pattern/fft_signals.npy')
+        # calcola la fft di self.__completeSignal
+        fft_complete_signal = np.fft.fft(self.__completeSignal)
+        # confronta la fft calcolata con entrambe le fft caricate dal file
+        similarity_scores = []
+        for fft_signal in fft_signals:
+            #similarity = np.corrcoef(fft_complete_signal, fft_signal)[0, 1]
+            # confrontare le fft di segnali con lunghezza diversa
+            similarity = normalized_cross_correlation(fft_complete_signal , fft_signal)
+            similarity_scores.append(similarity)
+        # verifica che la somiglianza superi una soglia ragionevole
+
+        threshold = 0.99  # Adjust as needed
+        if similarity_scores[0] > threshold and similarity_scores[1] > threshold:
+            return
+        # se la somiglianza supera la soglia per entrambe le fft con cui avviene il confronto prendi la fft con cui si assiomiglia di piu
+
+        if similarity_scores[0]==similarity_scores[1]:
+           return
+
+        leg_index = np.argmax(similarity_scores)
+        self.__legDetected = True
+        print ("Leg detected")
+        return leg_index
 
 
     ###

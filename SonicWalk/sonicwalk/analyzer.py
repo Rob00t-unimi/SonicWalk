@@ -201,9 +201,9 @@ class Analyzer():
             return
 
         if self.__legDetected == True : 
-            if self.__leg_index == 0 :
+            if self.__leg_index == 1 :
                 self.otherLeg()
-            elif self.__leg_index == 1:
+            elif self.__leg_index == 0:
                 self.stepLeg()
 
         return

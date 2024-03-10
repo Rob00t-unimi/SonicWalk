@@ -23,7 +23,7 @@ class Analyzer():
         self.__pos = True
         self.__min = 0.0
         self.__minHistory = np.full(self.__history_sz, -5.0, dtype=np.float64)
-        self.__firstWindow = True
+        #self.__crossDetected = False
 
     def __terminate(self):
         print("analyzer daemon {:d} terminated...".format(self.__num))
@@ -177,7 +177,7 @@ class Analyzer():
     ### Unknown exercise
 
     def unknown(self):
-        time.sleep(1)
+        #time.sleep(0.15)
         while self.__active:
             self.__detectUnknown()
             #allow other processes to run (wait 3ms)
@@ -189,16 +189,24 @@ class Analyzer():
 
         ### Le due gambe hanno segnali differenti che quindi devono essere distinti e analizzati in modo diverso
 
+        
         if self.__endController() : return
         self.__nextWindow()
+
+        if self.__sharedLegDetected.get() == False:
+            self.detectLeg()
+
+        if self.__sharedLegDetected.get() == True : 
+            if self.__legDetected == False:
+                self.otherLeg()
+            else:
+                self.stepLeg()
+        return
         
-        if self.__legDetected==False and self.__firstWindow==False:
+        """
+        if self.__legDetected==False:
             leg_index = self.detectLeg()
             self.__leg_index = leg_index
-        
-        if self.__firstWindow==True:
-            self.__firstWindow=False
-            return
 
         if self.__legDetected == True : 
             if self.__leg_index == 1 :
@@ -206,7 +214,85 @@ class Analyzer():
             elif self.__leg_index == 0:
                 self.stepLeg()
 
-        return
+        return"""
+    
+
+    # DISTINGUERE AUTOMATICAMENTE LE GAMBE
+    def detectLeg(self):
+
+        # normalmente un'esercizio parte con il passo in avanti non con quello indietro quindi
+        # tramite questa assunzione i 2 segnali hanno come primo zero crossing valido 2 gradienti opposti
+        # posso quindi riconoscere quale gamba produrrà quale tipo di segnale
+        # traslando di + 2 e -2 in base al tipo di zero crossing che sto cercando sono sicuro di non scambiare mai le due gambe escludendo zero crossing non validi
+        # (CONTRO) traslando di 10 non posso patire con un passo molto piccolo
+
+        # la gamba che fa il passo ha inizialmente uno zero crossing negativo poichè l'angolo prima di diventare positivo diventa leggermente negativo per via della piega del ginocchio
+        # potrei traslare 20 gradi per essere sicuro, ma richiederebbe sempre un passo iniziale poi sopra i 20 gradi 
+        # alternativa: al posto di cercare uno zero crossing positivo, quando rilevo uno zero crossing negativo e una notch maggiore di -20 rilevo la gamba
+
+        """
+        pitch0 = self.__pitch + 5
+        pitch1 = self.__pitch - 5
+              
+        neg = np.diff(np.signbit(pitch0))
+        pos = np.diff(np.signbit(pitch1))
+
+        negative = False
+        positive = False
+        if np.sum(neg) == 1:
+            crossPosition = np.where(neg)[0][0]
+            negativeZc = np.signbit(np.gradient(pitch0)[crossPosition + 1])
+            if negativeZc:
+                negative = True
+        if np.sum(pos) == 1:
+            crossPosition = np.where(pos)[0][0]
+            negativeZc = np.signbit(np.gradient(pitch1)[crossPosition + 1])
+            if not negativeZc:
+                positive = True
+
+        if negative and not positive:
+            self.__legDetected = True 
+            return 1
+        elif positive and not negative:
+            self.__legDetected = True 
+            return 0
+        
+        return"""
+        ## v2 
+
+        """
+        if self.__crossDetected==False:
+            cross = np.diff(np.signbit(self.__pitch))
+            if np.sum(cross) == 1:
+                crossPosition = np.where(cross)[0][0]
+                negativeZc = np.signbit(np.gradient(self.__pitch)[crossPosition + 1])
+                if negativeZc:
+                    self.__crossDetected = True
+
+        if self.__crossDetected:
+            lastMin = self.__min
+            self.__min = np.min(self.__pitch)
+            if lastMin < self.__min:
+                if self.__min >= -20:
+                    self.__min = 0.0
+                    self.__legDetected = True 
+                    return 0
+            elif self.__min < -20:
+                self.__legDetected = True 
+                return 1
+        """
+
+        ## In questa versione semplicemente cerco il segnale che per primo fa lo zero crossing positivo e comunico ad una variabile condivisa ai 2 processi
+        pitch = self.__pitch - 10
+        pos = np.diff(np.signbit(pitch))
+        if np.sum(pos) == 1:    
+            crossPosition = np.where(pos)[0][0]
+            negativeZc = np.signbit(np.gradient(pitch)[crossPosition + 1])
+            if not negativeZc and self.__sharedLegDetected.get()==False:
+                self.__sharedLegDetected.set(True)
+                self.__legDetected = True
+        return    
+        
     
     # RILEVAZIONE MOVIMENTO GAMBA "CHE SI MOUOVE"
     def stepLeg(self):
@@ -219,8 +305,8 @@ class Analyzer():
             if self.__endController() : return
             self.__nextWindow()
 
-            pos = self.__pitch -2
-            neg = self.__pitch +2
+            pos = self.__pitch -5
+            neg = self.__pitch +5
             for index, s in enumerate(self.__pitch):
                 if s <= 0:
                     pos[index] = 0
@@ -346,36 +432,6 @@ class Analyzer():
                 self.__swingPhase = True
         return
 
-    # DISTINGUERE AUTOMATICAMENTE LE GAMBE
-    def detectLeg(self):
-
-        # normalmente un'esercizio parte con il passo in avanti non con quello indietro quindi
-        # tramite questa assunzione i 2 segnali hanno come primo zero crossing valido 2 gradienti opposti
-        # posso quindi riconoscere quale gamba produrrà quale tipo di segnale
-              
-        neg = np.diff(np.signbit(self.__pitch + 2))
-        pos = np.diff(np.signbit(self.__pitch - 2))
-
-        negative = False
-        positive = False
-        if np.sum(neg) == 1:
-            crossPosition = np.where(neg)[0][0]
-            positiveZc = np.signbit(np.gradient(self.__pitch +2 )[crossPosition + 1])
-            if positiveZc != True:
-                negative = True
-        if np.sum(pos) == 1:
-            crossPosition = np.where(pos)[0][0]
-            positiveZc = np.signbit(np.gradient(self.__pitch -2 )[crossPosition + 1])
-            if positiveZc == True:
-                positive = True
-
-        if negative and not positive:
-            self.__legDetected = True 
-            return 1
-        elif positive and not negative:
-            self.__legDetected = True 
-            return 0
-        return    
 
     ## rob walk
 
@@ -411,7 +467,7 @@ class Analyzer():
     
     ###
     
-    def __call__(self, data, index, num, sharedIndex, samples, exType):
+    def __call__(self, data, index, num, sharedIndex, samples, exType, sharedLegBool):
         print('starting analyzer daemon.. {:d}'.format(num))
 
     #    if num == 0:
@@ -427,6 +483,7 @@ class Analyzer():
         self.__timestamp = time.time()
         self.__active = True
         self.__exType = exType
+        self.__sharedLegDetected = sharedLegBool
 
         # exType
         # 0 --> walking

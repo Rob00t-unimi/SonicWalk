@@ -63,6 +63,7 @@ from sharedCircularIndex import SharedCircularIndex
 from plotter import Plotter
 from analyzer import Analyzer
 from threading import Lock
+from legDetected import LegDetected
 
 class MtwCallback(xda.XsCallback):
     def __init__(self, m_mtwIndex, device, max_buffer_size = 300):
@@ -405,8 +406,9 @@ class MtwAwinda(object):
                 sharedIndex = SharedCircularIndex(len(samples))
                 analyzer0 = Analyzer()
                 analyzer1 = Analyzer()
-                analyzer_process0 = mp.Process(target=analyzer0, args=(data0, index0, 0, sharedIndex, samples, exType), daemon=True)
-                analyzer_process1 = mp.Process(target=analyzer1, args=(data1, index1, 1, sharedIndex, samples, exType), daemon=True)
+                sharedLegBool = LegDetected() 
+                analyzer_process0 = mp.Process(target=analyzer0, args=(data0, index0, 0, sharedIndex, samples, exType, sharedLegBool), daemon=True)
+                analyzer_process1 = mp.Process(target=analyzer1, args=(data1, index1, 1, sharedIndex, samples, exType, sharedLegBool), daemon=True)
                 analyzer_process0.start()
                 analyzer_process1.start()
                 #delete local version of samples 

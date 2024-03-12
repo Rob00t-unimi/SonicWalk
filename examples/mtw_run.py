@@ -5,7 +5,7 @@ import mtw
 import numpy as np
 import matplotlib.pyplot as plt
 
-duration = 30
+duration = 60
 samplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2"
 
 with mtw.MtwAwinda(120, 19, samplesPath) as mtw:

@@ -1,9 +1,13 @@
 import sys
+import time
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import QTimer
 import json
 import webbrowser
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 
 class MyWindow(QMainWindow):
@@ -20,6 +24,13 @@ class MyWindow(QMainWindow):
 
         self.menu_expanded = False
 
+        self.selectedExercise = 1
+        self.modality = 1
+        self.selectedMusic = 1
+
+        self.execution = False
+        self.startTime = None
+
         self.whiteIconPath = "icons/white/"
         self.blackIconPath = "icons/black/"
 
@@ -29,6 +40,9 @@ class MyWindow(QMainWindow):
         self.setup_central_widget()
         self.update_theme()
         self.buttonAnalysis_clicked()
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.timeUpdater)
+        self.timer.start(1000)  # Aggiorna ogni secondo
 
     def setup_central_widget(self):
         central_widget = QWidget()
@@ -43,7 +57,7 @@ class MyWindow(QMainWindow):
 
     def setup_side_frame(self):
         self.frame = QFrame()
-        self.frame.setFixedWidth(50)
+        self.frame.setFixedWidth(60)
         self.frame.setStyleSheet("background-color: lightgray;")
         self.frame_layout = QVBoxLayout(self.frame)
         self.frame_layout.setContentsMargins(5, 5, 5, 5)
@@ -118,8 +132,9 @@ class MyWindow(QMainWindow):
     def create_button(self, icon_path):
         button = QPushButton()
         button.setIcon(QIcon(icon_path))
-        button.setFixedSize(35, 35)
-        button.setStyleSheet("QPushButton { border: none; text-align: left; padding-left: 10px; border-radius: 10px; } QPushButton:hover { background-color: rgba(108, 60, 229, 150); }")
+        button.setFixedSize(50, 50)
+        button.setIconSize(QSize(25, 25)) 
+        button.setStyleSheet("QPushButton { border: none; text-align: left; padding-left: 10px; border-radius: 10px; } QPushButton:hover { background-color: rgba(108, 60, 229, 30%); }")
         return button
 
     def toggle_menu(self):
@@ -127,19 +142,19 @@ class MyWindow(QMainWindow):
         self.update_menu()
 
     def update_menu(self):
-        self.frame.setFixedWidth(150 if self.menu_expanded else 50)
+        self.frame.setFixedWidth(150 if self.menu_expanded else 60)
         button_list = [
-            (self.hamburger_button, "Menu"),
-            (self.buttonAnalysis, "Analysis"),
-            (self.buttonArchive, "Archive"),
-            (self.buttonStatistics, "Statistics"),
-            (self.buttonSettings, "Settings"),
-            (self.theme_button, "Theme"),
-            (self.buttonInfo, "Info")
+            (self.hamburger_button, "  Menu"),
+            (self.buttonAnalysis, "  Analysis"),
+            (self.buttonArchive, "  Archive"),
+            (self.buttonStatistics, "  Statistics"),
+            (self.buttonSettings, "  Settings"),
+            (self.theme_button, "  Theme"),
+            (self.buttonInfo, "  Info")
         ]
         for button, text in button_list:
             button.setText(text if self.menu_expanded else "")
-            button.setFixedSize(140 if self.menu_expanded else 35, 35)
+            button.setFixedSize(140 if self.menu_expanded else 50, 50)
 
 
     def toggle_theme(self):
@@ -168,6 +183,8 @@ class MyWindow(QMainWindow):
         self.buttonStatistics.setIcon(QIcon(path + "bar-chart-2.svg"))
         self.buttonSettings.setIcon(QIcon(path + "settings.svg"))
         self.buttonInfo.setIcon(QIcon(path + "info.svg"))
+        self.play_button.setIcon(QIcon(path + "play.svg"))
+        self.save_button.setIcon(QIcon(path + "save.svg"))
 
     def save_settings(self):
         settings_to_save = {
@@ -186,29 +203,153 @@ class MyWindow(QMainWindow):
             # Se il file non è stato trovato, usa le impostazioni predefinite
             print("Error loading settings json file")
 
+    def createPlotter(self):
+        # Crea una figura di esempio
+        fig, ax = plt.subplots()
+        ax.plot([1, 2, 3, 4], [1, 4, 2, 3])
+
+        # Crea un canvas per il plotter e collega la figura ad esso
+        canvas = FigureCanvas(fig)
+
+        return canvas
 
     def create_frame_analysis(self):
         frame = QFrame()
-        frame.setStyleSheet("background-color: lightblue;")  # Imposta il colore di sfondo
-        label = QLabel("Contenuto per l'analisi")
+
+        # Imposta un layout verticale per il frame principale
+        layout = QVBoxLayout(frame)
+
+        # Crea due sotto-frame
+        frame1 = QFrame()
+        frame2 = QFrame()
+
+        # Chiamiamo la funzione createPlotter e aggiungiamo il plotter al layout di frame1
+        plotter_widget = self.createPlotter()
+        layout_frame1 = QVBoxLayout(frame1)
+        layout_frame1.addWidget(plotter_widget)
+        layout_frame1.setContentsMargins(18, 18, 5, 5)
+
+        # Imposta il layout orizzontale per il frame2
+        layout2 = QHBoxLayout(frame2)
+
+        # Crea due sotto-frame all'interno di frame2
+        frame_a = QFrame()
+        frame_b = QFrame()
+
+        # Imposta il layout orizzontale per frame_a
+        layout_a = QVBoxLayout(frame_a)
+
+        frameRecording = QFrame()
+        layoutRecording = QHBoxLayout(frameRecording)
+
+        localcss =  """
+            QPushButton {
+                border: none;
+                background-color: rgba(150, 150, 150, 10%);
+                border-radius: 40px;
+                
+            }
+            QPushButton:hover {
+                background-color: rgba(108, 60, 229, 40%);
+            }
+            """
+
+        # Crea e aggiungi i pulsanti a frame_a
+        self.play_button = QPushButton()
+        self.play_button.setIcon(QIcon(self.whiteIconPath + "play.svg"))
+        self.play_button.clicked.connect(self.startExecution)
+        self.play_button.setFixedSize(85, 85)  # Imposta la dimensione fissa del pulsante
+        self.play_button.setIconSize(QSize(25, 25)) 
+        self.play_button.setStyleSheet(localcss)
+
+        self.stop_button = QPushButton()
+        self.stop_button.setIcon(QIcon("icons/square.svg"))
+        self.stop_button.clicked.connect(self.stopExecution)
+        self.stop_button.setFixedSize(85, 85)  # Imposta la dimensione fissa del pulsante
+        self.stop_button.setIconSize(QSize(25, 25)) 
+        self.stop_button.setStyleSheet(localcss)
+
+        self.save_button = QPushButton()
+        self.save_button.setIcon(QIcon(self.whiteIconPath + "save.svg"))
+        self.save_button.setFixedSize(85, 85)  # Imposta la dimensione fissa del pulsante
+        self.save_button.setIconSize(QSize(25, 25)) 
+        self.save_button.setStyleSheet(localcss)
+
+        layoutRecording.addWidget(self.stop_button)
+        layoutRecording.addWidget(self.play_button)
+        layoutRecording.addWidget(self.save_button)
+
+        layout_a.addWidget(frameRecording)
+
+        # Aggiungi un widget QLabel per visualizzare il tempo
+        self.time_label = QLabel("00:00:00")
+        layout_a.addWidget(self.time_label)
+        self.time_label.setAlignment(Qt.AlignCenter)
+
+        # Imposta il layout verticale per frame_b
+        layout_b = QVBoxLayout(frame_b)
+
+        label = QLabel("Selected Exercise:", self)
+        layout_b.addWidget(label)
+        # Crea un selettore per il tipo di esercizio
+        exercise_selector = QComboBox()
+        exercise_selector.addItems(["Walk", "March in place (Hight Knees)", "March in place (Butt Kicks)", "Swing", "Double Step"])
+        layout_b.addWidget(exercise_selector)
+        exercise_selector.currentTextChanged.connect(lambda text_value=exercise_selector.currentText: self.selectExercise(text_value))
+
+
+        # Crea e aggiungi i pulsanti per la velocità
+        music_buttons_frame = QFrame()
+        music_buttons_layout = QHBoxLayout(music_buttons_frame)
+        music_buttons_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.noMusic_button = QPushButton("No Music")
+        self.noMusic_button.clicked.connect(lambda: setattr(self, 'modality', 1))
+
+        self.music_button = QPushButton("Music")
+        self.music_button.clicked.connect(lambda: setattr(self, 'modality', 2))
+
+        self.realTimeMusic_button = QPushButton("Real Time Music")
+        self.realTimeMusic_button.clicked.connect(lambda: setattr(self, 'modality', 3))
+
+        music_buttons_layout.addWidget(self.noMusic_button)
+        music_buttons_layout.addWidget(self.music_button)
+        music_buttons_layout.addWidget(self.realTimeMusic_button)
+
+        layout_b.addWidget(music_buttons_frame)
+
+        label2 = QLabel("Selected Music:", self)
+        layout_b.addWidget(label2)
+        # Crea un selettore per il tipo di musica
+        music_selector = QComboBox()
+        music_selector.addItems(["Music 1", "Music 2"])     # i nomi devono essere recuperati dinamicamente dalla cartella delle musiche
+        layout_b.addWidget(music_selector)
+        music_selector.currentTextChanged.connect(lambda text_value=music_selector.currentText: self.selectExercise(text_value))
+
+        # Aggiungi i due frame a layout2
+        layout2.addWidget(frame_b)
+        layout2.addWidget(frame_a)
+
+        # Imposta la policy di espansione
+        layout.addWidget(frame1, 2)
+        layout.addWidget(frame2, 1)
+
+        # Imposta la policy di espansione
+        layout2.setStretch(0, 2)
+        layout2.setStretch(1, 2)
+
         return frame
 
     def create_frame_archive(self):
         frame = QFrame()
-        frame.setStyleSheet("background-color: lightgreen;")  # Imposta il colore di sfondo
-        label = QLabel("Contenuto per l'archivio")
         return frame
 
     def create_frame_statistics(self):
         frame = QFrame()
-        frame.setStyleSheet("background-color: lightcoral;")  # Imposta il colore di sfondo
-        label = QLabel("Contenuto per le statistiche")
         return frame
 
     def create_frame_settings(self):
         frame = QFrame()
-        frame.setStyleSheet("background-color: lightsalmon;")  # Imposta il colore di sfondo
-        label = QLabel("Contenuto per le impostazioni")
         return frame
 
 
@@ -246,6 +387,47 @@ class MyWindow(QMainWindow):
             webbrowser.open('documentation.html')
         except:
             print("Error opening documentation file")
+
+    def selectExercise(self, text):
+        print(text)
+        if text == "Walk": self.selectedExercise = 1 
+        elif text == "March in place (Hight Knees)": self.selectedExercise = 2
+        elif text == "March in place (Butt Kicks)": self.selectedExercise = 2
+        elif text == "Swing": self.selectedExercise = 3
+        elif text == "Unknown": self.selectedExercise = 4
+
+        return
+    
+    def selectMusic(self, text):
+        print(text)
+        if text == "Music 1": self.selectedMusic = 1 
+        elif text == "Music 2": self.selectedMusic = 2
+
+        return
+
+    def timeUpdater(self):
+        if self.execution:
+            current_time = time.time() - self.startTime
+            hours, remainder = divmod(current_time, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            self.time_label.setText("{:02}:{:02}:{:02}".format(int(hours), int(minutes), int(seconds)))
+        else:
+            self.time_label.setText("00:00:00")
+            self.startTime = None
+
+
+        
+    def startExecution(self):
+        self.execution = True
+        self.startTime = time.time()
+        ## ...
+        return
+    
+    def stopExecution(self):
+        self.execution = False
+        self.startTime = None
+        ## ...
+        return
 
 
 if __name__ == "__main__":

@@ -394,11 +394,6 @@ class MtwAwinda(object):
             index1 = RawValue('i', 0)
             data0 = RawArray('d', 1000)
             data1 = RawArray('d', 1000)
-
-            if plot:
-                plotter = Plotter()
-                plotter_process = mp.Process(target=plotter, args=(data0, data1, index0, index1), daemon=True)
-                plotter_process.start()
                 
             if analyze:
                 #samples are loaded only if analyzer is has to spawn
@@ -414,6 +409,11 @@ class MtwAwinda(object):
                 #delete local version of samples 
                 del samples
                 gc.collect()
+            
+            if plot:
+                plotter = Plotter()
+                plotter_process = mp.Process(target=plotter, args=(data0, data1, index0, index1), daemon=True)
+                plotter_process.start()
             
             time.sleep(1) #wait one second before starting orientation reset and to allow processes to properly start
             self.__resetOrientation()

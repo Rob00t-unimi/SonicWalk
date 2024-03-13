@@ -10,6 +10,10 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 
+# Aggiungere la pagina archivio con la possibilità di visualizzare e aggiungere ospedali e pazienti
+# aggiungere la finestra seleziona paziente in analyzer
+# ++ ogni pulsante quando premuto deve rimanere "acceso"
+
 class MyWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -219,28 +223,38 @@ class MyWindow(QMainWindow):
         # Imposta un layout verticale per il frame principale
         layout = QVBoxLayout(frame)
 
-        # Crea due sotto-frame
+        # Creazione frames
         frame1 = QFrame()
         frame2 = QFrame()
+        patient_frame = QFrame()        
+        frame_a = QFrame()
+        frame_b = QFrame()
+        frameRecording = QFrame()
+
+        # layout frames
+        layout1 = QHBoxLayout(frame1)
+        layout2 = QHBoxLayout(frame2)
+        layout_patient_frame = QVBoxLayout(patient_frame)
+        layout_a = QVBoxLayout(frame_a)
+        layout_b = QVBoxLayout(frame_b)
+        layoutRecording = QHBoxLayout(frameRecording)
+        
+
+        layout_patient_frame.addWidget(QLabel("Nome: Mario"))
+        layout_patient_frame.addWidget(QLabel("Cognome: Rossi"))
+        layout_patient_frame.addWidget(QLabel("ID: 12345"))
+        layout_patient_frame.addWidget(QLabel("Gruppo: Parkingson"))
+        layout_patient_frame.addWidget(QLabel("Ospedale: Milano"))
+        button_seleziona_paziente = QPushButton("Seleziona Paziente")
+
+        layout_patient_frame.addWidget(button_seleziona_paziente)
 
         # Chiamiamo la funzione createPlotter e aggiungiamo il plotter al layout di frame1
         plotter_widget = self.createPlotter()
-        layout_frame1 = QVBoxLayout(frame1)
-        layout_frame1.addWidget(plotter_widget)
-        layout_frame1.setContentsMargins(18, 18, 5, 5)
 
-        # Imposta il layout orizzontale per il frame2
-        layout2 = QHBoxLayout(frame2)
-
-        # Crea due sotto-frame all'interno di frame2
-        frame_a = QFrame()
-        frame_b = QFrame()
-
-        # Imposta il layout orizzontale per frame_a
-        layout_a = QVBoxLayout(frame_a)
-
-        frameRecording = QFrame()
-        layoutRecording = QHBoxLayout(frameRecording)
+        layout1.addWidget(patient_frame, 2)
+        layout1.addWidget(plotter_widget, 6)
+        layout1.setContentsMargins(10, 18, 5, 5)
 
         localcss =  """
             QPushButton {
@@ -285,9 +299,6 @@ class MyWindow(QMainWindow):
         self.time_label = QLabel("00:00:00")
         layout_a.addWidget(self.time_label)
         self.time_label.setAlignment(Qt.AlignCenter)
-
-        # Imposta il layout verticale per frame_b
-        layout_b = QVBoxLayout(frame_b)
 
         label = QLabel("Selected Exercise:", self)
         layout_b.addWidget(label)

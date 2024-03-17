@@ -9,10 +9,16 @@ import webbrowser
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
-
+# da fare in seguito:
 # Aggiungere la pagina archivio con la possibilità di visualizzare e aggiungere ospedali e pazienti
 # aggiungere la finestra seleziona paziente in analyzer
 # ++ ogni pulsante quando premuto deve rimanere "acceso"
+# generalizzare di più anche lo stile e il toggle di switch theme in modo che agisca su tutti i file
+
+
+# da fare ora:
+# ristrutturare bene il codice per renderlo ordinato, modulare e pulito
+# il criterio dovrebbe essere quello di portare tutto ciò che ora è legato a create_frame_analysis in un'altro file
 
 class MyWindow(QMainWindow):
     def __init__(self):
@@ -309,7 +315,7 @@ class MyWindow(QMainWindow):
         exercise_selector.currentTextChanged.connect(lambda text_value=exercise_selector.currentText: self.selectExercise(text_value))
 
 
-        # Crea e aggiungi i pulsanti per la velocità
+        # Crea e aggiungi i pulsanti per la modalità di esercizio
         music_buttons_frame = QFrame()
         music_buttons_layout = QHBoxLayout(music_buttons_frame)
         music_buttons_layout.setContentsMargins(0, 0, 0, 0)

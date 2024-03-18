@@ -1,3 +1,4 @@
+import threading
 from PyQt5.QtWidgets import QFrame
 import sys
 import time
@@ -14,6 +15,9 @@ from PyQt5.QtGui import QFont
 from datetime import datetime, date
 from pages.patient_selector import PatientSelector
 from mtw_run import mtw_run
+import os
+import numpy as np
+
 
 
 
@@ -39,6 +43,9 @@ class AnalysisPage(QFrame):
         self.blackIconPath = "icons/black/"
 
         self.connection_msg = None
+        self.signals = None
+        self.Fs = None
+
 
         self.patient_info_data = [
             ("Name:", ""),
@@ -187,7 +194,9 @@ class AnalysisPage(QFrame):
         # selection frame
         layout_selection.addWidget(QLabel("Selected Music:"))
         music_selector = QComboBox()
-        music_selector.addItems(["Music 1", "Music 2"])
+        music_selector.addItems(["Music 1"])
+        # le musiche bisogna recuperarle da una cartella e metterle nela lista.
+
         music_selector.setStyleSheet(self.select_style)
         music_selector.currentTextChanged.connect(self.selectMusic)
 
@@ -288,6 +297,7 @@ class AnalysisPage(QFrame):
         self.frame.setContentsMargins(0, 0, 0, 0)
 
         self.realTimeButtonClicked()
+        self.updatePlayButtonState()
 
     def selectExercise(self, text):
             print(text)
@@ -331,6 +341,8 @@ class AnalysisPage(QFrame):
             
             self.table_widget.setItem(row, 0, item_label)
             self.table_widget.setItem(row, 1, item_data)
+
+            self.updatePlayButtonState()
         return    
     
     def noMusicButtonClicked(self):
@@ -356,27 +368,33 @@ class AnalysisPage(QFrame):
         self.music_button.setStyleSheet("QPushButton { border: none; border-radius: 10px; background-color: rgba(108, 60, 229, 7%); } QPushButton:hover { background-color: rgba(108, 60, 229, 30%); }")
         self.realTimeMusic_button.setStyleSheet("QPushButton { border: none; border-radius: 10px; background-color: rgba(108, 60, 229, 7%); } QPushButton:hover { background-color: rgba(108, 60, 229, 30%); }")
 
+    def updatePlayButtonState(self):
+        patient_id = self.patient_info_data[2][1]  # ID del paziente nella terza tupla
+        if patient_id.strip() == "":
+            self.play_button.setEnabled(False)
+        else:
+            self.play_button.setEnabled(True)
+
      
     def startExecution(self):
         self.execution = False
 
-        # controllare self.modality , self.exercise, self.music
-        ## Chiamare funzione per iniziare esercizio con i sensori
-
         self.showConnectionMessage()
 
+        # Eseguire mtw_run in un thread separato
+        self.thread = threading.Thread(target=self.run_mtw)
+        self.thread.start()
+
+    def run_mtw(self):
         analyze = False if self.modality != 2 else True
-        self.signals, self.Fs = mtw_run(90, self.selectedMusic, self.selectExercise, self.setStart, analyze)
-
-        if self.signals is None and self.Fs is None:
-            self.connection_msg.setText("Usb Dongle not Found")
-            return
-
-        self.saveRecording()       
-
-        # end
-        self.execution = False
-        return
+        try:
+            self.signals, self.Fs = mtw_run(Duration=90, MusicSamplesPath=self.selectedMusic, Exercise=self.selectExercise, Analyze=analyze)
+            # non suona!
+            self.execution = False
+            self.saveRecording()
+        except RuntimeError as e:
+            self.connection_msg.setText(str(e))
+            # non restituisce l'errore
     
     def showConnectionMessage(self):
         if self.connection_msg is None:
@@ -394,15 +412,17 @@ class AnalysisPage(QFrame):
         self.connection_msg.show()
     
     def setStart(self):
+        # non posso passarla come parametro al thread o mi crea un errore a runtime
+        self.startTime = time.time()
         self.execution = True
         self.connection_msg.exec_()
-        self.startTime = time.time()
         if self.modality == 1:
             # suona una canzone... 
             return
         return
     
     def stopExecution(self):
+        # per implementarla bisogna rivedere la logica del codice di sonicwalk
         self.execution = False
         self.startTime = None
 
@@ -439,44 +459,102 @@ class AnalysisPage(QFrame):
 
         # Ottieni il pulsante premuto
         response = confirm_msg.exec_()
-        
+
         # Se l'utente ha confermato, salva la registrazione
         if response == QMessageBox.Yes:
-            # Salva la registrazione qui
+            try:
+                if self.signals is None or self.Fs is None:
+                    raise ValueError("No signals to save")
 
-            # Messaggio di conferma
-            msg = QMessageBox()
-            msg.setIconPixmap(QPixmap("icons/checkmark.png").scaledToWidth(50))
-            msg.setWindowTitle("Recording Saved")
-            msg.setText("Your recording has been saved successfully.")
-            msg.setStandardButtons(QMessageBox.Ok)
-            msg.setStyleSheet("""
-                QMessageBox {
-                    background-color: #F0F0F0;
-                    font-family: Arial;
-                    border-radius: 15px;
-                }
-                QLabel {
-                    color: #333;
-                }
-                QPushButton {
-                    color: white;
-                    background-color: rgba(108, 60, 229, 30%);
-                    padding: 10px;
-                    border-radius: 15px;
-                }
-                QPushButton:hover {
-                    background-color: rgba(108, 60, 229, 50%);
-                }
-            """)
-            ok_button = msg.button(QMessageBox.Ok)
-            ok_button.setMinimumWidth(100)
-            ok_button.setMinimumHeight(40)
-            msg.exec_()
+                # Trova l'ID del paziente corrente
+                patient_id = self.patient_info_data[2][1]  # ID del paziente nella terza tupla
+
+                # Verifica se l'ID del paziente è vuoto
+                if patient_id.strip() == "":
+                    raise ValueError("Patient ID is empty")
+
+                # Genera un nome univoco per il file
+                today_date = datetime.today().strftime('%Y-%m-%d')
+                parent_dir = os.path.dirname(os.path.abspath(__file__))
+                directory_path = os.path.join(parent_dir.replace("pages",""), f"data/archive/{patient_id}")
+                os.makedirs(directory_path, exist_ok=True)  # Crea la directory se non esiste
+                filename = os.path.join(directory_path, f"{patient_id}_ex.{self.selectedExercise}_{today_date}_1.npy")
+
+                # Verifica l'esistenza del file e genera un numero progressivo univoco se necessario
+                counter = 1
+                while os.path.exists(filename):
+                    filename = os.path.join(directory_path, f"{patient_id}_ex.{self.selectedExercise}_{today_date}_{counter}.npy")
+                    counter += 1
+
+                # Salva i dati nel file numpy
+                np.save(filename, {"signals": self.signals, "Fs": self.Fs})
+
+                # Messaggio di conferma
+                msg = QMessageBox()
+                msg.setIconPixmap(QPixmap("icons/checkmark.png").scaledToWidth(50))
+                msg.setWindowTitle("Recording Saved")
+                msg.setText("Your recording has been saved successfully.")
+                msg.setStandardButtons(QMessageBox.Ok)
+                msg.setStyleSheet("""
+                    QMessageBox {
+                        background-color: #F0F0F0;
+                        font-family: Arial;
+                        border-radius: 15px;
+                    }
+                    QLabel {
+                        color: #333;
+                    }
+                    QPushButton {
+                        color: white;
+                        background-color: rgba(108, 60, 229, 30%);
+                        padding: 10px;
+                        border-radius: 15px;
+                    }
+                    QPushButton:hover {
+                        background-color: rgba(108, 60, 229, 50%);
+                    }
+                """)
+                ok_button = msg.button(QMessageBox.Ok)
+                ok_button.setMinimumWidth(100)
+                ok_button.setMinimumHeight(40)
+                msg.exec_()
+
+            except Exception as e:
+                # Gestione dell'eccezione nel caso in cui non sia possibile salvare il file o l'ID del paziente sia vuoto
+                error_msg = QMessageBox()
+                error_msg.setIcon(QMessageBox.Critical)
+                error_msg.setWindowTitle("Error")
+                error_msg.setText(f"An error occurred while saving the recording: {str(e)}")
+                error_msg.setStandardButtons(QMessageBox.Ok)
+                error_msg.setStyleSheet("""
+                    QMessageBox {
+                        background-color: #F0F0F0;
+                        font-family: Arial;
+                        border-radius: 15px;
+                    }
+                    QLabel {
+                        color: #333;
+                    }
+                    QPushButton {
+                        color: white;
+                        background-color: rgba(229, 60, 60, 30%);
+                        padding: 10px;
+                        border-radius: 15px;
+                    }
+                    QPushButton:hover {
+                        background-color: rgba(229, 60, 60, 50%);
+                    }
+                """)
+                ok_button = error_msg.button(QMessageBox.Ok)
+                ok_button.setMinimumWidth(100)
+                ok_button.setMinimumHeight(40)
+                error_msg.exec_()
 
 
     def createPlotter(self):
+        # il plotter real time qui è ancora da implementare
 
+        # esempio fake:
         fig, ax = plt.subplots()
         ax.plot([1, 2, 3, 4], [1, 4, 2, 3])
 

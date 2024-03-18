@@ -2,7 +2,7 @@ import sys
 sys.path.append("../sonicwalk")
 import numpy as np
 
-def mtw_run(Duration:int=90, MusicSamplesPath: str ="../sonicwalk/audio_samples/cammino_1_fase_2", Exercise:int=0, setStart=None, modality: bool=True):
+def mtw_run(Duration:int=90, MusicSamplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2", Exercise:int=0, Analyze: bool=True):
 
     import mtw
 
@@ -19,18 +19,19 @@ def mtw_run(Duration:int=90, MusicSamplesPath: str ="../sonicwalk/audio_samples/
     duration = Duration   # 1.5 minutes
     samplesPath = MusicSamplesPath
     exercise = Exercise
+    analyze = Analyze
 
     try:
         with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
-            data = mtw.mtwRecord(duration, plot=False, analyze=modality, exType = exercise, setStart = setStart)
+            data = mtw.mtwRecord(duration, plot=False, analyze=analyze, exType = exercise)
                 # 0 --> walking
                 # 1 --> Walking in place (High Knees, Butt Kicks)
                 # 2 --> Walking in place (High Knees con sensori sulle cosce)
                 # 3 --> Swing
                 # 4 --> Double Step
                 # 5 --> ROB's walking 
-    except:
-        return None, None
+    except RuntimeError as e:
+        raise RuntimeError(e)
 
     data0 = data[0][0]
     data1 = data[0][1]

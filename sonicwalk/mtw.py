@@ -358,7 +358,7 @@ class MtwAwinda(object):
     def mtwCalibrate():
         pass
 
-    def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True, exType:int=0, setStart=None):
+    def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True, exType:int=0):
         """Record pitch data for duration seconds
         
         Returns a numpy.array object containing the data for each device and the relative index
@@ -419,7 +419,7 @@ class MtwAwinda(object):
             self.__resetOrientation()
 
             print("Recording started...")
-            setStart()
+
             startTime = xda.XsTimeStamp_nowMs()
             while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
                 

@@ -13,6 +13,7 @@ from PyQt5.QtGui import QFont
 from datetime import datetime, date
 
 class PatientSelector(QFrame):
+    
     def __init__(self):
         super().__init__()
 
@@ -222,8 +223,28 @@ class PatientSelector(QFrame):
         # update search results by keyword search
         def update_search_results():
             search_text = search_lineedit.text().lower()
+            noFound = True
             for button in buttons:
-                button.setVisible(search_text in button.text().lower())
+                button_text = button.layout().itemAt(0).widget().text() + button.layout().itemAt(1).widget().text()
+                button_text = button_text.replace("ID:", "")
+                button_text = button_text.replace("CF:", "")
+                button_text = button_text.replace("(", "")
+                button_text = button_text.replace(")", "")
+                button_text = button_text.replace(",", "")
+                button.setVisible(search_text in button_text.lower())
+                if search_text in button_text.lower():
+                    noFound = False
+
+            # Rimuovi la label "No results found." se è già presente nel layout
+            for i in reversed(range(patient_frame_layout.count())):
+                widget = patient_frame_layout.itemAt(i).widget()
+                if widget is not None and widget.text() == "No results found.":
+                    widget.deleteLater()
+
+            # Aggiungi la label "No results found." solo se non sono stati trovati risultati
+            if noFound:
+                no_results_label = QLabel("No results found.")
+                patient_frame_layout.addWidget(no_results_label)
 
         # reload patient list
         def reload_buttons():
@@ -303,8 +324,7 @@ class PatientSelector(QFrame):
 
         # initial buttons
         buttons = []
-        reload_buttons()
-        update_search_results()
+        on_filter_changed()
 
         # dialog window layout
         main_layout = QVBoxLayout()

@@ -17,9 +17,7 @@ from PyQt5.QtGui import QFont
 
 # da fare in seguito:
 # Aggiungere la pagina archivio con la possibilità di visualizzare e aggiungere ospedali e pazienti
-# aggiungere la finestra seleziona paziente in analyzer
-# ++ ogni pulsante quando premuto deve rimanere "acceso"
-# generalizzare di più anche lo stile e il toggle di switch theme in modo che agisca su tutti i file
+# generalizzare lo stile e il toggle di switch theme in modo che agisca su tutti i file
 
 
 class MyWindow(QMainWindow):

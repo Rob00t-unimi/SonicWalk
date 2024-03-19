@@ -17,9 +17,18 @@ from pages.patient_selector import PatientSelector
 from mtw_run import mtw_run
 import os
 import numpy as np
+import simpleaudio as sa
+import mtw
 
-
-
+# quando si chiude il programma, se sta regstrando assicurarsi prima di terminare in modo sicuro la registrazione
+# aggiungere funzione che permette di terminare
+# aggiungere il plotter 
+    # il plotter può essere aggiunto istanziandolo in mtwRecord e prendendo quell'istanza oppure
+    # istanziandolo qui nella gui e recuperando i dati condivisi di mtwRecord
+# il beep all'inizio della registrazione occupa la risorsa e genera errore quindi è temporaneamente commentato
+# i path di suoni e musica vanno recuperati dinamicamente
+# bisogna gestire e recuperare l'eccezione nel caso non sia inserito il dongle
+# implementare un sistema per far suonare la musica
 
 class AnalysisPage(QFrame):
 
@@ -28,6 +37,7 @@ class AnalysisPage(QFrame):
     def __init__(self):
         super().__init__()
 
+        self.exerciseTime = 90.0
         self.selectedExercise = 0
             # 0 --> walking
             # 1 --> Walking in place (High Knees, Butt Kicks)
@@ -320,10 +330,15 @@ class AnalysisPage(QFrame):
     def timeUpdater(self):
         if self.execution:
             current_time = time.time() - self.startTime
-            minutes, seconds = divmod(current_time, 60)
-            # Calcola i centesimi di secondo
-            centiseconds = int((current_time - int(current_time)) * 100)
-            self.time_label.setText("{:02}:{:02}.{:02}".format(int(minutes), int(seconds), centiseconds))
+            if self.exerciseTime >= current_time:
+                minutes, seconds = divmod(current_time, 60)
+                # Calcola i centesimi di secondo
+                centiseconds = int((current_time - int(current_time)) * 100)
+                self.time_label.setText("{:02}:{:02}.{:02}".format(int(minutes), int(seconds), centiseconds))
+            else:
+                minutes, seconds = divmod(self.exerciseTime, 60)
+                centiseconds = int((self.exerciseTime - int(self.exerciseTime)) * 100)
+                self.time_label.setText("{:02}:{:02}.{:02}".format(int(minutes), int(seconds), centiseconds))
         else:
             self.time_label.setText("00:00.00")
             self.startTime = None
@@ -395,7 +410,7 @@ class AnalysisPage(QFrame):
     def run_mtw(self):
         analyze = False if self.modality != 2 else True
         try:
-            self.signals, self.Fs = mtw_run(Duration=10, MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.setStart)
+            self.signals, self.Fs = mtw_run(Duration=int(self.exerciseTime), MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.setStart)
             # gestire il dongle non inserito
             self.mtw_run_finished.emit()
         except RuntimeError as e:
@@ -414,18 +429,19 @@ class AnalysisPage(QFrame):
             self.connection_msg = QMessageBox(QMessageBox.Information, "Waiting for Sensor Connection", "Please wait while the sensors are connecting...", QMessageBox.NoButton, self)
         self.connection_msg.setWindowModality(Qt.ApplicationModal)
         self.connection_msg.setIcon(QMessageBox.NoIcon)
-        # impedire all'utente di chiudere il popup, con la seguente linea si riesce ma poi non si riesce a chiuderlo nemmeno dal codice
-        #self.connection_msg.setStandardButtons(QMessageBox.NoButton)
+        self.connection_msg.setStandardButtons(QMessageBox.NoButton)
         self.connection_msg.show()
 
     def setStart(self):
-        time.sleep(1)
         self.startTime = time.time()
         self.execution = True
+        #beepPath = "../sonicwalk/audio_samples/beep.wav"
+        #wave_obj = sa.WaveObject.from_wave_file(beepPath)
+        #wave_obj.play()
         if self.connection_msg and not self.connection_msg.isHidden():
-            self.connection_msg.close()
+            self.connection_msg.reject()
         if self.modality == 1:
-            # suona una canzone... 
+            # suona musica... 
             return
         return
     
@@ -519,3 +535,4 @@ class AnalysisPage(QFrame):
     
     def get_frame(self):
         return self.frame
+

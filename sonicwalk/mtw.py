@@ -65,6 +65,7 @@ from analyzer import Analyzer
 from threading import Lock
 from legDetected import LegDetected
 
+
 class MtwCallback(xda.XsCallback):
     def __init__(self, m_mtwIndex, device, max_buffer_size = 300):
         xda.XsCallback.__init__(self)
@@ -388,12 +389,13 @@ class MtwAwinda(object):
 
         self.__cleanBuffer()
 
+        #Declare and initialize unsynchronized shared memory (not lock protected)
+        index0 = RawValue('i', 0)
+        index1 = RawValue('i', 0)
+        data0 = RawArray('d', 1000)
+        data1 = RawArray('d', 1000)
+
         if any((plot, analyze)):
-            #Declare and initialize unsynchronized shared memory (not lock protected)
-            index0 = RawValue('i', 0)
-            index1 = RawValue('i', 0)
-            data0 = RawArray('d', 1000)
-            data1 = RawArray('d', 1000)
                 
             if analyze:
                 #samples are loaded only if analyzer is has to spawn

@@ -2,7 +2,7 @@ import sys
 sys.path.append("../sonicwalk")
 import numpy as np
 
-def mtw_run(Duration:int=90, MusicSamplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2", Exercise:int=0, Analyze: bool=True):
+def mtw_run(Duration:int=90, MusicSamplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2", Exercise:int=0, Analyze: bool=True, setStart = None):
 
     import mtw
 
@@ -23,6 +23,7 @@ def mtw_run(Duration:int=90, MusicSamplesPath = "../sonicwalk/audio_samples/camm
 
     try:
         with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
+            setStart()
             data = mtw.mtwRecord(duration, plot=False, analyze=analyze, exType = exercise)
                 # 0 --> walking
                 # 1 --> Walking in place (High Knees, Butt Kicks)
@@ -55,3 +56,5 @@ def mtw_run(Duration:int=90, MusicSamplesPath = "../sonicwalk/audio_samples/camm
     Fs = max_length/duration
 
     return combined_data, Fs
+
+#mtw_run(Duration=90, Exercise=0, Analyze=True)

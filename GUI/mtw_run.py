@@ -21,18 +21,17 @@ def mtw_run(Duration:int=90, MusicSamplesPath = "../sonicwalk/audio_samples/camm
     exercise = Exercise
     analyze = Analyze
 
-    try:
-        with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
-            setStart()
-            data = mtw.mtwRecord(duration, plot=False, analyze=analyze, exType = exercise)
-                # 0 --> walking
-                # 1 --> Walking in place (High Knees, Butt Kicks)
-                # 2 --> Walking in place (High Knees con sensori sulle cosce)
-                # 3 --> Swing
-                # 4 --> Double Step
-                # 5 --> ROB's walking 
-    except RuntimeError as e:
-        raise RuntimeError(e)
+
+    with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
+        setStart()
+        data = mtw.mtwRecord(duration, plot=False, analyze=analyze, exType = exercise)
+            # 0 --> walking
+            # 1 --> Walking in place (High Knees, Butt Kicks)
+            # 2 --> Walking in place (High Knees con sensori sulle cosce)
+            # 3 --> Swing
+            # 4 --> Double Step
+            # 5 --> ROB's walking 
+
 
     data0 = data[0][0]
     data1 = data[0][1]

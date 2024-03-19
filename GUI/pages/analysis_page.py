@@ -5,7 +5,7 @@ import time
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, pyqtSignal, QObject
 from PyQt5.QtGui import QPixmap
 import json
 import webbrowser
@@ -23,10 +23,7 @@ import numpy as np
 
 class AnalysisPage(QFrame):
 
-    connectionMessageSignal = pyqtSignal()
-    closeConnectionMessageSignal = pyqtSignal()
-    confirmationMessageSignal = pyqtSignal(str)
-    errorMessageSignal = pyqtSignal(str)
+    mtw_run_finished = pyqtSignal()
     
     def __init__(self):
         super().__init__()
@@ -51,7 +48,6 @@ class AnalysisPage(QFrame):
         self.connection_msg = None
         self.signals = None
         self.Fs = None
-
 
         self.patient_info_data = [
             ("Name:", ""),
@@ -384,60 +380,78 @@ class AnalysisPage(QFrame):
      
     def startExecution(self):
         self.execution = False
+
         self.showConnectionMessage()
+
+        # Eseguire mtw_run in un thread separato per non bloccare la gui
         self.thread = threading.Thread(target=self.run_mtw)
         self.thread.daemon = True
         self.thread.start()
 
+        self.check_mtw_run_timer = QTimer(self)
+        self.check_mtw_run_timer.timeout.connect(self.check_mtw_run_status)
+        self.check_mtw_run_timer.start(100)
+
     def run_mtw(self):
         analyze = False if self.modality != 2 else True
         try:
-            self.signals, self.Fs = mtw_run(Duration=20, MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart=self.setStart)
+            self.signals, self.Fs = mtw_run(Duration=10, MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.setStart)
+            # gestire il dongle non inserito
+            self.mtw_run_finished.emit()
+        except RuntimeError as e:
+            self.connection_msg.setText(str(e))
+            # non restituisce l'errore
+    
+    def check_mtw_run_status(self):
+        if not self.thread.is_alive():
             self.execution = False
             self.startTime = None
-            self.saveRecording()
-        except RuntimeError as e:
-            self.showErrorMessage(str(e))
-
+            self.saveRecording()  # Esegui il salvataggio
+            self.check_mtw_run_timer.stop()
+            
     def showConnectionMessage(self):
         if self.connection_msg is None:
             self.connection_msg = QMessageBox(QMessageBox.Information, "Waiting for Sensor Connection", "Please wait while the sensors are connecting...", QMessageBox.NoButton, self)
-            self.connection_msg.setStyleSheet("""
-                QMessageBox {
-                    background-color: #F0F0F0;
-                    font-family: Arial;
-                    border-radius: 15px;
-                }
-                QLabel {
-                    color: #333;
-                }
-            """)
         self.connection_msg.setWindowModality(Qt.ApplicationModal)
+        self.connection_msg.setIcon(QMessageBox.NoIcon)
+        # impedire all'utente di chiudere il popup, con la seguente linea si riesce ma poi non si riesce a chiuderlo nemmeno dal codice
+        #self.connection_msg.setStandardButtons(QMessageBox.NoButton)
         self.connection_msg.show()
 
     def setStart(self):
         time.sleep(1)
         self.startTime = time.time()
         self.execution = True
-        self.closeConnectionMessage()
+        if self.connection_msg and not self.connection_msg.isHidden():
+            self.connection_msg.close()
         if self.modality == 1:
-            # Play a song...
-            pass
-
-    def closeConnectionMessage(self):
-        if self.connection_msg is not None:
-            self.connection_msg.accept()
-
+            # suona una canzone... 
+            return
+        return
+    
     def stopExecution(self):
+        # per implementarla bisogna rivedere la logica del codice di sonicwalk
         self.execution = False
         self.startTime = None
-        ## Interruption of recording (secure), must set sensors to correct mode
+
+        ## interruzione della registrazione (sicura), deve rimettere i sensori nella modalità corretta
         return
+    
 
     def saveRecording(self):
-        # Mostra il messaggio "Do you want to save the recording?"
-        reply = QMessageBox.question(self, "Save Recording", "Do you want to save the recording?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-        if reply == QMessageBox.Yes:
+        # Chiedi conferma prima di salvare la registrazione
+        confirm_msg = QMessageBox()
+        confirm_msg.setIcon(QMessageBox.Question)
+        confirm_msg.setWindowTitle("Confirm Save")
+        confirm_msg.setText("Do you want to save the recording?")
+        confirm_msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+
+        # Ottieni il pulsante premuto
+        response = confirm_msg.exec_()
+
+
+        # Se l'utente ha confermato, salva la registrazione
+        if response == QMessageBox.Yes:
             try:
                 if self.signals is None or self.Fs is None:
                     raise ValueError("No signals to save")
@@ -446,13 +460,13 @@ class AnalysisPage(QFrame):
                 patient_id = self.patient_info_data[2][1]  # ID del paziente nella terza tupla
 
                 # Verifica se l'ID del paziente è vuoto
-                if not patient_id.strip():
+                if patient_id.strip() == "":
                     raise ValueError("Patient ID is empty")
 
                 # Genera un nome univoco per il file
                 today_date = datetime.today().strftime('%Y-%m-%d')
                 parent_dir = os.path.dirname(os.path.abspath(__file__))
-                directory_path = os.path.join(parent_dir.replace("pages", ""), f"data/archive/{patient_id}")
+                directory_path = os.path.join(parent_dir.replace("pages",""), f"data/archive/{patient_id}")
                 os.makedirs(directory_path, exist_ok=True)  # Crea la directory se non esiste
                 filename = os.path.join(directory_path, f"{patient_id}_ex.{self.selectedExercise}_{today_date}_1.npy")
 
@@ -466,73 +480,29 @@ class AnalysisPage(QFrame):
                 np.save(filename, {"signals": self.signals, "Fs": self.Fs})
 
                 # Messaggio di conferma
-                self.showConfirmationMessage("Your recording has been saved successfully.")
+                msg = QMessageBox()
+                msg.setIconPixmap(QPixmap("icons/checkmark.png").scaledToWidth(50))
+                msg.setWindowTitle("Recording Saved")
+                msg.setText("Your recording has been saved successfully.")
+                msg.setStandardButtons(QMessageBox.Ok)
+        
+                ok_button = msg.button(QMessageBox.Ok)
+                ok_button.setMinimumWidth(100)
+                ok_button.setMinimumHeight(40)
+                msg.exec_()
 
             except Exception as e:
-                self.showErrorMessage(f"An error occurred while saving the recording: {str(e)}")
-        else:
-            # Chiudi il messaggio senza salvare
-            pass
-
-    def showConfirmationMessage(self, message):
-        msg = QMessageBox()
-        msg.setIconPixmap(QPixmap("icons/checkmark.png").scaledToWidth(50))
-        msg.setWindowTitle("Recording Saved")
-        msg.setText(message)
-        msg.setStandardButtons(QMessageBox.Ok)
-        msg.setStyleSheet("""
-            QMessageBox {
-                background-color: #F0F0F0;
-                font-family: Arial;
-                border-radius: 15px;
-            }
-            QLabel {
-                color: #333;
-            }
-            QPushButton {
-                color: white;
-                background-color: rgba(108, 60, 229, 30%);
-                padding: 10px;
-                border-radius: 15px;
-            }
-            QPushButton:hover {
-                background-color: rgba(108, 60, 229, 50%);
-            }
-        """)
-        ok_button = msg.button(QMessageBox.Ok)
-        ok_button.setMinimumWidth(100)
-        ok_button.setMinimumHeight(40)
-        msg.exec_()
-
-    def showErrorMessage(self, error_message):
-        error_msg = QMessageBox()
-        error_msg.setIcon(QMessageBox.Critical)
-        error_msg.setWindowTitle("Error")
-        error_msg.setText(error_message)
-        error_msg.setStandardButtons(QMessageBox.Ok)
-        error_msg.setStyleSheet("""
-            QMessageBox {
-                background-color: #F0F0F0;
-                font-family: Arial;
-                border-radius: 15px;
-            }
-            QLabel {
-                color: #333;
-            }
-            QPushButton {
-                color: white;
-                background-color: rgba(229, 60, 60, 30%);
-                padding: 10px;
-                border-radius: 15px;
-            }
-            QPushButton:hover {
-                background-color: rgba(229, 60, 60, 50%);
-            }
-        """)
-        ok_button = error_msg.button(QMessageBox.Ok)
-        ok_button.setMinimumWidth(100)
-        ok_button.setMinimumHeight(40)
-        error_msg.exec_()
+                # Gestione dell'eccezione nel caso in cui non sia possibile salvare il file o l'ID del paziente sia vuoto
+                error_msg = QMessageBox()
+                error_msg.setIcon(QMessageBox.Critical)
+                error_msg.setWindowTitle("Error")
+                error_msg.setText(f"An error occurred while saving the recording: {str(e)}")
+                error_msg.setStandardButtons(QMessageBox.Ok)
+                
+                ok_button = error_msg.button(QMessageBox.Ok)
+                ok_button.setMinimumWidth(100)
+                ok_button.setMinimumHeight(40)
+                error_msg.exec_()
 
 
     def createPlotter(self):

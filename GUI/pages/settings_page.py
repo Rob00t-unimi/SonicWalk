@@ -1,9 +1,6 @@
 from PyQt5.QtWidgets import QFrame
 
 class SettingsPage(QFrame):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, light = True, parent=None):
+        super().__init__(parent)
         # Altri codici per l'inizializzazione dell'oggetto...
-        self.frame =  QFrame()
-    def get_frame(self):
-        return self.frame

@@ -1,66 +1,28 @@
 from PyQt5.QtWidgets import QFrame
-import sys
-import time
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtCore import QTimer
 import json
-import webbrowser
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from PyQt5.QtGui import QFont
 from datetime import datetime, date
+import os
+import sys
+
+gui_path = os.path.join(os.path.dirname(__file__), '..')
+sys.path.append(gui_path)
+
+from components.customSelect import CustomSelect
 
 class PatientSelector(QFrame):
-    
-    def __init__(self):
+    def __init__(self, light = True):
+        """
+        Requires:
+            - light: a boolean indicating whether the theme is light or dark
+        Modifies:
+            - Initializes self attributes and layout
+        Effects:
+            - Initializes a patient selector frame.
+        """
         super().__init__()
 
-        self.select_style = """
-            QComboBox {
-                border: 1px solid #B99AFF; /* Purple border */
-                border-radius: 15px;
-                padding: 10px;
-                background-color: #FFFFFF;
-                selection-background-color: #B99AFF;
-                font-size: 15px;
-                color: #4C4C4C;
-            }
-            QComboBox::drop-down {
-                subcontrol-origin: padding;
-                subcontrol-position: top right;
-                width: 30px;
-                border-left-width: 0px;
-                border-left-color: transparent;
-                border-top-right-radius: 15px;
-                border-bottom-right-radius: 15px;
-                background-color: #B99AFF;
-            }
-            QComboBox QAbstractItemView {
-                border: 1px solid #B99AFF;
-                selection-background-color: #9C6BE5;
-                background-color: #FFFFFF;
-                font-size: 14px;
-                color: #4C4C4C;
-            }
-            QScrollBar:vertical {
-                background: #F5F5F5;
-                width: 10px;
-                margin: 20px 0 20px 0;
-            }
-            QScrollBar::handle:vertical {
-                background: #DCDFE4;
-                min-height: 30px;
-                border-radius: 5px;
-            }
-            QScrollBar::add-line:vertical {
-                background: none;
-            }
-            QScrollBar::sub-line:vertical {
-                background: none;
-            }
-        """
+        self.light = light
 
         self.patient_info_data = [
             ("Name:", ""),
@@ -71,15 +33,29 @@ class PatientSelector(QFrame):
         ]
 
     def selectPatient(self):
+        """
+        Modifies:   self
+        Effects:    Opens a dialog window to select a patient.
+                    Filters patients based on hospital, group, sex, and age.
+                    Updates search results based on keyword search.
+                    Reloads and updates patient list when filters are changed.
+        """
         # open dialog window
         dialog = QDialog()
         dialog.setWindowTitle("Select Patient")
 
-        dialog.setStyleSheet("""
-            background-color: #FFFFFF;
-            color: #333333;
-            font-size: 12pt;
-        """)
+        if self.light:
+            dialog.setStyleSheet("""
+                background-color: #FFFFFF;
+                color: #333333;
+                font-size: 12pt;
+            """)
+        else:
+            dialog.setStyleSheet("""
+                background-color: #1F1F23;
+                color: #CCCCCC;
+                font-size: 12pt;
+            """)
 
         # read json dataset
         with open('data/dataset.json', 'r') as file:
@@ -91,38 +67,42 @@ class PatientSelector(QFrame):
         sexes = {'M', 'F'}
         age_ranges = {'0-20', '21-40', '41-60', '61-80', '81+'}
 
-        # filters options
-        hospital_combo = QComboBox()
-        hospital_combo.addItem("All hospitals")
+        # initialize custom selects for filters
+        hospital_combo = CustomSelect(light=self.light, options=["All hospitals"])
         hospital_combo.addItems(sorted(hospitals))
-        hospital_combo.setStyleSheet(self.select_style)
 
-        group_combo = QComboBox()
-        group_combo.addItem("All groups")
+        group_combo = CustomSelect(light=self.light, options=["All groups"])
         group_combo.addItems(sorted(groups))
-        group_combo.setStyleSheet(self.select_style)
 
-        sex_combo = QComboBox()
-        sex_combo.addItem("All")
+        sex_combo = CustomSelect(light=self.light, options=["All"])
         sex_combo.addItems(sorted(sexes))
-        sex_combo.setStyleSheet(self.select_style)
 
-        age_combo = QComboBox()
-        age_combo.addItem("All Age")
+        age_combo =  CustomSelect(light=self.light, options=["All Age"])
         age_combo.addItems(sorted(age_ranges))
-        age_combo.setStyleSheet(self.select_style)
 
         # search box
         search_lineedit = QLineEdit()
         search_lineedit.setPlaceholderText("Enter name, surname, ID or CF")
-        search_lineedit.setStyleSheet("""
-            background-color: #F5F5F5;
-            border: 1px solid #DCDFE4;
+        if self.light:
+            search_lineedit.setStyleSheet("""
+                background-color: #F5F5F5;
+                border: 1px solid #DCDFE4;
+                border-radius: 15px;
+                padding: 5px;
+                margin-top: 20px;
+                margin-bottom: 20px;
+            """)
+        else:
+            search_lineedit.setStyleSheet("""
+            background-color: #333333;
+            border: 1px solid #666666;
             border-radius: 15px;
             padding: 5px;
             margin-top: 20px;
             margin-bottom: 20px;
+            color: #CCCCCC;
         """)
+
 
         # filters layout
         filter_layout = QHBoxLayout()
@@ -150,7 +130,7 @@ class PatientSelector(QFrame):
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(patient_frame)
 
-        scroll_bar_stylesheet = """
+        temp = """
             QScrollArea {
                 border: none;
             }
@@ -174,7 +154,8 @@ class PatientSelector(QFrame):
                 background: none;
             }
         """
-        scroll_area.setStyleSheet(scroll_bar_stylesheet)
+
+        scroll_area.setStyleSheet(temp)
 
         # calculate age
         def calculate_age(birth_date):
@@ -264,8 +245,12 @@ class PatientSelector(QFrame):
             def create_patient_button(patient, dialog):
                 button_layout = QHBoxLayout()
 
-                button_label_1 = QLabel(f"<span style='color: black; text-align: center;'>{patient['Name']} {patient['Surname']}</span>")
+                if self.light:
+                    button_label_1 = QLabel(f"<span style='color: black; text-align: center;'>{patient['Name']} {patient['Surname']}</span>")
+                else:
+                    button_label_1 = QLabel(f"<span style='color: white; text-align: center;'>{patient['Name']} {patient['Surname']}</span>")
                 button_label_2 = QLabel(f"<span style='color: gray; text-align: center;'>ID: ({patient['ID']}),  CF: {patient['CF']}</span>")
+
                 button_label_1.setStyleSheet("background-color: transparent;")
                 button_label_2.setStyleSheet("background-color: transparent;")
 
@@ -281,7 +266,7 @@ class PatientSelector(QFrame):
                         padding-left: 10px;
                         border-radius: 10px;
                         height: 60px;
-                        background-color: rgba(108, 60, 229, 7%);
+                        background-color: rgba(108, 60, 229, 10%);
                     }
                     QPushButton:hover {
                         background-color: rgba(108, 60, 229, 30%);
@@ -336,6 +321,13 @@ class PatientSelector(QFrame):
 
 
     def loadPatientData(self, patient, dialog):
+        """
+        Requires:   patient: a dictionary containing patient information
+                    dialog: the dialog window
+        Modifies:   Updates self.patient_info_data with patient information
+                    Closes the dialog window
+        Effects:    Loads selected patient data and closes the dialog window.
+        """
         # Load selected patient data
         self.patient_info_data = [
             ("Name:", patient["Name"]),
@@ -348,5 +340,8 @@ class PatientSelector(QFrame):
         dialog.accept()
 
     def getSelectedPatientInfo(self):
-            return self.patient_info_data
+        """
+        Effects:    Returns self.patient_info_data: a list containing patient information
+        """
+        return self.patient_info_data
 

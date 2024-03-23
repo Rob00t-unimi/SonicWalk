@@ -1,10 +1,8 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt
-import os
 import sys
 
-gui_path = os.path.join(os.path.dirname(__file__), '..')
-sys.path.append(gui_path)
+sys.path.append("../")
 
 from components.customButton import CustomButton
 from components.patientTable import PatientTable
@@ -28,6 +26,7 @@ class PatientFrame(QFrame):
         self.enablePlayButton = enablePlayButton
         self.disablePlayButton = disablePlayButton
         self.light = light
+        self.data = None
 
         # theme style
         self.lightTheme = "background-color: #B6C2CF; border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;"
@@ -61,17 +60,17 @@ class PatientFrame(QFrame):
         # and call them whenever we need
         patient_selector = PatientSelector(light = self.light)
         patient_selector.selectPatient()
-        data = patient_selector.getSelectedPatientInfo()
+        self.data = patient_selector.getSelectedPatientInfo()
 
         # update table
-        self.table.setTableData(data)
+        self.table.setTableData(self.data)
 
         # enable play button
         self.enablePlayButton()
 
         # if data is empty, disable play button
         dataEmpty = True
-        for _, dat in data:
+        for _, dat in self.data:
             if dat.strip():
                 dataEmpty = False
                 break
@@ -88,3 +87,9 @@ class PatientFrame(QFrame):
         self.setStyleSheet(self.lightTheme if self.light else self.darkTheme)
         self.table.toggleTheme()
         self.selectPatientButton.toggleTheme()
+
+    def getPatient(self):
+        """
+            Effects:    Rerurns selected patient Data
+        """
+        return self.data

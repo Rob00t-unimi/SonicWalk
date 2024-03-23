@@ -1,10 +1,9 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QFont
-import os
+from PyQt5.QtCore import Qt 
 import sys
 
-gui_path = os.path.join(os.path.dirname(__file__), '..')
-sys.path.append(gui_path)
+sys.path.append("../")
 
 from components.customSelect import CustomSelect
 from components.customButton import CustomButton
@@ -31,6 +30,7 @@ class ExerciseFrame(QFrame):
                 # 4 --> Double Step
             self.musicModality = 2
             self.light = light
+            self.bpm = 75
 
             # theme style
             self.lightTheme = "background-color: #B6C2CF; border-top-left-radius: 15px; border-top-right-radius: 15px; color: black;"
@@ -39,15 +39,7 @@ class ExerciseFrame(QFrame):
             # set self layout
             self.layout_selection = QVBoxLayout(self)
             self.layout_selection.setContentsMargins(30, 30, 30, 30)
-
-            # music custom selection
-            label_selected_music = QLabel("Selected Music:")
-            label_selected_music.setFont(QFont("sans-serif", 11))
-            self.layout_selection.addWidget(label_selected_music)
-            self.musicOptions = self._findMusicOptions()
-            self.music_selector = CustomSelect(light=self.light, options=self.musicOptions if self.musicOptions is not None else [""])
-            self.music_selector.currentTextChanged.connect(self.selectMusic)
-            self.layout_selection.addWidget(self.music_selector)
+            self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Ignored) 
 
             # exercise custom selection
             label_selected_exercise = QLabel("Selected Exercise:")
@@ -56,6 +48,15 @@ class ExerciseFrame(QFrame):
             self.exercise_selector = CustomSelect(light=self.light, options=["Walk", "March in place (Hight Knees)", "March in place (Butt Kicks)", "Swing", "Double Step"])
             self.exercise_selector.currentTextChanged.connect(self.selectExercise)
             self.layout_selection.addWidget(self.exercise_selector)
+
+            # music custom selection
+            self.label_selected_music = QLabel("Selected Music:")
+            self.label_selected_music.setFont(QFont("sans-serif", 11))
+            self.layout_selection.addWidget(self.label_selected_music)
+            self.musicOptions = self._findMusicOptions()
+            self.music_selector = CustomSelect(light=self.light, options=self.musicOptions if self.musicOptions is not None else [""])
+            self.music_selector.currentTextChanged.connect(self.selectMusic)
+            self.layout_selection.addWidget(self.music_selector)
 
             # define a frame for buttons
             self.music_buttons_frame = QFrame()
@@ -71,16 +72,50 @@ class ExerciseFrame(QFrame):
             self.realTimeMusic_button = CustomButton(light=self.light, text="Real Time", stayActive = True, onClickDeactivate = False)
             self.realTimeMusic_button.onClick(lambda: self._buttonClick(2))
 
-            # add to layout
+            # Slider for BPM
+            self.slider_label = QLabel("Velocity:")
+            self.slider_label.setFont(QFont("sans-serif", 11))
+            
+            self.slider_frame = QFrame()
+            self.bpm_slider = QSlider(Qt.Horizontal)  
+            self.bpm_slider.setRange(0, 150) 
+            self.bpm_slider.setValue(75)  
+            self.bpm_slider.setTickInterval(5)  
+            self.bpm_slider.setStyleSheet(
+                "QSlider::groove:horizontal { height: 10px; background-color: gray; border-radius: 5px; }"
+                "QSlider::handle:horizontal { background-color: white; border: 1px solid #4A708B; width: 18px; margin: -2px 0; border-radius: 8px; }"
+                "QSlider::add-page:horizontal { background-color: lightgray; border-radius: 5px; }"
+                "QSlider::sub-page:horizontal { background-color: #B99AFF; border-radius: 5px; }"
+            )
+            self.bpm_slider.valueChanged.connect(self.setBpm)
+            self.bpm_value_label = QLabel("  "+str(self.bpm_slider.value())+" bpm")
+            frame_layout = QHBoxLayout()
+            frame_layout.addWidget(self.bpm_slider)
+            frame_layout.addWidget(self.bpm_value_label)
+            self.slider_frame.setLayout(frame_layout) 
+
+            # Add the frame to the main layout
             self.music_buttons_layout.addWidget(self.noMusic_button)
             self.music_buttons_layout.addWidget(self.music_button)
             self.music_buttons_layout.addWidget(self.realTimeMusic_button)
+            self.layout_selection.addWidget(self.slider_label)
+            self.layout_selection.addWidget(self.slider_frame)
 
             # set style
             self.setStyleSheet(self.lightTheme if self.light else self.darkTheme)
 
             # call default button
-            self.realTimeMusic_button.clickCall()
+            self.music_button.clickCall()
+
+
+    def setBpm(self):
+        """
+            Modifies:   self.bpm
+            Effects:    updates bpm value and label
+        """
+        # update bpm value
+        self.bpm = self.bpm_slider.value()
+        self.bpm_value_label.setText("  "+str(self.bpm)+" bpm")
 
     def _findMusicOptions(self):
         # da definire
@@ -121,6 +156,20 @@ class ExerciseFrame(QFrame):
         self.musicModality = number
         print(str(number))
 
+        if self.musicModality != 1:
+            self.slider_label.hide()
+            self.slider_frame.hide()
+        else:
+            self.slider_label.show()
+            self.slider_frame.show()
+
+        if self.musicModality == 0:
+            self.label_selected_music.hide()
+            self.music_selector.hide()
+        else:
+            self.label_selected_music.show()
+            self.music_selector.show()
+
     def toggleTheme(self):
         """
             Modifies:   self.light: toggles the light theme status
@@ -155,3 +204,8 @@ class ExerciseFrame(QFrame):
         """
         return self.selectedExercise
     
+    def getBpm(self):
+        """
+            Effects:    Rerurns selected bpm
+        """
+        return self.bpm

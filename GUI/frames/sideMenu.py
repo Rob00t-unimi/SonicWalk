@@ -1,11 +1,9 @@
 from PyQt5.QtWidgets import *
 import webbrowser
-import os
 import sys
 import json
 
-gui_path = os.path.join(os.path.dirname(__file__), '..')
-sys.path.append(gui_path)
+sys.path.append("../")
 
 from components.menuButton import MenuButton
 

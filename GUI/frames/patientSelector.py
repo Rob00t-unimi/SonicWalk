@@ -2,11 +2,9 @@ from PyQt5.QtWidgets import QFrame
 from PyQt5.QtWidgets import *
 import json
 from datetime import datetime, date
-import os
 import sys
 
-gui_path = os.path.join(os.path.dirname(__file__), '..')
-sys.path.append(gui_path)
+sys.path.append("../")
 
 from components.customSelect import CustomSelect
 

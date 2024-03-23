@@ -7,35 +7,57 @@ import os
 import sys
 from datetime import datetime
 import numpy as np
+import simpleaudio as sa
 
-gui_path = os.path.join(os.path.dirname(__file__), '..')
-sys.path.append(gui_path)
+sys.path.append("../")
 
 from components.recButton import RecButton
 from mtw_run import mtw_run
 
 class RecordingFrame(QFrame):
-    def __init__(self, light = True, getMusicModality = None, getMusicPath = None, getExerciseNumber = None):
+    def __init__(self, light = True, getMusicModality = None, getMusicPath = None, getExerciseNumber = None, getPatient = None, getBpm = None, changeEnabledAll = None):
+        """
+        This class represents the frame responsible for handling recording functionalities.
+
+        Requires:
+            - light: A boolean indicating the theme of the frame.
+            - getMusicModality: A function to retrieve the selected music modality.
+            - getMusicPath: A function to retrieve the path of the selected music.
+            - getExerciseNumber: A function to retrieve the selected exercise number.
+            - changeEnabledAll: A function to call when we would change the enabled state of external components.
+
+        Modifies:
+            - self
+
+        Effects:
+            - Manages recording functionalities such as starting, stopping, and saving recordings.
+        """
         super().__init__()
 
+        # initialize attributes
         self.exerciseTime = 90
         self.selectedMusic = None
         self.selectedExercise = None
         self.modality = None
+        self.patient_info_data = None
 
         self.getMusicModality = getMusicModality
         self.getMusicPath = getMusicPath
         self.getExerciseNumber = getExerciseNumber
-
+        self.changeEnabledAll = changeEnabledAll
+        self.getPatient = getPatient
+        self.getBpm = getBpm
 
         self.light = light
         self.blackIcons = "icons/black"
         self.whiteIcons = "icons/white"
 
-        self.playAbilited = True
-        self.execution = False
-        self.startTime = None
+        self.playAbilited = True    # state of the play button
+        self.execution = False      # state of the execution
+        self.startTime = None       # start execution time
+        self.playingMusic = False
 
+        # sinals for multithreading
         self.connection_msg = None
         self.signals = None
         self.Fs = None
@@ -91,6 +113,10 @@ class RecordingFrame(QFrame):
         self.disablePlayButton()
 
     def toggleTheme(self):
+        """
+            Modifies:   self.light
+            Effects:    Toggles the theme of the recording frame between light and dark mode.
+        """
         self.light = not self.light
         self.time_label.setStyleSheet("color: black;" if self.light else "color: white;")
         self.play_button.toggleTheme()
@@ -98,21 +124,33 @@ class RecordingFrame(QFrame):
         self.save_button.toggleTheme()
 
     def enablePlayButton(self):
+        """
+            Modifies:   self.playAbilited
+            Effects:    Enables the play button.
+        """
         if not self.playAbilited:
             self.playAbilited = True
             self.play_button.setEnabled(True)
 
     def disablePlayButton(self):
+        """
+            Modifies:   self.playAbilited
+            Effects:    Disables the play button.
+        """
         if self.playAbilited:
             self.playAbilited = False
             self.play_button.setEnabled(False)
 
     def timeUpdater(self):
+        """
+            Modifies:   self.time_label
+                        self.startTime
+            Effects:    Updates the timer label during the recording.
+        """
         if self.execution:
             current_time = time.time() - self.startTime
             if self.exerciseTime >= current_time:
                 minutes, seconds = divmod(current_time, 60)
-                # Calcola i centesimi di secondo
                 centiseconds = int((current_time - int(current_time)) * 100)
                 self.time_label.setText("{:02}:{:02}.{:02}".format(int(minutes), int(seconds), centiseconds))
             else:
@@ -124,32 +162,61 @@ class RecordingFrame(QFrame):
             self.startTime = None
 
     def startExecution(self):
-
+        """
+            Modifies:   self.execution
+                        self.startTime
+                        self.play_button
+                        self.stop_button
+                        self.save_button
+            Effects:    Starts the recording.
+        """
+        # get mtwRecord params
         self.modality = self.getMusicModality()
         self.selectedMusic = self.getMusicPath()
         self.selectedExercise = self.getExerciseNumber()
 
+        # set the execution state on false
         self.execution = False
 
+        # disable all buttons and selects except stop button
+        self.changeEnabledAll()
+
+        # show sensors pairing message
         self.showConnectionMessage()
 
         # Execute mtw_run in a different thread
-        self.thread = threading.Thread(target=self.run_mtw)
-        self.thread.daemon = True
-        self.thread.start()
+        self.record_thread = threading.Thread(target=self.run_mtw)
+        self.record_thread.daemon = True
+        self.record_thread.start()
 
+        # create execuiton timer
         self.check_mtw_run_timer = QTimer(self)
         self.check_mtw_run_timer.timeout.connect(self.check_mtw_run_status)
         self.check_mtw_run_timer.start(100)
 
     def check_mtw_run_status(self):
-        if not self.thread.is_alive():
+        """
+            Modifies:   self.execution
+                        self.startTime
+                        self
+            Effects:    Checks the status of the mtw_run thread.
+                        if is not alive executes saveRecording
+        """
+        if not self.record_thread.is_alive():
+            self.playingMusic = False   # stops music
             self.execution = False
             self.startTime = None
+            self.changeEnabledAll()
             self.saveRecording()
             self.check_mtw_run_timer.stop()
 
     def run_mtw(self):
+        """
+            Modifies:   self.signals
+                        self.Fs
+            Effects:    Runs the mtw_run function for recording in a different thread.
+                        Get recorded signal and Fs
+        """
         analyze = False if self.modality != 2 else True
         try:
             self.signals, self.Fs = mtw_run(Duration=int(self.exerciseTime), MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.setStart)
@@ -160,6 +227,10 @@ class RecordingFrame(QFrame):
             # non restituisce l'errore
 
     def showConnectionMessage(self):
+        """
+            Modifies:   self
+            Effects:    Shows a message to the user that the sensors are connecting.
+        """
         if self.connection_msg is None:
             self.connection_msg = QMessageBox(QMessageBox.Information, "Waiting for Sensor Connection", "Please wait while the sensors are connecting...", QMessageBox.NoButton, self)
         self.connection_msg.setWindowModality(Qt.ApplicationModal)
@@ -168,6 +239,13 @@ class RecordingFrame(QFrame):
         self.connection_msg.show()
 
     def setStart(self):
+        """
+            Modifies:   self.startTime
+                        self.execution
+            Effects:    Sets the start time of the recording.
+                        It closes the connection message.
+                        If music modality is setted on Music it starts to play the music in a different thread.
+        """
         self.startTime = time.time()
         self.execution = True
         #beepPath = "../sonicwalk/audio_samples/beep.wav"
@@ -175,12 +253,41 @@ class RecordingFrame(QFrame):
         #wave_obj.play()
         if self.connection_msg and not self.connection_msg.isHidden():
             self.connection_msg.reject()
+
         if self.modality == 1:
-            # suona musica... 
-            return
-        return
-    
+            music_thread = threading.Thread(target=self._play_music)
+            music_thread.start()
+
+    def _play_music(self):
+        bpm = self.getBpm()
+        beats_per_second = bpm / 60.0  # Convert BPM to beats per second
+        beat_duration = 1.0 / beats_per_second  # Duration of each beat in seconds
+
+        # Load and sort music samples
+        files = [os.path.join(self.selectedMusic, f) for f in os.listdir(self.selectedMusic) 
+                if os.path.isfile(os.path.join(self.selectedMusic, f))]
+        files.sort() #sort filenames in order
+        music_samples = []
+        print("loading wave samples...")
+        for f in files:
+            if f.lower().endswith(".wav"):
+                music_samples.append(sa.WaveObject.from_wave_file(f))
+
+        # play
+        self.playingMusic = True
+        while self.playingMusic:
+            for sample in music_samples:
+                    if not self.playingMusic:
+                        break
+                    sample.play()
+                    time.sleep(beat_duration)
+
     def stopExecution(self):
+        """
+            Modifies:   self.execution
+                        self.startTime
+            Effects:    Stops the recording.
+        """
         # per implementarla bisogna rivedere la logica del codice di sonicwalk
         self.execution = False
         self.startTime = None
@@ -189,47 +296,69 @@ class RecordingFrame(QFrame):
         return
     
     def saveRecording(self):
-        # Chiedi conferma prima di salvare la registrazione
+        """
+        Modifies:   Creates and saves a numpy file with the recording data (signal and Fs) in the folder of specified patient.
+
+        Effects:    Prompts the user to confirm before saving the recording.
+                    Saves the recording data in a numpy file with a unique filename in the patient folder.
+                    Displays a success message upon successful saving.
+        """
+
+        # Prompts the user to confirm before saving the recording
         confirm_msg = QMessageBox()
         confirm_msg.setIcon(QMessageBox.Question)
         confirm_msg.setWindowTitle("Confirm Save")
         confirm_msg.setText("Do you want to save the recording?")
         confirm_msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
 
-        # Ottieni il pulsante premuto
+        # get the response from user
         response = confirm_msg.exec_()
 
 
-        # Se l'utente ha confermato, salva la registrazione
+        # if user says yes, save the recording
         if response == QMessageBox.Yes:
+            self.patient_info_data = self.getPatient()
             try:
                 if self.signals is None or self.Fs is None:
                     raise ValueError("No signals to save")
 
-                # Trova l'ID del paziente corrente
-                patient_id = self.patient_info_data[2][1]  # ID del paziente nella terza tupla
+                # find current patient ID
+                patient_id = self.patient_info_data[2][1]
 
-                # Verifica se l'ID del paziente è vuoto
+                # verify if id is Empty
                 if patient_id.strip() == "":
                     raise ValueError("Patient ID is empty")
+                
+                if self.selectedExercise == 0:
+                    exName = "walk" 
+                elif self.selectedExercise == 1:
+                    exName = "marchHight"
+                elif self.selectedExercise == 2:
+                    exName = "marchButt"
+                elif self.selectedExercise == 3:
+                    exName = "swing"
+                elif self.selectedExercise == 4:
+                    exName = "doubleStep"
 
-                # Genera un nome univoco per il file
+                if self.modality == 0:
+                    musicMode ="noMusic"
+                elif self.modality == 1:
+                    musicMode ="music"
+                elif self.modality == 2:
+                    musicMode ="realTime"
+
+                # Creates a unique filename for the recording
                 today_date = datetime.today().strftime('%Y-%m-%d')
                 parent_dir = os.path.dirname(os.path.abspath(__file__))
-                directory_path = os.path.join(parent_dir.replace("pages",""), f"data/archive/{patient_id}")
+                directory_path = os.path.join(parent_dir.replace("frames",""), f"data/archive/{patient_id}")
                 os.makedirs(directory_path, exist_ok=True)  # Crea la directory se non esiste
-                filename = os.path.join(directory_path, f"{patient_id}_ex.{self.selectedExercise}_{today_date}_1.npy")
+                current_time = datetime.now().strftime("%H%M%S")
+                filename = os.path.join(directory_path, f"{today_date}_{current_time}_{patient_id}_{exName}_{musicMode}.npy")
 
-                # Verifica l'esistenza del file e genera un numero progressivo univoco se necessario
-                counter = 1
-                while os.path.exists(filename):
-                    filename = os.path.join(directory_path, f"{patient_id}_ex.{self.selectedExercise}_{today_date}_{counter}.npy")
-                    counter += 1
-
-                # Salva i dati nel file numpy
+                # save datas into the file npy
                 np.save(filename, {"signals": self.signals, "Fs": self.Fs})
 
-                # Messaggio di conferma
+                # Confirm message
                 msg = QMessageBox()
                 msg.setIconPixmap(QPixmap("icons/checkmark.png").scaledToWidth(50))
                 msg.setWindowTitle("Recording Saved")
@@ -242,7 +371,7 @@ class RecordingFrame(QFrame):
                 msg.exec_()
 
             except Exception as e:
-                # Gestione dell'eccezione nel caso in cui non sia possibile salvare il file o l'ID del paziente sia vuoto
+                # Handle exceptions if unable to save the file or the patient ID is empty
                 error_msg = QMessageBox()
                 error_msg.setIcon(QMessageBox.Critical)
                 error_msg.setWindowTitle("Error")

@@ -149,5 +149,6 @@ setup(
     # what's used to render the link text on PyPI.
     project_urls={  # Optional
         "Source": "https://github.com/xyzxyzxyzxy/SonicWalk",
+        "Source": "https://github.com/Rob00t-unimi/SonicWalk",
     },
 )

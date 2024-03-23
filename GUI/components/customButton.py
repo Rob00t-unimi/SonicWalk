@@ -3,7 +3,7 @@ from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtCore import QSize
 
 class CustomButton(QPushButton):
-    def __init__(self, dimensions = [110, 40], icons_paths = None, iconDimensions = [25, 25], text = None, light = True, stayActive = False, onClickDeactivate = True):
+    def __init__(self, dimensions = [100, 40], icons_paths = None, iconDimensions = [25, 25], text = None, light = True, stayActive = False, onClickDeactivate = True):
         """ 
         Requires: 
             - dimensions: list of two integers specifying width and height
@@ -98,7 +98,7 @@ class CustomButton(QPushButton):
         """
         if self.active and self.stayActive:
             self.active = False
-            self.setStyleSheet(self.lightNormal if self.light else self.darkNormal)
+            self.setStyleSheet(self.lightTheme if self.light else self.darkTheme)
 
     def selectButton(self):
         """

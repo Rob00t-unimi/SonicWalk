@@ -12,13 +12,12 @@ if __name__ == "__main__":
     samplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2"
 
     with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
-        data = mtw.mtwRecord(duration, plot=True, analyze=True, exType = 4)
+        data = mtw.mtwRecord(duration, plot=True, analyze=True, exType = 3)
             # 0 --> walking
             # 1 --> Walking in place (High Knees, Butt Kicks)
             # 2 --> Walking in place (High Knees con sensori sulle cosce)
             # 3 --> Swing
-            # 4 --> Unknown
-            # 5 --> ROB's walking 
+            # 4 --> Double step
 
     data0 = data[0][0]
     data1 = data[0][1]

@@ -30,8 +30,6 @@ def mtw_run(Duration:int=90, MusicSamplesPath = "../sonicwalk/audio_samples/camm
             # 2 --> Walking in place (High Knees con sensori sulle cosce)
             # 3 --> Swing
             # 4 --> Double Step
-            # 5 --> ROB's walking 
-
 
     data0 = data[0][0]
     data1 = data[0][1]

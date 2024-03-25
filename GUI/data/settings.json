@@ -1,1 +1,9 @@
-{"light_theme": false}
+{
+    "light_theme": true,
+    "music_directories": [
+        "/home/phuselab/Desktop/Roberto Tallarini/SonicWalk/sonicwalk/audio_samples/cammino_1_fase_2"
+    ],
+    "music_names": [
+        "Music 1"
+    ]
+}

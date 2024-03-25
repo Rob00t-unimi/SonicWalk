@@ -121,7 +121,3 @@ class CustomSelect(QComboBox):
         """
         self.light = not self.light
         self.setStyleSheet(self.lightTheme if self.light else self.darkTheme)
-
-
-
-

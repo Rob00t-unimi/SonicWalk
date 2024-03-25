@@ -1,3 +1,4 @@
+import json
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt 
@@ -10,6 +11,7 @@ from components.customButton import CustomButton
 
 class ExerciseFrame(QFrame):
     def __init__(self, light = True):
+
             super().__init__()
             """
             Requires:
@@ -21,7 +23,9 @@ class ExerciseFrame(QFrame):
             """
 
             # initialize attributes
-            self.selectedMusic = "../sonicwalk/audio_samples/cammino_1_fase_2" 
+            self.selectedMusic = None 
+            self.MusicPaths = None
+            self.MusicNames = None
             self.selectedExercise = 0
                 # 0 --> walking
                 # 1 --> Walking in place (High Knees, Butt Kicks)
@@ -31,6 +35,7 @@ class ExerciseFrame(QFrame):
             self.musicModality = 2
             self.light = light
             self.bpm = 75
+            self.firstRendering = True
 
             # theme style
             self.lightTheme = "background-color: #B6C2CF; border-top-left-radius: 15px; border-top-right-radius: 15px; color: black;"
@@ -106,7 +111,8 @@ class ExerciseFrame(QFrame):
 
             # call default button
             self.music_button.clickCall()
-
+            if len(self.MusicNames)>0:
+                self.selectMusic(self.MusicNames[0])
 
     def setBpm(self):
         """
@@ -118,19 +124,39 @@ class ExerciseFrame(QFrame):
         self.bpm_value_label.setText("  "+str(self.bpm)+" bpm")
 
     def _findMusicOptions(self):
-        # da definire
-          
-          return ["Music 1"]
-    
+        """
+            Modifies:   self.MusicPaths, self.MusicNames
+            Effects:    load music paths and names from settings.json
+        """
+        try:
+            with open('data/settings.json', 'r') as f:
+                settings = json.load(f)
+            music_directories = settings.get('music_directories', [])
+            music_names = settings.get('music_names', [])
+            self.MusicPaths=music_directories
+            self.MusicNames=music_names
+            return music_names
+        except FileNotFoundError:
+            print("Error: settings.json file not found.")
+            return None
+
     def selectMusic(self, text):
         """
             Requires:   text: a string representing the selected music option
+            Modifies:   self.selectedMusic
             Effects:    Sets the selected music path based on the chosen option.
         """
-        print(text)
-        if text == "Music 1": self.selectedMusic = "../sonicwalk/audio_samples/cammino_1_fase_2" 
-        # elif text == "Music 2": self.selectedMusic = "../sonicwalk/audio_samples/..."
-        # da definire in base a come e dove si trova la musica
+        number = None
+        for i in range(len(self.MusicNames)):
+            if self.MusicNames[i] == text:
+                number = i
+                break
+        
+        if number is not None:
+            self.selectedMusic = self.MusicPaths[number]
+            print(text + ": " + self.selectedMusic)
+        else:
+            print("Error: Music option not found.")
 
     def selectExercise(self, text):
         """
@@ -209,3 +235,31 @@ class ExerciseFrame(QFrame):
             Effects:    Rerurns selected bpm
         """
         return self.bpm
+    
+    def paintEvent(self, event):
+        # when the ExerciseFrame is rendered it is executed paintEvent
+        # inherit the paintEvent of the parent class
+        # if is the first rendering of the ExerciseFrame executes the paintEvent of the parent class and set self.firstRendering to False
+        # if is a re-rendering of the ExerciseFrame executes the paintEvent of the parent class and if the options is changed 
+        # it sostitutes the music_selector 
+        """
+        Modifies:   self.musicOptions:    Updates the list of music options if it has changed.
+                    self.music_selector:  Replaces the existing CustomSelect widget with a new one if music options have changed.
+        Effects:    If there's a change in music options, replaces the existing music selector widget with an updated one.
+                    Executes the paintEvent of the parent class.
+        """
+        if not self.firstRendering:
+            tmp = self.musicOptions
+            self.musicOptions = self._findMusicOptions()
+            if tmp != self.musicOptions:
+                new_music_selector = CustomSelect(light=self.light, options=self.musicOptions if self.musicOptions is not None else [""])
+                index = self.layout_selection.indexOf(self.music_selector)
+                self.layout_selection.removeWidget(self.music_selector)
+                self.music_selector.deleteLater()  # Clean up the old widget
+                self.layout_selection.insertWidget(index, new_music_selector)
+                self.music_selector = new_music_selector
+            super().paintEvent(event)
+
+        else:
+            super().paintEvent(event)
+            self.firstRendering = False

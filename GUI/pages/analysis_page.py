@@ -19,7 +19,6 @@ from frames.recordingFrame import RecordingFrame
     # il plotter può essere aggiunto istanziandolo in mtwRecord e prendendo quell'istanza oppure
     # istanziandolo qui nella gui e recuperando i dati condivisi di mtwRecord
 # il beep all'inizio della registrazione occupa la risorsa e genera errore quindi è temporaneamente commentato
-# i path di suoni e musica vanno recuperati dinamicamente
 # bisogna gestire e recuperare l'eccezione nel caso non sia inserito il dongle
 
 class AnalysisPage(QFrame):

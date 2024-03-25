@@ -38,7 +38,7 @@ class Analyzer():
         self.__completeMovements = 0    # ex. steps
         self.__trasholdRange = 1.5
         self.__legDetected = False
-        self.__pos = False
+        self.__pos = True
         self.__min = 0.0
         self.__minHistory = np.full(self.__history_sz, -5.0, dtype=np.float64)
 
@@ -157,7 +157,7 @@ class Analyzer():
 
 
         self.__threshold = 10
-        if (self.__exType == 2):
+        if (self.__exType == 1):
             self.__pitch = - self.__pitch
         self.__pitch = self.__pitch - self.__threshold
 
@@ -224,10 +224,10 @@ class Analyzer():
     # DISTINGUERE AUTOMATICAMENTE LE GAMBE
     def detectLeg(self, displacement = None):
 
-        # normalmente un'esercizio parte con il passo in avanti non con quello indietro quindi il primo segnale che avrà uno zero crossing negativo
+        # normalmente un'esercizio parte con il passo in avanti non con quello indietro quindi il primo segnale che avrà uno zero crossing positivo
         # identificherà a gamba che fa il passo avanti e indietro, l'altro segnale identificherà la gamba "ferma"
 
-        ## In questa versione semplicemente cerco il segnale che per primo fa lo zero crossing negativo e comunico ad una variabile condivisa ai 2 processi
+        ## In questa versione semplicemente cerco il segnale che per primo fa lo zero crossing positivo e comunico ad una variabile condivisa ai 2 processi
         # applico lo scostamento per 2 motivi
         # 1: taglio possibili zerogrossing dati dal rumore
         # 2: scosto di molto poichè i processi non iniziano insieme, 
@@ -239,20 +239,20 @@ class Analyzer():
         # in questo modo sono sempre sicuro (eccetto movimenti sotto i 10 gradi) che il segnale 2 viene sempre rilevato prima del segnale 1
 
         # proseguendo l'esempio ...
-        # quando rilevo lo zero crossing negativo nel processo 2 setto una variabile condivisa ai 2 processi su true cosi da comunicare al processo 1 che 
+        # quando rilevo lo zero crossing positivo nel processo 2 setto una variabile condivisa ai 2 processi su true cosi da comunicare al processo 1 che 
         # il segnale 2 è quello che stavamo cercando e si trova nel processo 2, di conseguenza il processo 1 capisce di avere il segnale 1
 
-        pitch = self.__pitch + 11           # aumentando il valore si aumenta la precisione nella rilevazione tuttavia aumenta l'ampiezza del passo richiesto
+        pitch = self.__pitch - 11           # aumentando il valore sottratto si aumenta la precisione nella rilevazione tuttavia aumenta l'ampiezza del passo richiesto
                                             # diminuendo si perde una corretta rilevazione
         
         if displacement is not None:
-            pitch = self.__pitch + displacement
+            pitch =  self.__pitch - displacement
 
         pos = np.diff(np.signbit(pitch))
         if np.sum(pos) == 1:    
             crossPosition = np.where(pos)[0][0]
             negativeZc = np.signbit(np.gradient(pitch)[crossPosition + 1])
-            if negativeZc:
+            if not negativeZc:
                 self.__sharedLegDetected.set(True)
                 self.__legDetected = True
         return    
@@ -261,9 +261,9 @@ class Analyzer():
     # RILEVAZIONE MOVIMENTO GAMBA "CHE SI MOUOVE"
     def stepLeg(self):
             
-            ## la gamba che si muove fa un doppio picco negativo poi doppio positivo etc..
+            ## la gamba che si muove fa un doppio picco positivo poi doppio negativo etc..
             # a noi interessa solo quando poggia terra ovvero per ogni coppia solo il primo dei 2 picchi
-            # quando rilevo un picco negativo quindi imposto la ricerca sul positivo e viceversa
+            # quando rilevo un picco positivo quindi imposto la ricerca sul negativo e viceversa
             # quando rilevo un picco valido suono
 
             if self.__endController() : return
@@ -284,7 +284,7 @@ class Analyzer():
                 if lastPeak > self.__peak:
 
                     elapsed_time = time.time() - self.__timestamp
-                    if self.__peak >= self.__threshold - self.__trasholdRange*2 and elapsed_time > self.__timeThreshold:
+                    if self.__peak >= self.__threshold - self.__trasholdRange and elapsed_time > self.__timeThreshold:
 
                         # a step is valid only if last peak is greater than adaptive threshold 
                         # minus a constant angle to allow angles less than the minimum to be re gistered
@@ -308,12 +308,11 @@ class Analyzer():
                 if lastMin < self.__min:
 
                     elapsed_time = time.time() - self.__timestamp
-                    if self.__min <=  self.__trasholdRange*2 - self.__threshold and self.__timeThreshold:
+                    if self.__min <=  self.__trasholdRange - self.__threshold and self.__timeThreshold:
                     
                         # a step is valid only if last peak is greater than adaptive threshold 
                         # minus a constant angle to allow angles less than the minimum to be re gistered
                         self.__timestamp = time.time() # reset timestamp (new step)
-                        #time.sleep(0.01)
                         _ = self.__samples[self.__sharedIndex.value()].play()
                         self.__sharedIndex.increment()
                         # update peak history with last peak
@@ -332,7 +331,7 @@ class Analyzer():
 
         ## questa gamba ha un'andamenso tipo sinusoidale quindi mi interessano gli zero crossing
         # in questo caso però mi interessano entrambi gli zero crossing che si verificano uno prima e uno dopo il picco
-        # quindi cerco uno zero crossing negativo, faccio suonare
+        # quindi cerco uno zero crossing positivo, faccio suonare
         # cerco un picco valido, quando lo trovo cerco uno zero crossing negativo
         # quando trovo lo zero crossing negativo faccio suonare e cerco lo zero crossing positivo
         
@@ -340,8 +339,6 @@ class Analyzer():
         self.__nextWindow()
 
         if self.__pos == True: 
-            # il piede ci mette più tempo a raggiungere lo zero crossing negativo di quello positivo
-            # cerhiamo di compensare usando displacement diversi, quello per il positivo più basso
             # anticipo traslando in alto
             # traslo di 5
             pitch = self.__pitch + 5
@@ -362,9 +359,11 @@ class Analyzer():
                         self.__pos = False
 
         if self.__pos == False:
+            # il piede potrebbe metterci più tempo a raggiungere lo zero crossing negativo di quello positivo
+            # si può  cercare di compensare usando displacement diversi, quello per il positivo più basso
             # anticipo traslando in basso
-            # traslo di -7 per lo zero crossing negativo
-            pitch = self.__pitch - 7     # 7 rileva ancora passi molto piccoli
+            # traslo di -5 per lo zero crossing negativo
+            pitch = self.__pitch - 5     # 7 rileva ancora passi molto piccoli
             
             # zero crossings count
             cross =  np.diff(np.signbit(pitch))
@@ -381,9 +380,7 @@ class Analyzer():
                         _ = self.__samples[self.__sharedIndex.value()].play()
                         self.__sharedIndex.increment()
                         self.__completeMovements += 1
-                        self.__pos = True
-        return
-    
+                        self.__pos = True    
     
     ## SWING
 
@@ -412,8 +409,6 @@ class Analyzer():
                 self.backwardLeg()
             else:
                 self.forwardLeg()
-
-        return
     
 
     # la differenza di traslazioni è data dagli angoli che fanno i piedi generalmente, gli angoli di norma variano, 
@@ -423,16 +418,16 @@ class Analyzer():
     def forwardLeg(self):
         # i minimi sono sempre sopra 10
         # i massimi locali sono sempre sotto 10
-        # posso traslare di 10 e cercare gli zero crossing positivi
+        # posso traslare di -10 e cercare gli zero crossing positivi
 
-        pitch = self.__pitch + 10
+        pitch = self.__pitch - 10
         cross =  np.diff(np.signbit(pitch))
         if np.sum(cross) == 1: #If more than 1 zero crossing is found then it's noise
             # determine position of zero crossing
             crossPosition = np.where(cross)[0][0]
             # determine polarity of zero-crossing (use np.gradient at index of zero crossing + 1 (the value where zero is crossed))
             negativeZc = np.signbit(np.gradient(pitch)[crossPosition + 1])
-            if not negativeZc:
+            if negativeZc:
                 elapsed_time = time.time() - self.__timestamp
                 if elapsed_time > self.__timeThreshold * 2:
                     self.__timestamp = time.time()
@@ -441,18 +436,18 @@ class Analyzer():
                     self.__completeMovements += 1
     
     def backwardLeg(self):
-        # i picchi sono sempre sopra 15
-        # i minimi sono sempre sotto 15
-        # posso traslare di -15 e cercare gli zero crossing negativi
-
-        pitch = self.__pitch - 15
+        # i picchi sono sempre sopra -15
+        # i minimi sono sempre sotto -15
+        # posso traslare di 15 e cercare gli zero crossing negativi
+        
+        pitch = self.__pitch + 15
         cross =  np.diff(np.signbit(pitch))
         if np.sum(cross) == 1: #If more than 1 zero crossing is found then it's noise
             # determine position of zero crossing
             crossPosition = np.where(cross)[0][0]
             # determine polarity of zero-crossing (use np.gradient at index of zero crossing + 1 (the value where zero is crossed))
             negativeZc = np.signbit(np.gradient(pitch)[crossPosition + 1])
-            if negativeZc:
+            if not negativeZc:
                 elapsed_time = time.time() - self.__timestamp
                 if elapsed_time > self.__timeThreshold * 2:
                     self.__timestamp = time.time()

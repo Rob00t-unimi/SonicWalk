@@ -38,7 +38,7 @@ class Analyzer():
         self.__completeMovements = 0    # ex. steps
         self.__trasholdRange = 1.5
         self.__legDetected = False
-        self.__secondCrossDetected = True
+        self.__secondCrossDetected = False
         self.__pos = True
         self.__min = 0.0
         self.__minHistory = np.full(self.__history_sz, -5.0, dtype=np.float64)
@@ -193,18 +193,18 @@ class Analyzer():
             else: #positiveZc
                 self.__swingPhase = True
 
-    ### Unknown exercise
+    ### double Step exercise
 
-    def unknown(self):
+    def doubleStepDetector(self):
         #time.sleep(0.12495)
         while self.__active:
-            self.__detectUnknown()
+            self.__detectDoubleStep()
             #allow other processes to run (wait 3ms)
             #one packet is produced roughly every 8.33ms
             time.sleep(0.003)
 
 
-    def __detectUnknown(self):
+    def __detectDoubleStep(self):
 
         ### Le due gambe hanno segnali differenti che quindi devono essere distinti e analizzati in modo diverso
 
@@ -236,7 +236,7 @@ class Analyzer():
         # ipotizziamo che il segnale 1 inizi al tempo 0 ma è il segnale per cui non ci interessa lo zero crossing
         # segnale 2 inizia al tempo 1 ma ci interessa il suo zero crossing
         # potrebbe verificarsi che rilevo prima lo zero crossing del segnale 1 rispetto a quello del segnale 1
-        # traslando in basso di cosi tanto (10) invece, siccome il segnale 1 è più ampio ovvero varia più lentamente
+        # traslando in basso di cosi tanto (11) invece, siccome il segnale 1 è più ampio ovvero varia più lentamente
         # sto ritardando la rilevazione di entrambi i segnali, ma la rilevazione del segnale 1 risulta più ritardata rispetto a quella del segnale 2
         # in questo modo sono sempre sicuro (eccetto movimenti sotto i 10 gradi) che il segnale 2 viene sempre rilevato prima del segnale 1
 
@@ -244,7 +244,8 @@ class Analyzer():
         # quando rilevo lo zero crossing positivo nel processo 2 setto una variabile condivisa ai 2 processi su true cosi da comunicare al processo 1 che 
         # il segnale 2 è quello che stavamo cercando e si trova nel processo 2, di conseguenza il processo 1 capisce di avere il segnale 1
 
-        pitch = self.__pitch - 10
+        pitch = self.__pitch - 11           # aumentando il valore sottratto si aumenta la precisione nella rilevazione tuttavia aumenta l'ampiezza del passo richiesto
+                                            # diminuendo si perde una corretta rilevazione
         pos = np.diff(np.signbit(pitch))
         if np.sum(pos) == 1:    
             crossPosition = np.where(pos)[0][0]
@@ -281,7 +282,7 @@ class Analyzer():
                 if lastPeak > self.__peak:
 
                     elapsed_time = time.time() - self.__timestamp
-                    if self.__peak >= self.__threshold - self.__trasholdRange and elapsed_time > 0.3:
+                    if self.__peak >= self.__threshold - self.__trasholdRange*2 and elapsed_time > self.__timeThreshold:
 
                         # a step is valid only if last peak is greater than adaptive threshold 
                         # minus a constant angle to allow angles less than the minimum to be re gistered
@@ -305,7 +306,7 @@ class Analyzer():
                 if lastMin < self.__min:
 
                     elapsed_time = time.time() - self.__timestamp
-                    if self.__min <=  self.__trasholdRange - self.__threshold and elapsed_time > 0.3:
+                    if self.__min <=  self.__trasholdRange*2 - self.__threshold and self.__timeThreshold:
                     
                         # a step is valid only if last peak is greater than adaptive threshold 
                         # minus a constant angle to allow angles less than the minimum to be re gistered
@@ -336,18 +337,25 @@ class Analyzer():
         if self.__endController() : return
         self.__nextWindow()
 
-        self.__pitch = abs(self.__pitch)
-        self.__pitch = self.__pitch - 5
         if self.__secondCrossDetected == True: 
-            cross =  np.diff(np.signbit(self.__pitch))
+            # il piede ci mette più tempo a raggiungere lo zero crossing negativo di quello positivo
+            # cerhiamo di compensare usando displacement diversi, quello per il positivo più basso
+            # anticipo traslando in alto
+            # traslo di 10 faccio il valore assoluto e contro traslo di 5
+            # quindi traslo di 5
+            tmp = self.__pitch + 10
+            tmp = abs(tmp)
+            pitch = tmp - 5
+
+            cross =  np.diff(np.signbit(pitch))
             if np.sum(cross) == 1: #If more than 1 zero crossing is found then it's noise
                 # determine position of zero crossing
                 crossPosition = np.where(cross)[0][0]
                 # determine polarity of zero-crossing (use np.gradient at index of zero crossing + 1 (the value where zero is crossed))
-                positiveZc = np.signbit(np.gradient(self.__pitch)[crossPosition + 1])
+                positiveZc = np.signbit(np.gradient(pitch)[crossPosition + 1])
                 if positiveZc:
                     elapsed_time = time.time() - self.__timestamp
-                    if elapsed_time > self.__timeThreshold * 2:
+                    if elapsed_time > self.__timeThreshold:
                         self.__timestamp = time.time()
                         _ = self.__samples[self.__sharedIndex.value()].play()
                         self.__sharedIndex.increment()
@@ -356,17 +364,21 @@ class Analyzer():
                 else:
                     self.__swingPhase = False
 
-
+        # anticipo traslando in basso
+        # traslo di -5 per lo zero crossing negativo
+        tmp = abs(self.__pitch)
+        pitch = tmp - 7     # 7 rileva ancora passi molto piccoli
+        
         if self.__swingPhase == True and self.__secondCrossDetected == False:
-            self.__peak = np.max([self.__peak, np.max(self.__pitch)])
+            self.__peak = np.max([self.__peak, np.max(pitch)])
          
         # zero crossings count
-        cross =  np.diff(np.signbit(self.__pitch))
+        cross =  np.diff(np.signbit(pitch))
         if np.sum(cross) == 1: #If more than 1 zero crossing is found then it's noise
             # determine position of zero crossing
             crossPosition = np.where(cross)[0][0]
             # determine polarity of zero-crossing (use np.gradient at index of zero crossing + 1 (the value where zero is crossed))
-            negativeZc = np.signbit(np.gradient(self.__pitch)[crossPosition + 1])
+            negativeZc = np.signbit(np.gradient(pitch)[crossPosition + 1])
             if negativeZc:
                 if self.__swingPhase == True and self.__secondCrossDetected == False:
                     elapsed_time = time.time() - self.__timestamp
@@ -443,7 +455,7 @@ class Analyzer():
         # 1 --> Walking in place and Marching
         # 2 --> Walking in place (con sensori sulle cosce)
         # 3 --> Swing
-        # 4 --> Unknown
+        # 4 --> Double step
         # 5 --> ROB's walking 
     
         if exType == 0: 
@@ -458,9 +470,9 @@ class Analyzer():
 
         #elif exType == 3:
         elif exType == 4: 
-            print("Unknown")
+            print("Double Step Analyzer")
             print('...analyzer daemon {:d} started'.format(num))
-            self.unknown()
+            self.doubleStepDetector()
             
         elif exType == 5: 
             print("Rob's Step Analyzer")

@@ -8,9 +8,11 @@ class LegDetected():
 
     def set(self, value):
         with self.value.get_lock():
+            if self.value.value == value:
+                return False    # not setted
             self.value.value = value
             print("gamba in movimento rilevata")
-            return
+            return True # setted
     def get(self):
         with self.value.get_lock():
             return self.value.value

@@ -3,11 +3,31 @@ import matplotlib.pyplot as plt
 
 def enlarge_numbers(numbers):
     enlarged_numbers = []
+    # for num in numbers:
+    #     num = num + 10
+    #     if num < 0:
+    #         new = (num**5)/100000
+    #         enlarged_numbers.append((new if new > -30 else -30))  # Eleva al cubo solo i numeri positivi
+    #     else:
+    #         enlarged_numbers.append(num)  # Non eva al cubo solo i numeri negativi
     for num in numbers:
-        if num > 0:
-            enlarged_numbers.append(num ** 2)  # Eleva al quadrato solo i numeri positivi
+        num = num - 10
+        if num < 0:
+            enlarged_numbers.append(num)  # Eleva al cubo solo i numeri positivi
         else:
-            enlarged_numbers.append(num)  # Mantieni gli zeri e i numeri negativi invariati
+            new = (num**5)/1500
+            enlarged_numbers.append((new if new < 30 else 30))  # Non eva al cubo solo i numeri negativi
+    return enlarged_numbers
+
+def enlarge_numbers2(numbers):
+    enlarged_numbers = []
+    for num in numbers:
+        num = num + 10
+        if num < 0:
+            new = (num**5)/1500
+            enlarged_numbers.append((new if new > -30 else -30))  # Eleva al cubo solo i numeri positivi
+        else:
+            enlarged_numbers.append(num)  # Non eva al cubo solo i numeri negativi
     return enlarged_numbers
 
 # Carica i dati dal file numpy
@@ -16,7 +36,7 @@ data = np.load(filename + ".npy")
 
 # Separare i dati
 pitch0 = enlarge_numbers(data[0])
-pitch1 = enlarge_numbers(data[1])
+pitch1 = enlarge_numbers2(data[1])
 
 # Calcola il numero di campioni
 num_samples = len(pitch0)

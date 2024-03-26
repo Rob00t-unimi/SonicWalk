@@ -36,8 +36,9 @@ class Analyzer():
         self.__swingPhase = False
         self.__active = False
         self.__completeMovements = 0    # ex. steps
-        self.__trasholdRange = 1.5
+        self.__trasholdRange = 3.0
         self.__legDetected = False
+        self.__foundedPitch = False
         self.__pos = True
         self.__min = 0.0
         self.__minHistory = np.full(self.__history_sz, -5.0, dtype=np.float64)
@@ -156,7 +157,7 @@ class Analyzer():
         self.__nextWindow()
 
 
-        self.__threshold = 10
+        self.__threshold = 12
         if (self.__exType == 1):
             self.__pitch = - self.__pitch
         self.__pitch = self.__pitch - self.__threshold
@@ -174,16 +175,13 @@ class Analyzer():
             if negativeZc:
                 if self.__swingPhase == True:
                     elapsed_time = time.time() - self.__timestamp
-                    if self.__peak >= self.__threshold - self.__trasholdRange and elapsed_time > self.__timeThreshold:
+                    if elapsed_time > self.__timeThreshold:
                         # a step is valid only if last peak is greater than adaptive threshold 
                         # minus a constant angle to allow angles less than the minimum to be re gistered
                         self.__swingPhase = False #swing phase is set to false only when step is valid
                         self.__timestamp = time.time() # reset timestamp (new step)
                         _ = self.__samples[self.__sharedIndex.value()].play()
                         self.__sharedIndex.increment()
-
-                        # update peak history with last peak
-                        self.__peakHistory[self.__completeMovements % self.__history_sz] = self.__peak
 
                         # increment step count
                         self.__completeMovements += 1
@@ -242,7 +240,7 @@ class Analyzer():
         # quando rilevo lo zero crossing positivo nel processo 2 setto una variabile condivisa ai 2 processi su true cosi da comunicare al processo 1 che 
         # il segnale 2 è quello che stavamo cercando e si trova nel processo 2, di conseguenza il processo 1 capisce di avere il segnale 1
 
-        pitch = self.__pitch - 11           # aumentando il valore sottratto si aumenta la precisione nella rilevazione tuttavia aumenta l'ampiezza del passo richiesto
+        pitch = self.__pitch - 7           # aumentando il valore sottratto si aumenta la precisione nella rilevazione tuttavia aumenta l'ampiezza del passo richiesto
                                             # diminuendo si perde una corretta rilevazione
         
         if displacement is not None:
@@ -253,8 +251,8 @@ class Analyzer():
             crossPosition = np.where(pos)[0][0]
             negativeZc = np.signbit(np.gradient(pitch)[crossPosition + 1])
             if not negativeZc:
-                self.__sharedLegDetected.set(True)
-                self.__legDetected = True
+                setted = self.__sharedLegDetected.set(True)
+                if setted: self.__legDetected = True
         return    
         
     
@@ -269,61 +267,53 @@ class Analyzer():
             if self.__endController() : return
             self.__nextWindow()
 
-            pos = self.__pitch -5
-            neg = self.__pitch +5
+            # traslo per togliere rumore
+            pos = self.__pitch - 7
+            neg = self.__pitch + 7
+            
+            # divido i campioni >= 0 da quelli <= 0
             for index, s in enumerate(self.__pitch):
                 if s <= 0:
                     pos[index] = 0
-                elif s >= 0:
+                if s >= 0:
                     neg[index] = 0
 
             if self.__pos:
-
-                lastPeak = self.__peak
+                # analizzo i positivi cercando i picchi
+                last = self.__peak
                 self.__peak = np.max(pos)
-                if lastPeak > self.__peak:
+                current = self.__peak
+            else: 
+                # analizzo i negativi cercando i minimi
+                # lo faccio ribaltando e cercando comunque i massimi
+                last = self.__min
+                neg = - neg
+                self.__min = np.max(neg)
+                current = self.__min
+
+            if last > current:
 
                     elapsed_time = time.time() - self.__timestamp
-                    if self.__peak >= self.__threshold - self.__trasholdRange and elapsed_time > self.__timeThreshold:
+                    if last >= self.__threshold - self.__trasholdRange and elapsed_time > self.__timeThreshold*5:
 
                         # a step is valid only if last peak is greater than adaptive threshold 
                         # minus a constant angle to allow angles less than the minimum to be re gistered
                         self.__timestamp = time.time() # reset timestamp (new step)
                         _ = self.__samples[self.__sharedIndex.value()].play()
                         self.__sharedIndex.increment()
-                        # update peak history with last peak
-                        self.__peakHistory[self.__completeMovements % self.__history_sz] = self.__peak
 
-                        # update threshold
-                        newthresh = np.min(self.__peakHistory)
+                        # update history and threshold
+                        if self.__pos: 
+                           self.__peakHistory[self.__completeMovements % self.__history_sz] = last 
+                           newthresh = np.min(self.__minHistory)
+                        else: 
+                           self.__minHistory[self.__completeMovements % self.__history_sz] = last
+                           newthresh = np.min(self.__peakHistory)
                         # ensure that threshold cannot go below 2.0
                         self.__threshold = newthresh if newthresh > 5.0 else 5.0
+
                         self.__completeMovements += 1
-                        self.__pos = False
-
-            else:
-
-                lastMin = self.__min
-                self.__min = np.min(neg)
-                if lastMin < self.__min:
-
-                    elapsed_time = time.time() - self.__timestamp
-                    if self.__min <=  self.__trasholdRange - self.__threshold and self.__timeThreshold:
-                    
-                        # a step is valid only if last peak is greater than adaptive threshold 
-                        # minus a constant angle to allow angles less than the minimum to be re gistered
-                        self.__timestamp = time.time() # reset timestamp (new step)
-                        _ = self.__samples[self.__sharedIndex.value()].play()
-                        self.__sharedIndex.increment()
-                        # update peak history with last peak
-                        self.__minHistory[self.__completeMovements % self.__history_sz] = self.__min
-
-                        # update threshold
-                        newthresh = - np.min(self.__peakHistory)
-                        # ensure that threshold cannot go below 2.0
-                        self.__threshold = -newthresh if -newthresh > 5.0 else 5.0
-                        self.__completeMovements += 1
-                        self.__pos = True
+                        self.__pos = not self.__pos
 
         
     # RILEVAZIONE MOVIMENTO GAMBA "FERMA"
@@ -333,54 +323,48 @@ class Analyzer():
         # in questo caso però mi interessano entrambi gli zero crossing che si verificano uno prima e uno dopo il picco
         # quindi cerco uno zero crossing positivo, faccio suonare
         # cerco un picco valido, quando lo trovo cerco uno zero crossing negativo
-        # quando trovo lo zero crossing negativo faccio suonare e cerco lo zero crossing positivo
+        # quando trovo lo zero crossing negativo faccio suonare e cerco un minimo valido, quando lo trovo cerco uno zero crossing positivo
+
+        # per semplificare il codice faccio il valore assoluto e traslo in modo da validare tutti come picchi invece che alternare tra picchi e minimi
         
         if self.__endController() : return
         self.__nextWindow()
 
-        if self.__pos == True: 
-            # anticipo traslando in alto
-            # traslo di 5
-            pitch = self.__pitch + 5
+        # faccio il valore assoluto ottenendo solo picchi
+        # traslo per ottenere zero crossing e anticipare
 
-            cross =  np.diff(np.signbit(pitch))
-            if np.sum(cross) == 1: #If more than 1 zero crossing is found then it's noise
-                # determine position of zero crossing
-                crossPosition = np.where(cross)[0][0]
-                # determine polarity of zero-crossing (use np.gradient at index of zero crossing + 1 (the value where zero is crossed))
-                negativeZc = np.signbit(np.gradient(pitch)[crossPosition + 1])
-                if not negativeZc:
-                    elapsed_time = time.time() - self.__timestamp
-                    if elapsed_time > self.__timeThreshold*2:
-                        self.__timestamp = time.time()
-                        _ = self.__samples[self.__sharedIndex.value()].play()
-                        self.__sharedIndex.increment()
-                        self.__completeMovements += 1
-                        self.__pos = False
+        pitch = abs(self.__pitch)
 
-        if self.__pos == False:
-            # il piede potrebbe metterci più tempo a raggiungere lo zero crossing negativo di quello positivo
-            # si può  cercare di compensare usando displacement diversi, quello per il positivo più basso
-            # anticipo traslando in basso
-            # traslo di -5 per lo zero crossing negativo
-            pitch = self.__pitch - 5     # 7 rileva ancora passi molto piccoli
-            
-            # zero crossings count
-            cross =  np.diff(np.signbit(pitch))
-            if np.sum(cross) == 1: #If more than 1 zero crossing is found then it's noise
-                # determine position of zero crossing
-                crossPosition = np.where(cross)[0][0]
-                # determine polarity of zero-crossing (use np.gradient at index of zero crossing + 1 (the value where zero is crossed))
-                negativeZc = np.signbit(np.gradient(pitch)[crossPosition + 1])
-                if negativeZc:
-                    elapsed_time = time.time() - self.__timestamp
-                    if elapsed_time > self.__timeThreshold*2:
-                        self.__swingPhase = False #swing phase is set to false only when step is valid
-                        self.__timestamp = time.time() # reset timestamp (new step)
-                        _ = self.__samples[self.__sharedIndex.value()].play()
-                        self.__sharedIndex.increment()
-                        self.__completeMovements += 1
-                        self.__pos = True    
+        if self.__foundedPitch == False:
+            self.__peak = np.max([self.__peak, np.max(pitch)])
+            self.__foundedPitch = True
+
+        if self.__pos: pitch = pitch - 5  # quando il piede poggia avanti poggia direttamente il tallone ed è più veloce a raggiungere lo zero crossing
+        else: pitch = pitch -7            # quando il piede poggia indietro poggia prima la punta poi il tallone e quindi raggiunge piu lentamente lo zero crossing
+        # il piede potrebbe metterci più tempo a raggiungere lo zero crossing negativo di quello positivo
+        # si può cercare di compensare usando displacement diversi
+
+        cross =  np.diff(np.signbit(pitch))
+        if np.sum(cross) == 1:
+            crossPosition = np.where(cross)[0][0]
+            negativeZc = np.signbit(np.gradient(pitch)[crossPosition + 1])
+            if negativeZc:
+                elapsed_time = time.time() - self.__timestamp
+                if self.__foundedPitch and elapsed_time > self.__timeThreshold*4:
+                    self.__foundedPitch = False
+                    self.__pos = not self.__pos
+                    # update time stamp
+                    self.__timestamp = time.time()
+                    # play sound
+                    _ = self.__samples[self.__sharedIndex.value()].play()
+                    self.__sharedIndex.increment()
+                    # increment step count
+                    self.__completeMovements += 1
+                # reset peak
+                self.__peak = 0.0
+
+
+
     
     ## SWING
 
@@ -402,7 +386,7 @@ class Analyzer():
         self.__nextWindow()
 
         if self.__sharedLegDetected.get() == False:
-            self.detectLeg(displacement=3)
+            self.detectLeg(displacement=10)
 
         if self.__sharedLegDetected.get() == True : 
             if self.__legDetected == False:
@@ -436,11 +420,11 @@ class Analyzer():
                     self.__completeMovements += 1
     
     def backwardLeg(self):
-        # i picchi sono sempre sopra -15
-        # i minimi sono sempre sotto -15
+        # i picchi sono sempre sopra -10
+        # i minimi sono sempre sotto -10
         # posso traslare di 15 e cercare gli zero crossing negativi
         
-        pitch = self.__pitch + 15
+        pitch = self.__pitch + 10
         cross =  np.diff(np.signbit(pitch))
         if np.sum(cross) == 1: #If more than 1 zero crossing is found then it's noise
             # determine position of zero crossing
@@ -455,8 +439,11 @@ class Analyzer():
                     self.__sharedIndex.increment()
                     self.__completeMovements += 1
     
-    def __call__(self, data, index, num, sharedIndex, samples, exType, sharedLegBool):
+    def __call__(self, data, index, num, sharedIndex, samples, exType, sharedLegBool, first):
         print('starting analyzer daemon.. {:d}'.format(num))
+
+        if first: time.sleep(0.003)
+        print(("primo: " if first else "secondo") +str(time.time()))
 
         self.__num = num
         self.__data = data
@@ -467,8 +454,9 @@ class Analyzer():
         self.__active = True
         self.__exType = exType
         self.__sharedLegDetected = sharedLegBool
+        self.isFirstProcess = first
 
-        # exType
+        # exType= False
         # 0 --> walking
         # 1 --> Walking in place and Marching
         # 2 --> Walking in place (con sensori sulle cosce)

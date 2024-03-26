@@ -396,6 +396,11 @@ class MtwAwinda(object):
         data1 = RawArray('d', 1000)
 
         if any((plot, analyze)):
+
+            if plot:
+                plotter = Plotter()
+                plotter_process = mp.Process(target=plotter, args=(data0, data1, index0, index1), daemon=True)
+                plotter_process.start()
                 
             if analyze:
                 #samples are loaded only if analyzer is has to spawn
@@ -404,18 +409,14 @@ class MtwAwinda(object):
                 analyzer0 = Analyzer()
                 analyzer1 = Analyzer()
                 sharedLegBool = LegDetected() 
-                analyzer_process0 = mp.Process(target=analyzer0, args=(data0, index0, 0, sharedIndex, samples, exType, sharedLegBool), daemon=True)
-                analyzer_process1 = mp.Process(target=analyzer1, args=(data1, index1, 1, sharedIndex, samples, exType, sharedLegBool), daemon=True)
+                first = True
+                analyzer_process0 = mp.Process(target=analyzer0, args=(data0, index0, 0, sharedIndex, samples, exType, sharedLegBool, first), daemon=True)
+                analyzer_process1 = mp.Process(target=analyzer1, args=(data1, index1, 1, sharedIndex, samples, exType, sharedLegBool, not first), daemon=True)
                 analyzer_process0.start()
                 analyzer_process1.start()
                 #delete local version of samples 
                 del samples
                 gc.collect()
-            
-            if plot:
-                plotter = Plotter()
-                plotter_process = mp.Process(target=plotter, args=(data0, data1, index0, index1), daemon=True)
-                plotter_process.start()
             
             time.sleep(1) #wait one second before starting orientation reset and to allow processes to properly start
             self.__resetOrientation()

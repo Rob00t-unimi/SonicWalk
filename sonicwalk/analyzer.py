@@ -24,6 +24,7 @@ import simpleaudio
 import time
 import numpy as np
 from scipy.signal import correlate
+from scipy.ndimage import gaussian_filter1d
 
 class Analyzer():
     def __init__(self) -> None:
@@ -248,6 +249,8 @@ class Analyzer():
         else:                                       # diminuendo si perde una corretta rilevazione
             pitch = self.__pitch
 
+        if pitch is not None: pitch = gaussian_filter1d(pitch, sigma=1)
+
         pos = np.diff(np.signbit(pitch))
         if np.sum(pos) == 1:    
             crossPosition = np.where(pos)[0][0]
@@ -409,26 +412,17 @@ class Analyzer():
 
         # Algoritmo:
         # cerco zero crossing positivi, poi picchi positivi e cosi via
+        # non suono subito quando trovo un picco altrimenti sarei troppo in anticipo, suono dopo un tot di tempo dalla rilevazione solo se sono sotto una soglia fissa
 
         # for i, tmppitch in enumerate(self.__pitch):
         #     if tmppitch < 0:
         #         self.__pitch[i] = (tmppitch**3)/1000
         pitch = self.__pitch + 20
 
-        if self.__pos == False:
-            last = self.__peak
-            current = np.max(pitch)
-            # if self.__peak > self.__threshold:
-            if last > current:
-                self.__foundedPitch = True
-                self.__peak = last
-            else:
-                self.__peak = current
-
         if self.__foundedPitch == True:
-            if np.min(self.__pitch ) <= 7:
+            if np.min(self.__pitch ) <= 15:
                 elapsed_time = time.time() - self.__timestamp
-                if elapsed_time > self.__timeThreshold*4:
+                if elapsed_time > self.__timeThreshold*3:
                     self.__timestamp = time.time()
                     _ = self.__samples[self.__sharedIndex.value()].play()
                     self.__sharedIndex.increment()
@@ -437,6 +431,19 @@ class Analyzer():
                     self.__pos = True
                     self.__peak = 0.0
                     self.__foundedPitch = False
+
+        if self.__pos == False:
+            last = self.__peak
+            current = np.max(pitch)
+            # if self.__peak > self.__threshold:
+            if last > current:
+                elapsed_time = time.time() - self.__timestamp
+                if elapsed_time > self.__timeThreshold*4:
+                    self.__timestamp = time.time()
+                    self.__foundedPitch = True
+                    self.__peak = last
+            else:
+                self.__peak = current
  
         cross =  np.diff(np.signbit(pitch))
         if np.sum(cross) == 1:
@@ -444,7 +451,7 @@ class Analyzer():
             negativeZc = np.signbit(np.gradient(pitch)[crossPosition + 1])
             if not negativeZc:
                 elapsed_time = time.time() - self.__timestamp
-                if self.__pos and elapsed_time > self.__timeThreshold*4:
+                if self.__pos and elapsed_time > self.__timeThreshold*5:
                     self.__pos = False
                     # update time stamp
                     self.__timestamp = time.time()
@@ -483,9 +490,12 @@ class Analyzer():
                 self.forwardLeg()
     
 
+    # potrebbe verificarsi che gli angoli negativi sono proporzionlmente più bassi rispetto ai positivi quindi si dovrebbero adottare traslazioni differenti
     # la differenza di traslazioni è data dagli angoli che fanno i piedi generalmente, gli angoli di norma variano, 
     # il piede indietro punta in fuori
     # il piede avanti punta avanti
+                
+    # rimane il problema della piegatura del ginocchio
 
     def forwardLeg(self):
         # i minimi sono sempre sopra 10

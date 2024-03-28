@@ -59,11 +59,12 @@ import multiprocessing as mp
 import numpy as np
 import simpleaudio as sa
 from multiprocessing.sharedctypes import RawValue, RawArray
-from sharedCircularIndex import SharedCircularIndex
+from sharedVariables import SharedCircularIndex
 from plotter import Plotter
 from analyzer import Analyzer
 from threading import Lock
-from legDetected import LegDetected
+from sharedVariables import LegDetected
+from sharedVariables import ProcessWaiting
 
 
 class MtwCallback(xda.XsCallback):
@@ -409,9 +410,10 @@ class MtwAwinda(object):
                 analyzer0 = Analyzer()
                 analyzer1 = Analyzer()
                 sharedLegBool = LegDetected() 
+                sharedSyncronizer = ProcessWaiting()
                 first = True
-                analyzer_process0 = mp.Process(target=analyzer0, args=(data0, index0, 0, sharedIndex, samples, exType, sharedLegBool, first), daemon=True)
-                analyzer_process1 = mp.Process(target=analyzer1, args=(data1, index1, 1, sharedIndex, samples, exType, sharedLegBool, not first), daemon=True)
+                analyzer_process0 = mp.Process(target=analyzer0, args=(data0, index0, 0, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start), daemon=True)
+                analyzer_process1 = mp.Process(target=analyzer1, args=(data1, index1, 1, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start), daemon=True)
                 analyzer_process0.start()
                 analyzer_process1.start()
                 #delete local version of samples 

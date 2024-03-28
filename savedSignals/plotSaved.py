@@ -9,6 +9,10 @@ data = np.load(filename + ".npy")
 pitch0 = data[0]
 pitch1 = data[1]
 
+for i, pitch in enumerate(pitch1):
+    if pitch < 0:
+        pitch1[i] = (pitch**3)/1000
+
 # Calcola il numero di campioni
 num_samples = len(pitch0)
 

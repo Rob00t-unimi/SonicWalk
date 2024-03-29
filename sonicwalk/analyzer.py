@@ -26,6 +26,12 @@ import numpy as np
 from scipy.signal import correlate
 from scipy.ndimage import gaussian_filter1d
 
+class ZeroCrossingDetectionResult:
+    def __init__(self, found_crossing=False, gradient=None):
+        self.founded = found_crossing
+        self.gradient = gradient
+        self.absGradient = None if gradient is None else abs(gradient)
+
 class Analyzer():
     def __init__(self) -> None:
         self.__winsize = 15 #window duration is 8.33ms * 15 ~ 125 ms
@@ -42,7 +48,12 @@ class Analyzer():
         self.__foundedPitch = False
         self.__pos = True
         self.__min = 0.0
-        self.__minHistory = np.full(self.__history_sz, -5.0, dtype=np.float64)
+        self.__minHistory = np.full(self.__history_sz, 5.0, dtype=np.float64)
+        self.__gradientThreshold = 0.3
+        self.__gradientHistory = np.full(self.__history_sz, 0.5, dtype=np.float64)
+
+        self.__genericBoolFlagFalse = False
+        self.__genericBoolFlagTrue = True
 
         self.__previousWindow = None
         self.__window = None
@@ -152,7 +163,7 @@ class Analyzer():
             else:
                 return False
     
-    def zeroCrossingDetector(self, window, positive = True):
+    def zeroCrossingDetector(self, window, positive = True, maxAbsGradient = None):
         """
         Detect zero crossings in the window.
 
@@ -171,15 +182,35 @@ class Analyzer():
         if np.sum(cross) == 1: #If more than 1 zero crossing is found then it's noise
             # determine position of zero crossing
             crossPosition = np.where(cross)[0][0]
-            # determine polarity of zero-crossing (use np.gradient at index of zero crossing + 1 (the value where zero is crossed))
-            negativeZc = np.signbit(np.gradient(window)[crossPosition + 1])
-            if positive:
-                return not negativeZc
-            else:
-                return negativeZc
+
+            # determine the gradient of the zero crossing
+            gradient = np.gradient(window)[crossPosition + 1]
+            absGradient = abs(gradient)
+            if maxAbsGradient is None or absGradient < maxAbsGradient:
+                # determine polarity of zero-crossing (use np.gradient at index of zero crossing + 1 (the value where zero is crossed))
+                negativeZc = np.signbit(gradient)
+
+                founded = not negativeZc if positive else negativeZc
+
+                return ZeroCrossingDetectionResult(found_crossing=founded, gradient=gradient)    
         else:
             return None
         
+    def _setNewGradientThreshold(self, newGradient, alpha = 0.5):
+
+        # alfa compreso tra zero e 1 
+        # alfa minore da più peso alla media vecchia
+        # alfa maggiore da più peso alla media nuova
+        
+        self.__gradientHistory[1:] = self.__gradientHistory[:-1]
+        self.__gradientHistory[0] = newGradient
+
+        # EMA (Exponential Moving Average)
+        # Nella prima posizione della history ho il valore più recente, nell'ultima il più vecchio
+        mean = np.mean(self.__gradientHistory)
+        newMean = (alpha * mean) + ((1-alpha)*self.__gradientThreshold)
+        self.__gradientThreshold =  newMean if newMean > 0.3 else 0.3
+
 
     ################################ STEP DETECTION =======================================================================
         
@@ -204,7 +235,7 @@ class Analyzer():
         # Zero crossing detection
         negativeZc = self.zeroCrossingDetector(positive=False, window = self.__pitch)
 
-        if negativeZc:
+        if negativeZc is not None and negativeZc.founded:
             if self.__swingPhase == True:
                 elapsed_time = time.time() - self.__timestamp
                 if self.__peak >= self.__threshold - 3.0 and elapsed_time > self.__timeThreshold:
@@ -225,7 +256,7 @@ class Analyzer():
                     self.__threshold = newthresh if newthresh > 5.0 else 5.0 # ensure that threshold cannot go below 2.0
 
                 self.__peak = 0.0 #reset peak whenever a zero crossing is encountered (negative gradient)
-        elif not negativeZc: #positiveZc
+        elif negativeZc is not None and not negativeZc.founded: #positiveZc
             self.__swingPhase = True
 
     ################################ MARCH DETECTION ======================================================== && Rob ========
@@ -268,7 +299,7 @@ class Analyzer():
 
         # Zero crossing detection
         negativeZc = self.zeroCrossingDetector(positive=False, window = self.__pitch)
-        if negativeZc:
+        if negativeZc is not None and negativeZc.founded:
             if self.__swingPhase == True:
                 elapsed_time = time.time() - self.__timestamp
                 if elapsed_time > self.__timeThreshold:
@@ -286,7 +317,7 @@ class Analyzer():
                     self.__completeMovements += 1
                     #print(self.__stg)
                 self.__peak = 0.0 #reset peak whenever a zero crossing is encountered (negative gradient)
-        elif not negativeZc: 
+        elif negativeZc is not None and not negativeZc.founded: 
             # we found positive Zc so we can set swing phase on true
             self.__swingPhase = True
 
@@ -328,17 +359,14 @@ class Analyzer():
 
         if pitch is not None: pitch = gaussian_filter1d(pitch, sigma=1)
 
-        pos = np.diff(np.signbit(pitch))
-        if np.sum(pos) == 1:    
-            crossPosition = np.where(pos)[0][0]
-            negativeZc = np.signbit(np.gradient(pitch)[crossPosition + 1])
-            if not negativeZc:
-                if self.__peak < - displacement - 0.1:
-                    self.__peak = 0.0
-                    setted = self.__sharedLegDetected.set(True)
-                    if setted: self.__legDetected = True
-                else:
-                    self.__peak = np.minimum(np.min(pitch), self.__peak)
+        positiveZc = self.zeroCrossingDetector(window = pitch, positive=True)
+        if positiveZc is not None and positiveZc.founded:
+            if self.__peak < - displacement - 0.1:
+                self.__peak = 0.0
+                setted = self.__sharedLegDetected.set(True)
+                if setted: self.__legDetected = True
+            else:
+                self.__peak = np.minimum(np.min(pitch), self.__peak)
         return   
 
 
@@ -362,7 +390,10 @@ class Analyzer():
                 self.stepLeg()
         return 
         
-    
+    def _updateWindows(self):
+        self.__previousWindow = self.__window
+        self.__window = self.__pitch
+        
     # RILEVAZIONE MOVIMENTO GAMBA "CHE SI MOUOVE"
     def stepLeg(self):
             
@@ -375,14 +406,10 @@ class Analyzer():
 
             if self.__endController() : return
             self.__nextWindow()
-
-            def _updateWindows():
-                self.__previousWindow = self.__window
-                self.__window = self.__pitch
-
+            
             # If the first 2 windows haven't arrived yet do nothing.
             if self.__previousWindow is None or self.__window is None: 
-                _updateWindows() 
+                self._updateWindows() 
                 return
 
             # Displacement only for denoize is optional (any involuntary movements)
@@ -426,7 +453,7 @@ class Analyzer():
                         self.__pos = not self.__pos # alternate searching types of pitch every 2 peaks founded
             
             # update windows
-            _updateWindows() 
+            self._updateWindows() 
 
 
 
@@ -445,53 +472,6 @@ class Analyzer():
         
         if self.__endController() : return
         self.__nextWindow()
-
-        # faccio il valore assoluto ottenendo solo picchi
-        # traslo per ottenere zero crossing e anticipare
-
-        # pitch = abs(self.__pitch)
-
-        # if self.__pos: pitch = pitch - 5  # quando il piede poggia avanti poggia direttamente il tallone ed è più veloce a raggiungere lo zero crossing
-        # else: pitch = pitch -7            # quando il piede poggia indietro poggia prima la punta poi il tallone e quindi raggiunge piu lentamente lo zero crossing
-        # # il piede potrebbe metterci più tempo a raggiungere lo zero crossing negativo di quello positivo
-        # # si può cercare di compensare usando displacement diversi
-
-        # # pitch = pitch - 5
-
-        # QUESTO MODO DI RILEVARE I PICCHI È SBAGLIATISSIMO, METTE TRUE APPENA TROVA UN NUMERO MAGGIORE DI UN ALTRO NON VA BENE IN QUESTO CASO.. DOVREBBE ASPETTARE LO ZERO CROSSING COSI...!!
-        # if self.__foundedPitch == False:
-        #     self.__peak = np.max([self.__peak, np.max(pitch)])
-        #     self.__foundedPitch = True
-
-        # cross =  np.diff(np.signbit(pitch))
-        # if np.sum(cross) == 1:
-        #     crossPosition = np.where(cross)[0][0]
-        #     negativeZc = np.signbit(np.gradient(pitch)[crossPosition + 1])
-        #     if negativeZc:
-        #         elapsed_time = time.time() - self.__timestamp
-        #         if self.__foundedPitch and elapsed_time > self.__timeThreshold*3.0:
-        #             self.__foundedPitch = False
-        #             self.__pos = not self.__pos
-        #             # update time stamp
-        #             self.__timestamp = time.time()
-        #             # play sound
-        #             _ = self.__samples[self.__sharedIndex.value()].play()
-        #             self.__sharedIndex.increment()
-        #             # increment step count
-        #             self.__completeMovements += 1
-        #         # reset peak
-        #         self.__peak = 0.0
-
-        # if self.__endController() : return
-        # self.__nextWindow()
-
-
-
-
-
-
-
-
 
 
         # faccio il valore assoluto ottenendo solo picchi
@@ -517,61 +497,140 @@ class Analyzer():
         # non suono subito quando trovo un picco altrimenti sarei troppo in anticipo, suono dopo un tot di tempo dalla rilevazione solo se sono sotto una soglia fissa
 
 
+        # # for i, tmppitch in enumerate(self.__pitch):
+        # #     if tmppitch < 0:
+        # #         self.__pitch[i] = (tmppitch**3)/1000
+        # pitch = self.__pitch + 20
 
+        # if self.__foundedPitch == True:
+        #     if np.min(self.__pitch ) <= 15:
+        #         elapsed_time = time.time() - self.__timestamp
+        #         if elapsed_time > self.__timeThreshold*3:
+        #             self.__timestamp = time.time()
+        #             _ = self.__samples[self.__sharedIndex.value()].play()
+        #             self.__sharedIndex.increment()
+        #             # increment step count
+        #             self.__completeMovements += 1
+        #             self.__pos = True
+        #             self.__peak = 0.0
+        #             self.__foundedPitch = False
 
-
-
-
-
-
-
-        # for i, tmppitch in enumerate(self.__pitch):
-        #     if tmppitch < 0:
-        #         self.__pitch[i] = (tmppitch**3)/1000
-        pitch = self.__pitch + 20
-
-        if self.__foundedPitch == True:
-            if np.min(self.__pitch ) <= 15:
-                elapsed_time = time.time() - self.__timestamp
-                if elapsed_time > self.__timeThreshold*3:
-                    self.__timestamp = time.time()
-                    _ = self.__samples[self.__sharedIndex.value()].play()
-                    self.__sharedIndex.increment()
-                    # increment step count
-                    self.__completeMovements += 1
-                    self.__pos = True
-                    self.__peak = 0.0
-                    self.__foundedPitch = False
-
-        if self.__pos == False:
-            last = self.__peak
-            current = np.max(pitch)
-            # if self.__peak > self.__threshold:
-            if last > current:
-                elapsed_time = time.time() - self.__timestamp
-                if elapsed_time > self.__timeThreshold*4:
-                    self.__timestamp = time.time()
-                    self.__foundedPitch = True
-                    self.__peak = last
-            else:
-                self.__peak = current
+        # if self.__pos == False:
+        #     last = self.__peak
+        #     current = np.max(pitch)
+        #     # if self.__peak > self.__threshold:
+        #     if last > current:
+        #         elapsed_time = time.time() - self.__timestamp
+        #         if elapsed_time > self.__timeThreshold*4:
+        #             self.__timestamp = time.time()
+        #             self.__foundedPitch = True
+        #             self.__peak = last
+        #     else:
+        #         self.__peak = current
  
-        cross =  np.diff(np.signbit(pitch))
-        if np.sum(cross) == 1:
-            crossPosition = np.where(cross)[0][0]
-            negativeZc = np.signbit(np.gradient(pitch)[crossPosition + 1])
-            if not negativeZc:
-                elapsed_time = time.time() - self.__timestamp
-                if self.__pos and elapsed_time > self.__timeThreshold*5:
-                    self.__pos = False
-                    # update time stamp
-                    self.__timestamp = time.time()
-                    # play sound
-                    _ = self.__samples[self.__sharedIndex.value()].play()
-                    self.__sharedIndex.increment()
-                    # increment step count
-                    self.__completeMovements += 1
-    
+        # cross =  np.diff(np.signbit(pitch))
+        # if np.sum(cross) == 1:
+        #     crossPosition = np.where(cross)[0][0]
+        #     negativeZc = np.signbit(np.gradient(pitch)[crossPosition + 1])
+        #     if not negativeZc:
+        #         elapsed_time = time.time() - self.__timestamp
+        #         if self.__pos and elapsed_time > self.__timeThreshold*5:
+        #             self.__pos = False
+        #             # update time stamp
+        #             self.__timestamp = time.time()
+        #             # play sound
+        #             _ = self.__samples[self.__sharedIndex.value()].play()
+        #             self.__sharedIndex.increment()
+        #             # increment step count
+        #             self.__completeMovements += 1
+
+            
+
+
+
+
+
+
+        
+        # # for i, tmppitch in enumerate(self.__pitch):
+        # #     if tmppitch < 0:
+        # #         self.__pitch[i] = (tmppitch**3)/1000
+        # self.__pitch = self.__pitch + 20
+
+        # # Cerco lo zero crossing positivo
+        # positiveZc = self.zeroCrossingDetector(window = self.__pitch, positive = True)
+        # if positiveZc:
+        #     elapsed_time = time.time() - self.__timestamp
+        #     if self.__pos and elapsed_time > self.__timeThreshold:    # se self.__pos è True ho già trovaro un picco quindi lo Zc è valido    
+        #                                                                 # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
+        #         self.__pos = False
+        #         # update time stamp
+        #         self.__timestamp = time.time()
+        #         # play sound and increment step count
+        #         self._playSample()
+
+        # if self.__pos == False:
+        #     if self.__previousWindow is None or self.__window is None:
+        #         return
+        #     peak = self.peakFinder(window = self.__window, current_window=self.__pitch, previous_window=self.__previousWindow)
+        #     elapsed_time = time.time() - self.__timestamp
+        #     if peak and elapsed_time > self.__timeThreshold:      # con una threshold temporale alta se 2 picchi sono molto vicini vengono fusi, evitiamo di registrare picchi doppi dovuti al piegamento del ginocchio
+        #         self.__timestamp = time.time()
+        #         self.__peak = np.max(self.__window)
+        #         self._playSample()
+        #         self.__pos = True
+
+        # self._updateWindows()
+
+
+
+
+
+
+
+
+        # Se non è stato rilevato uno zero crossing negativo con gradiente alto cerco uno zero crossing con gradiente entro la soglia
+        # if not self.__genericBoolFlagFalse:
+
+        # In condizioni di ricerca dei gradienti entro la soglia posso anticipare poichè ho picchi più alti
+        pitch = (self.__pitch - 5) if self.__pos else (self.__pitch + 5)
+
+        # ricerca di zero crossing positivo o negativo entro la soglia
+        positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+0.25)
+        if positiveZc is not None and ((positiveZc.founded and self.__pos) or (not positiveZc.founded and not self.__pos)):
+            elapsed_time = time.time() - self.__timestamp
+            if elapsed_time > self.__timeThreshold*1.5:    # se self.__pos è True ho già trovaro un picco quindi lo Zc è valido    
+                                                        # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
+                self.__pos = not self.__pos     # switch research of zero crossing type
+                self.__timestamp = time.time()  # update time stamp
+                self._playSample()  # play sound and increment step count
+            self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=0.85)
+            print("gradient: " + str(self.__gradientThreshold))
+
+        #     # Se non ho rilevato uno zero crossing entro la soglia cerco se c'è uno zero crossing negativo sopra soglia sul segnale non traslato
+        #     elif positiveZc is None:
+        #         negativeZc = self.zeroCrossingDetector(window = self.__pitch, positive = False)
+        #         if negativeZc is not None and negativeZc.founded:
+        #             elapsed_time = time.time() - self.__timestamp
+        #             if negativeZc.absGradient > self.__gradientThreshold and elapsed_time > self.__timeThreshold:
+        #                 # se l'ho trovato imposto la ricerca dello zero crossing positivo sotto soglia
+        #                 # questo mi consente di anticipare il successivo zero crossing negativo e suonare prima
+        #                 self.__genericBoolFlagFalse = True
+        #             self._setNewGradientThreshold(newGradient=negativeZc.absGradient, alpha=0.75)
+        # else:
+        #     print("here")
+        #     # ricerca di zero crossing positivo sopra soglia sul segnale non traslato, se lo trovo suono e reimposto la ricerca normale
+        #     positiveZc = self.zeroCrossingDetector(window = self.__pitch, positive = True)
+        #     if positiveZc is not None and positiveZc.founded:
+        #         if positiveZc.absGradient > self.__gradientThreshold:
+        #             self.__genericBoolFlagFalse = False
+        #             self.__pos = True
+        #             elapsed_time = time.time() - self.__timestamp
+        #             if elapsed_time > self.__timeThreshold:
+        #                 self.__timestamp = time.time()
+        #                 self._playSample()
+        #         self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=0.75)
+
 
     ################################ SWING DETECTION ======================================================== && Rob ========
 

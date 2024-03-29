@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     
-    duration = 20
+    duration = 40
     samplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2"
 
     with mtw.MtwAwinda(120, 19, samplesPath) as mtw:

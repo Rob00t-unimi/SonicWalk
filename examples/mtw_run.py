@@ -8,13 +8,15 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     
-    duration = 40
+    duration = 25
     samplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2"
+
+    plotPoints = True
 
     with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
         data = mtw.mtwRecord(duration, plot=True, analyze=True, exType = 4)
             # 0 --> walking
-            # 1 --> Walking in place (High Knees, Butt Kicks)
+            # 1 --> Walking in place (High Knees, Butt Kicks)3
             # 2 --> Walking in place (High Knees con sensori sulle cosce)
             # 3 --> Swing
             # 4 --> Double step
@@ -23,6 +25,25 @@ if __name__ == "__main__":
     data1 = data[0][1]
     index0 = data[1][0]
     index1 = data[1][1]
+
+    points0 = data[2][0]
+    points1 = data[2][1]
+
+    interestingPoints0 = []
+    interestingPoints1 = []
+
+    for point in points0:
+        if point != (-2000):
+            interestingPoints0.append(int(point))
+        else:
+            break
+
+    for point in points1:
+        if point != (-2000):
+            interestingPoints1.append(int(point))
+        else:
+            break
+    
 
     print("total size of buffers: 0: {:d} 1: {:d}".format(data0.size * data0.itemsize, data1.size * data1.itemsize))
 
@@ -36,32 +57,53 @@ if __name__ == "__main__":
     Fs0 = len(pitch0)/duration
     Fs1 = len(pitch1)/duration
 
-    #subtract DC component
-    balanced_data0 = pitch0 - np.mean(pitch0)
-    balanced_data1 = pitch1 - np.mean(pitch1)
+    time0 = np.arange(0, len(pitch0)) / Fs0
+    time1 = np.arange(0, len(pitch1)) / Fs1
 
-    #compute FFT 
-    fftPitch0 = np.fft.fft(balanced_data0)
-    fftPitch1 = np.fft.fft(balanced_data1)
+    # #subtract DC component
+    # balanced_data0 = pitch0 - np.mean(pitch0)
+    # balanced_data1 = pitch1 - np.mean(pitch1)
 
-    #get modulo of FFT coefficients
-    fftPitch0Mod = np.abs(fftPitch0)
-    fftPitch1Mod = np.abs(fftPitch1)
+    # #compute FFT 
+    # fftPitch0 = np.fft.fft(balanced_data0)
+    # fftPitch1 = np.fft.fft(balanced_data1)
 
-    fig, axs = plt.subplots(2)
+    # #get modulo of FFT coefficients
+    # fftPitch0Mod = np.abs(fftPitch0)
+    # fftPitch1Mod = np.abs(fftPitch1)
 
-    axs[0].plot(pitch0, label = 'pitch0')
-    axs[0].plot(pitch1, label = 'pitch1')
-    axs[0].set_title("Pitch angle")
+    # fig, axs = plt.subplots(3, figsize=(10, 10))  # Create 3 subplots
+    fig, axs = plt.subplots(2, figsize=(10, 10))  # Create 3 subplots
+
+
+    # Plot for the first signal and its scatter
+    axs[0].plot(time0, pitch0, label='pitch0')
+    axs[0].set_title("Pitch angle - Signal 1")
     axs[0].grid(True)
 
-    axs[1].plot(fftPitch0Mod[0:len(fftPitch0Mod)//2], label = 'fftPitch0')
-    axs[1].plot(fftPitch1Mod[0:len(fftPitch0Mod)//2], label = 'fftPitch1')
-    axs[1].set_title("FFT")
+    if len(interestingPoints0) > 0 and plotPoints:
+        axs[0].scatter(time0[interestingPoints0], pitch0[interestingPoints0], color='red')
+
+    # Plot for the second signal and its scatter
+    axs[1].plot(time1, pitch1, label='pitch1', color='green')
+    axs[1].set_title("Pitch angle - Signal 2")
+    axs[1].grid(True)
+
+    if len(interestingPoints1) > 0 and plotPoints:
+        axs[1].scatter(time1[interestingPoints1], pitch1[interestingPoints1], color='blue')
+
+    # # Plot for both FFTs
+    # axs[2].plot(fftPitch0Mod[0:len(fftPitch0Mod) // 2], label='fftPitch0')
+    # axs[2].plot(fftPitch1Mod[0:len(fftPitch0Mod) // 2], label='fftPitch1')
+    # axs[2].set_title("FFT")
+    # axs[2].legend()
+    # axs[2].grid(True)
+
+    plt.tight_layout()
     plt.show()
 
-    #zero crossings count
-    steps0 = (pitch0[:-1] * pitch0[1:] < 0).sum()/2
-    steps1 = (pitch1[:-1] * pitch1[1:] < 0).sum()/2
+    # # Zero crossings count
+    # steps0 = (pitch0[:-1] * pitch0[1:] < 0).sum() / 2
+    # steps1 = (pitch1[:-1] * pitch1[1:] < 0).sum() / 2
 
-    print("Total number of steps (offline count): {:f}".format(steps0 + steps1))
+    # print("Total number of steps (offline count): {:f}".format(steps0 + steps1))

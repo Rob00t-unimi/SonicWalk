@@ -10,6 +10,17 @@ pitch0 = data[0]
 pitch1 = data[1]
 
 
+max_digits_after_decimal = 0
+max_num = None
+for num in pitch0:
+    decimal_part = str(num).split('.')[1]  # Ottieni la parte decimale come stringa
+    num_digits_after_decimal = len(decimal_part)
+    if num_digits_after_decimal > max_digits_after_decimal:
+        max_digits_after_decimal = num_digits_after_decimal
+        max_num = num
+if max_num is not None:
+    print("Il numero con più cifre dopo la virgola è:", max_num)
+
 # Calcola il numero di campioni
 num_samples = len(pitch0)
 

@@ -165,6 +165,7 @@ class MtwAwinda(object):
         self.__eulerData = np.zeros((2, self.__maxNumberofCoords), dtype=np.float64) #we have only two Mtw devices
         self.__index = np.zeros(2, dtype=np.uint32)
 
+
     def __enter__(self):
         print("Creating XsControl object...")
         self.control = xda.XsControl_construct()
@@ -363,14 +364,14 @@ class MtwAwinda(object):
     def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True, exType:int=0):
         """Record pitch data for duration seconds
         
-        Returns a numpy.array object containing the data for each device and the relative index
+        Returns a numpy.array object containing the data for each device and the relative index, and interesting points bidimensional array of indexes
         Additional flags can be supplied:
 
         if plot=True it spawns a daemon that handles plotting
         if analyze=True (default) it spawns a daemon that performs step counting
         exType defines the type of analysis to be performed
         """
-        
+
         if not isinstance(duration, int) or duration < 10:
             raise ValueError("duration must be a positive integer (> 10) indicating the number of seconds")
         
@@ -396,6 +397,9 @@ class MtwAwinda(object):
         data0 = RawArray('d', 1000)
         data1 = RawArray('d', 1000)
 
+        interestingPoints0 = RawArray('d', 1000)
+        interestingPoints1 = RawArray('d', 1000)
+
         if any((plot, analyze)):
 
             if plot:
@@ -411,9 +415,8 @@ class MtwAwinda(object):
                 analyzer1 = Analyzer()
                 sharedLegBool = LegDetected() 
                 sharedSyncronizer = ProcessWaiting()
-                first = True
-                analyzer_process0 = mp.Process(target=analyzer0, args=(data0, index0, 0, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start), daemon=True)
-                analyzer_process1 = mp.Process(target=analyzer1, args=(data1, index1, 1, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start), daemon=True)
+                analyzer_process0 = mp.Process(target=analyzer0, args=(data0, index0, 0, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints0), daemon=True)
+                analyzer_process1 = mp.Process(target=analyzer1, args=(data1, index1, 1, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints1), daemon=True)
                 analyzer_process0.start()
                 analyzer_process1.start()
                 #delete local version of samples 
@@ -453,7 +456,11 @@ class MtwAwinda(object):
             startTime = xda.XsTimeStamp_nowMs()
             while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
                 _ = self.__getEuler() #fills object buffer with data from Mtw devices
-        return (self.__eulerData, self.__index)
+
+        print(str(interestingPoints0))
+        print(str(interestingPoints1))
+        interestingPoints = [interestingPoints0, interestingPoints1]
+        return (self.__eulerData, self.__index, interestingPoints)
     
     def __clean(self):
         try:

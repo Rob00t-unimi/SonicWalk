@@ -47,13 +47,8 @@ class Analyzer():
         self.__legDetected = False
         self.__foundedPitch = False
         self.__pos = True
-        self.__min = 0.0
-        self.__minHistory = np.full(self.__history_sz, 5.0, dtype=np.float64)
         self.__gradientThreshold = 0.3
         self.__gradientHistory = np.full(self.__history_sz, 0.6, dtype=np.float64)
-
-        self.__genericBoolFlagFalse = False
-        self.__genericBoolFlagTrue = True
 
         self.__previousWindow = None
         self.__window = None
@@ -457,7 +452,7 @@ class Analyzer():
                                 self.__pitch = self.__pitch[len(self.__window)-i:]
                                 return
             
-            # If the first 2 windows haven't arrived yet do nothing.            
+            # If the first 2 windows haven't arrived yet    
             if self.__previousWindow is None and self.__window is None: 
                 self._updateWindows() 
                 return
@@ -468,9 +463,11 @@ class Analyzer():
                 self.__window = self.__pitch
                 return
             
+            # control if new window contains new informations else return
             control_if_newWindow()
             if self.__pitch.size == 0: return
 
+            # initialize the windows
             pitch = self.__pitch
             previous = self.__previousWindow
             window = self.__window
@@ -488,26 +485,13 @@ class Analyzer():
                 peak = np.max(window) if self.__pos else (-1*np.min(window))
                 # self.__interestingPoints.append(self.__currentGlobalIndex)
                 elapsed_time = time.time() - self.__timestamp
-                if elapsed_time > self.__timeThreshold*(5 if self.__foundedPitch else 2) and peak > 5:   # The threshold value not to go below seems to be 0.4 s; the peaks often occur before the footfall, so this is perfectly fine
+                if elapsed_time > self.__timeThreshold*(5 if self.__foundedPitch else 2) and peak > 5:
+                    self.__timestamp = time.time()
                     if not self.__foundedPitch:
-                        self.__interestingPoints.append(self.__currentGlobalIndex)
-                        self.__timestamp = time.time()
-                        
-                        # # update history and threshold
-                        # if self.__pos: 
-                        #     self.__peakHistory[self.__completeMovements % self.__history_sz] = peak
-                        #     newthresh = np.min(self.__minHistory)
-                        # else: 
-                        #     self.__minHistory[self.__completeMovements % self.__history_sz] = peak
-                        #     newthresh = np.min(self.__peakHistory)
-                        #     # ensure that threshold cannot go below 2.0
-                        #     self.__threshold = newthresh if newthresh > 5.0 else 5.0
-
+                        self.__interestingPoints.append(self.__currentGlobalIndex)  # add the pick into the interesting points list
                         self._playSample()
                         self.__foundedPitch = True  # first valid pitch is founded
-
                     else:
-                        self.__timestamp = time.time()
                         self.__foundedPitch = False # second muted pitch is founded
                         self.__pos = not self.__pos # alternate searching types of pitch every 2 peaks founded
             
@@ -550,134 +534,8 @@ class Analyzer():
 
             # threshold update
             self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=0.85, min_value=0.4)
-            print("gradient: " + str(self.__gradientThreshold))
+            # print("gradient: " + str(self.__gradientThreshold))
 
-        
-    # RILEVAZIONE MOVIMENTO GAMBA "FERMA"
-    def otherLegOLDEST(self):
-
-        ## questa gamba ha un'andamenso tipo sinusoidale quindi mi interessano gli zero crossing
-        # in questo caso però mi interessano entrambi gli zero crossing che si verificano uno prima e uno dopo il picco
-        # quindi cerco uno zero crossing positivo, faccio suonare
-        # cerco un picco valido, quando lo trovo cerco uno zero crossing negativo
-        # quando trovo lo zero crossing negativo faccio suonare e cerco un minimo valido, quando lo trovo cerco uno zero crossing positivo
-
-        # per semplificare il codice faccio il valore assoluto e traslo in modo da validare tutti come picchi invece che alternare tra picchi e minimi
-        
-        if self.__endController() : return
-        self.__nextWindow()
-
-
-        # faccio il valore assoluto ottenendo solo picchi
-        # traslo per ottenere zero crossing e anticipare
-
-        # quando il piede poggia avanti poggia direttamente il tallone ed è più veloce a raggiungere lo zero crossing
-        # quando il piede poggia indietro fa un angolo più ampio, poggia prima la punta poi il tallone e quindi raggiunge piu lentamente lo zero crossing
-        # traslando in modo diverso si hanno dei delay nel suono
-        # non traslando o traslando in modo uguale si hanno problemi di rumore, infatti:
-        # quando il piede ha angolo poitivo potrebbe verificarsi un piegamento del ginocchio che provoca zero crossing che non vorremmo rilevare
-        # al contrario non accade poichè il ginocchio si piega in un sono verso
-        # quindi:
-
-        # - gli angoli negativi sono più ampi
-        # - gli angoli positivi possono scendere improvvisamente sotto zero se si piega il ginocchio
-        
-        # soluzione:
-        # - trasliamo molto in alto il segnal tagliando gli zero crossing non desiderati
-        # - in questo modo ritardiamo il rilevamento degli zero crossing negativi, quindi anticipiamo ulteriormente e cerchiamo i picchi positivi
-
-        # Algoritmo:
-        # cerco zero crossing positivi, poi picchi positivi e cosi via
-        # non suono subito quando trovo un picco altrimenti sarei troppo in anticipo, suono dopo un tot di tempo dalla rilevazione solo se sono sotto una soglia fissa
-
-
-        # # for i, tmppitch in enumerate(self.__pitch):
-        # #     if tmppitch < 0:
-        # #         self.__pitch[i] = (tmppitch**3)/1000
-        pitch = self.__pitch + 20
-
-        if self.__foundedPitch == True:
-            if np.min(self.__pitch ) <= 15:
-                elapsed_time = time.time() - self.__timestamp
-                if elapsed_time > self.__timeThreshold*3:
-                    self.__timestamp = time.time()
-                    _ = self.__samples[self.__sharedIndex.value()].play()
-                    self.__sharedIndex.increment()
-                    # increment step count
-                    self.__completeMovements += 1
-                    self.__pos = True
-                    self.__peak = 0.0
-                    self.__foundedPitch = False
-
-        if self.__pos == False:
-            last = self.__peak
-            current = np.max(pitch)
-            # if self.__peak > self.__threshold:
-            if last > current:
-                elapsed_time = time.time() - self.__timestamp
-                if elapsed_time > self.__timeThreshold*4:
-                    self.__timestamp = time.time()
-                    self.__foundedPitch = True
-                    self.__peak = last
-            else:
-                self.__peak = current
- 
-        cross =  np.diff(np.signbit(pitch))
-        if np.sum(cross) == 1:
-            crossPosition = np.where(cross)[0][0]
-            negativeZc = np.signbit(np.gradient(pitch)[crossPosition + 1])
-            if not negativeZc:
-                elapsed_time = time.time() - self.__timestamp
-                if self.__pos and elapsed_time > self.__timeThreshold*5:
-                    self.__pos = False
-                    # update time stamp
-                    self.__timestamp = time.time()
-                    # play sound
-                    _ = self.__samples[self.__sharedIndex.value()].play()
-                    self.__sharedIndex.increment()
-                    # increment step count
-                    self.__completeMovements += 1
-
-            
-
-
-    # RILEVAZIONE MOVIMENTO GAMBA "FERMA"
-    def otherLegOLD(self):
-
-        
-        if self.__endController() : return
-        self.__nextWindow()
-
-        
-        # for i, tmppitch in enumerate(self.__pitch):
-        #     if tmppitch < 0:
-        #         self.__pitch[i] = (tmppitch**3)/1000
-        self.__pitch = self.__pitch + 20
-
-        # Cerco lo zero crossing positivo
-        positiveZc = self.zeroCrossingDetector(window = self.__pitch, positive = True)
-        if positiveZc:
-            elapsed_time = time.time() - self.__timestamp
-            if self.__pos and elapsed_time > self.__timeThreshold*4:    # se self.__pos è True ho già trovaro un picco quindi lo Zc è valido    
-                                                                        # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
-                self.__pos = False
-                # update time stamp
-                self.__timestamp = time.time()
-                # play sound and increment step count
-                self._playSample()
-
-        if self.__pos == False:
-            if self.__previousWindow is None or self.__window is None:
-                return
-            peak = self.peakFinder(window = self.__window, current_window=self.__pitch, previous_window=self.__previousWindow)
-            elapsed_time = time.time() - self.__timestamp
-            if peak and elapsed_time > self.__timeThreshold*4:      # con una threshold temporale alta se 2 picchi sono molto vicini vengono fusi, evitiamo di registrare picchi doppi dovuti al piegamento del ginocchio
-                self.__timestamp = time.time()
-                self.__peak = np.max(self.__window)
-                self._playSample()
-                self.__pos = True
-
-        self._updateWindows()
 
     ################################ SWING DETECTION ======================================================== && Rob ========
 

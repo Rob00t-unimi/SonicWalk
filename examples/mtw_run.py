@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     
-    duration = 25
+    duration = 90
     samplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2"
 
     plotPoints = True

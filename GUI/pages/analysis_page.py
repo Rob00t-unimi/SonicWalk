@@ -23,8 +23,7 @@ from frames.recordingFrame import RecordingFrame
 
 class AnalysisPage(QFrame):
 
-    # sets up pyqt signal to use with multithreading
-    mtw_run_finished = pyqtSignal()
+
     
     def __init__(self, light = True):
         """
@@ -45,6 +44,9 @@ class AnalysisPage(QFrame):
         self.playButtonAbilited = False
         self.allEnabled = True
 
+        # # sets up pyqt signal to use with multithreading
+        # self.mtw_run_finished = pyqtSignal()
+
         # initialize self
         self.setup_ui()
 
@@ -60,7 +62,7 @@ class AnalysisPage(QFrame):
 
         # create sub frames
         self.selection_frame = ExerciseFrame(light=self.light)
-        self.actions_frame = RecordingFrame(getBpm = self.selection_frame.getBpm, getMusicModality = self.selection_frame.getMusicModality, getMusicPath = self.selection_frame.getMusicPath, getExerciseNumber = self.selection_frame.getExerciseNumber, light = self.light, changeEnabledAll = self.changeEnabledAll)
+        self.actions_frame = RecordingFrame(setBpm = self.selection_frame.setBpm, getBpm = self.selection_frame.getBpm, getMusicModality = self.selection_frame.getMusicModality, getMusicPath = self.selection_frame.getMusicPath, getExerciseNumber = self.selection_frame.getExerciseNumber, light = self.light, changeEnabledAll = self.changeEnabledAll)#, mtw_run_finished = self.mtw_run_finished)
         self.patient_frame = PatientFrame(light=self.light, enablePlayButton = self.actions_frame.enablePlayButton, disablePlayButton = self.actions_frame.disablePlayButton) 
         self.actions_frame.getPatient = self.patient_frame.getPatient
         self.plotter_frame = QFrame()

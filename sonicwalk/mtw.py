@@ -361,7 +361,7 @@ class MtwAwinda(object):
     def mtwCalibrate():
         pass
 
-    def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True, exType:int=0):
+    def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True, exType:int=0, calculateBpm:bool=False):
         """Record pitch data for duration seconds
         
         Returns a numpy.array object containing the data for each device and the relative index, and interesting points bidimensional array of indexes
@@ -400,6 +400,9 @@ class MtwAwinda(object):
         interestingPoints0 = RawArray('d', 1000)
         interestingPoints1 = RawArray('d', 1000)
 
+        betweenStepsTimes0 = RawArray('d', 1000)
+        betweenStepsTimes1 = RawArray('d', 1000)
+
         if any((plot, analyze)):
 
             if plot:
@@ -415,8 +418,8 @@ class MtwAwinda(object):
                 analyzer1 = Analyzer()
                 sharedLegBool = LegDetected() 
                 sharedSyncronizer = ProcessWaiting()
-                analyzer_process0 = mp.Process(target=analyzer0, args=(data0, index0, 0, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints0), daemon=True)
-                analyzer_process1 = mp.Process(target=analyzer1, args=(data1, index1, 1, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints1), daemon=True)
+                analyzer_process0 = mp.Process(target=analyzer0, args=(data0, index0, 0, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints0, betweenStepsTimes0, calculateBpm), daemon=True)
+                analyzer_process1 = mp.Process(target=analyzer1, args=(data1, index1, 1, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints1, betweenStepsTimes1, calculateBpm), daemon=True)
                 analyzer_process0.start()
                 analyzer_process1.start()
                 #delete local version of samples 
@@ -457,10 +460,42 @@ class MtwAwinda(object):
             while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
                 _ = self.__getEuler() #fills object buffer with data from Mtw devices
 
-        print(str(interestingPoints0))
-        print(str(interestingPoints1))
-        interestingPoints = [interestingPoints0, interestingPoints1]
-        return (self.__eulerData, self.__index, interestingPoints)
+        # clean raw arrays from data after termination value
+        def extractData(rawArray):
+            array = []
+            for data in rawArray:
+                if data!= (-2000):  # end value
+                    array.append(data)
+                else:
+                    break
+            return array
+        
+        if analyze:
+            # create bidimentional array of interesting points
+            points0 = extractData(interestingPoints0)
+            points1 = extractData(interestingPoints1)
+            interestingPoints = [points0, points1]      
+            
+            # convert timestamps to bpm value
+            times0 = extractData(betweenStepsTimes0)
+            times1 = extractData(betweenStepsTimes1)
+            times0.extend(times1)
+            print(str(times0))
+            if len(times0) != 0:
+                times0.sort()
+                elapsed_times = []
+                for i in range(len(times0) - 1):
+                    elapsed_time = times0[i + 1] - times0[i]
+                    elapsed_times.append(elapsed_time)
+                # average in minutes
+                mediumTimeValue = (sum(elapsed_times)/len(elapsed_times))/60
+                # calculate bpm
+                bpmTimeValue = 1/mediumTimeValue
+            else:
+                bpmTimeValue = False
+
+            return (self.__eulerData, self.__index, interestingPoints, bpmTimeValue)
+        return (self.__eulerData, self.__index, [[],[]], False)
     
     def __clean(self):
         try:

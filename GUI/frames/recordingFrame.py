@@ -15,7 +15,7 @@ from components.recButton import RecButton
 from mtw_run import mtw_run
 
 class RecordingFrame(QFrame):
-    def __init__(self, light = True, getMusicModality = None, getMusicPath = None, getExerciseNumber = None, getPatient = None, getBpm = None, changeEnabledAll = None):
+    def __init__(self, light = True, getMusicModality = None, getMusicPath = None, getExerciseNumber = None, getPatient = None, getBpm = None, setBpm = None, changeEnabledAll = None):#, mtw_run_finished = None):
         """
         This class represents the frame responsible for handling recording functionalities.
 
@@ -40,6 +40,9 @@ class RecordingFrame(QFrame):
         self.selectedExercise = None
         self.modality = None
         self.patient_info_data = None
+        self.calculateBpm = False
+        self.bpm = None
+        # self.mtw_run_finished = mtw_run_finished
 
         self.getMusicModality = getMusicModality
         self.getMusicPath = getMusicPath
@@ -47,6 +50,7 @@ class RecordingFrame(QFrame):
         self.changeEnabledAll = changeEnabledAll
         self.getPatient = getPatient
         self.getBpm = getBpm
+        self.setBpm = setBpm
 
         self.light = light
         self.blackIcons = "icons/black"
@@ -174,6 +178,7 @@ class RecordingFrame(QFrame):
         self.modality = self.getMusicModality()
         self.selectedMusic = self.getMusicPath()
         self.selectedExercise = self.getExerciseNumber()
+        self.calculateBpm = True if self.modality == 0 else False
 
         # set the execution state on false
         self.execution = False
@@ -217,11 +222,16 @@ class RecordingFrame(QFrame):
             Effects:    Runs the mtw_run function for recording in a different thread.
                         Get recorded signal and Fs
         """
-        analyze = False if self.modality != 2 else True
+        analyze = False if self.modality == 1 else True
         try:
-            self.signals, self.Fs = mtw_run(Duration=int(self.exerciseTime), MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.setStart)
+            self.signals, self.Fs, self.bpm = mtw_run(Duration=int(self.exerciseTime), MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.setStart, CalculateBpm=self.calculateBpm)
             # gestire il dongle non inserito
-            self.mtw_run_finished.emit()
+            # self.mtw_run_finished.emit()
+            if self.bpm != False:
+                print("bpm: " + str(self.bpm))
+                self.setBpm(self.bpm) 
+            else:
+                raise RuntimeError("Bpm Estimation Failed")
         except RuntimeError as e:
             self.connection_msg.setText(str(e))
             # non restituisce l'errore

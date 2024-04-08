@@ -4,17 +4,19 @@ sys.path.append("../sonicwalk")
 import mtw
 import numpy as np
 import matplotlib.pyplot as plt
+import multiprocessing as mp
 
 
 if __name__ == "__main__":
+
     
-    duration = 90
+    duration = 30
     samplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2"
 
     plotPoints = True
 
     with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
-        data = mtw.mtwRecord(duration, plot=True, analyze=True, exType = 4)
+        data = mtw.mtwRecord(duration, plot=True, analyze=True, exType = 4, calculateBpm=False)
             # 0 --> walking
             # 1 --> Walking in place (High Knees, Butt Kicks)3
             # 2 --> Walking in place (High Knees con sensori sulle cosce)
@@ -26,24 +28,11 @@ if __name__ == "__main__":
     index0 = data[1][0]
     index1 = data[1][1]
 
-    points0 = data[2][0]
-    points1 = data[2][1]
+    interestingPoints0 = data[2][0]
+    interestingPoints1 = data[2][1]
 
-    interestingPoints0 = []
-    interestingPoints1 = []
-
-    for point in points0:
-        if point != (-2000):
-            interestingPoints0.append(int(point))
-        else:
-            break
-
-    for point in points1:
-        if point != (-2000):
-            interestingPoints1.append(int(point))
-        else:
-            break
-    
+    bpmValue = data[3]
+    print(str(bpmValue))
 
     print("total size of buffers: 0: {:d} 1: {:d}".format(data0.size * data0.itemsize, data1.size * data1.itemsize))
 

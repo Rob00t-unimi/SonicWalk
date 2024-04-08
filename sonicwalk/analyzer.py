@@ -58,20 +58,26 @@ class Analyzer():
         self.__indexCycle = 0
         self.__prevIndex = -1
 
+        self.__betweenStepTimes = []
+
     ################################ START & END =================================================================
         
 
     def __terminate(self):
+        # - 2000 termination value
+        self.__interestingPoints.append(-2000)
+        for i in range(len(self.__interestingPoints)):
+            self.__sharedInterestingPoints[i] = self.__interestingPoints[i]
+
+        self.__betweenStepTimes.append(-2000)
+        for i in range(len(self.__betweenStepTimes)):
+            self.__sharedBetweenStepsTimes[i] = self.__betweenStepTimes[i]
+
         print("analyzer daemon {:d} terminated...".format(self.__num))
         print("analyzer {:d} number of completed movements: {:d}".format(self.__num, self.__completeMovements))
         #write total number of complete movements to shared memory
         #data is written at index - 1 (termination flag at index should not be overwritten for the correct behaviour)
         self.__data[self.__index.value - 1] = self.__completeMovements
-
-        # - 2000 termination value
-        self.__interestingPoints.append(-2000)
-        for i in range(len(self.__interestingPoints)):
-            self.__sharedInterestingPoints[i] = self.__interestingPoints[i]
 
     def __endController(self):
         if self.__data[self.__index.value] == 1000:
@@ -289,7 +295,10 @@ class Analyzer():
                     self.__peakHistory[self.__completeMovements % self.__history_sz] = self.__peak
 
                     # play sound and increment the movement counter
-                    self._playSample()
+                    self._playSample() if not self.__calculateBpm else self.__betweenStepTimes.append(self.__timestamp)
+
+                    # save point
+                    self.__interestingPoints.append(self.__currentGlobalIndex)
 
                     # update threshold
                     newthresh = np.min(self.__peakHistory)
@@ -350,7 +359,8 @@ class Analyzer():
                     # set swing phase to false until we find a positive zero crossing
                     self.__swingPhase = False
                     self.__timestamp = time.time() # reset timestamp (new step)
-                    self._playSample()
+                    self._playSample() if not self.__calculateBpm else self.__betweenStepTimes.append(self.__timestamp)
+                    self.__interestingPoints.append(self.__currentGlobalIndex)
 
                 self.__peak = 0.0 #reset peak whenever a zero crossing is encountered (negative gradient)
         elif negativeZc is not None and not negativeZc.founded: 
@@ -489,7 +499,7 @@ class Analyzer():
                     self.__timestamp = time.time()
                     if not self.__foundedPitch:
                         self.__interestingPoints.append(self.__currentGlobalIndex)  # add the pick into the interesting points list
-                        self._playSample()
+                        self._playSample() if not self.__calculateBpm else self.__betweenStepTimes.append(self.__timestamp)
                         self.__foundedPitch = True  # first valid pitch is founded
                     else:
                         self.__foundedPitch = False # second muted pitch is founded
@@ -530,7 +540,8 @@ class Analyzer():
                 self.__interestingPoints.append(self.__currentGlobalIndex)
                 self.__pos = not self.__pos     # switch research of zero crossing type
                 self.__timestamp = time.time()  # update time stamp
-                self._playSample()  # play sound and increment step count
+                self._playSample() if not self.__calculateBpm else self.__betweenStepTimes.append(self.__timestamp)
+                # play sound and increment step count
 
             # threshold update
             self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=0.85, min_value=0.4)
@@ -579,13 +590,15 @@ class Analyzer():
         pitch = (self.__pitch - 10) if forward else (self.__pitch + 10)
 
         # ricerca di zero crossing
-        positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+0.25)     # + 0.25 per permettere alla soglia anche di salire
+        positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+0.3)     # + 0.25 per permettere alla soglia anche di salire
         if positiveZc is not None and ((positiveZc.founded and not forward) or (not positiveZc.founded and forward)):
             elapsed_time = time.time() - self.__timestamp
             if elapsed_time > self.__timeThreshold*2:    # se self.__pos è True ho già trovaro un picco quindi lo Zc è valido    
                                                         # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
                 self.__timestamp = time.time()  # update time stamp
-                self._playSample()  # play sound and increment step count
+                # play sound and increment step count
+                self._playSample() if not self.__calculateBpm else self.__betweenStepTimes.append(self.__timestamp)
+                self.__interestingPoints.append(self.__currentGlobalIndex)
 
             # threshold update
             self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=0.85, min_value=0.3)
@@ -595,7 +608,7 @@ class Analyzer():
     ################################ OBJECT CALL ======================================================== && Rob ========
 
     
-    def __call__(self, data, index, num, sharedIndex, samples, exType, sharedLegBool, syncProcesses, interestingPoints):
+    def __call__(self, data, index, num, sharedIndex, samples, exType, sharedLegBool, syncProcesses, interestingPoints, betweenStepsTimes, calculateBpm):
         
         self.syncProcesses = syncProcesses
 
@@ -613,6 +626,8 @@ class Analyzer():
         self.__exType = exType
         self.__sharedLegDetected = sharedLegBool
         self.__sharedInterestingPoints = interestingPoints
+        self.__calculateBpm = calculateBpm
+        self.__sharedBetweenStepsTimes = betweenStepsTimes
 
         # 0 --> walking
         # 1 --> Walking in place and Marching

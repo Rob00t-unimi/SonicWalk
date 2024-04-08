@@ -2,7 +2,7 @@ import sys
 sys.path.append("../sonicwalk")
 import numpy as np
 
-def mtw_run(Duration:int=90, MusicSamplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2", Exercise:int=0, Analyze: bool=True, setStart = None):
+def mtw_run(Duration:int=90, MusicSamplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2", Exercise:int=0, Analyze: bool=True, setStart = None, CalculateBpm: bool = False):
 
     import mtw
 
@@ -20,11 +20,12 @@ def mtw_run(Duration:int=90, MusicSamplesPath = "../sonicwalk/audio_samples/camm
     samplesPath = MusicSamplesPath
     exercise = Exercise
     analyze = Analyze
+    calculateBpm = CalculateBpm
 
 
     with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
         setStart()
-        data = mtw.mtwRecord(duration, plot=False, analyze=analyze, exType = exercise)
+        data = mtw.mtwRecord(10, plot=False, analyze=analyze, exType = exercise, calculateBpm = calculateBpm)
             # 0 --> walking
             # 1 --> Walking in place (High Knees, Butt Kicks)
             # 2 --> Walking in place (High Knees con sensori sulle cosce)
@@ -35,6 +36,8 @@ def mtw_run(Duration:int=90, MusicSamplesPath = "../sonicwalk/audio_samples/camm
     data1 = data[0][1]
     index0 = data[1][0]
     index1 = data[1][1]
+
+    bpmValue = data[3]
 
     pitch0 = data0[:index0]
     pitch1 = data1[:index1]
@@ -52,6 +55,6 @@ def mtw_run(Duration:int=90, MusicSamplesPath = "../sonicwalk/audio_samples/camm
     #compute sample rate (samples/s)
     Fs = max_length/duration
 
-    return combined_data, Fs
+    return combined_data, Fs, bpmValue
 
 #mtw_run(Duration=90, Exercise=0, Analyze=True)

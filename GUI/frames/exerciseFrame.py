@@ -92,7 +92,7 @@ class ExerciseFrame(QFrame):
                 "QSlider::add-page:horizontal { background-color: lightgray; border-radius: 5px; }"
                 "QSlider::sub-page:horizontal { background-color: #B99AFF; border-radius: 5px; }"
             )
-            self.bpm_slider.valueChanged.connect(self.setBpm)
+            self.bpm_slider.valueChanged.connect(self._setBpm)
             self.bpm_value_label = QLabel("  "+str(self.bpm_slider.value())+" bpm")
             frame_layout = QHBoxLayout()
             frame_layout.addWidget(self.bpm_slider)
@@ -114,7 +114,7 @@ class ExerciseFrame(QFrame):
             if len(self.MusicNames)>0:
                 self.selectMusic(self.MusicNames[0])
 
-    def setBpm(self):
+    def _setBpm(self):
         """
             Modifies:   self.bpm
             Effects:    updates bpm value and label
@@ -122,6 +122,17 @@ class ExerciseFrame(QFrame):
         # update bpm value
         self.bpm = self.bpm_slider.value()
         self.bpm_value_label.setText("  "+str(self.bpm)+" bpm")
+
+    def setBpm(self, bpm):
+        """
+            Modifies:   self.bpm
+            Effects:    sets selected bpm
+        """
+        if bpm == False: return
+        self.bpm = bpm
+        self.bpm_value_label.setText("  "+str(self.bpm)+" bpm")
+        self.bpm_slider.setValue(self.bpm)
+        return
 
     def _findMusicOptions(self):
         """

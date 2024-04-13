@@ -15,7 +15,7 @@ from components.recButton import RecButton
 from mtw_run import mtw_run
 
 class RecordingFrame(QFrame):
-    def __init__(self, light = True, getMusicModality = None, getMusicPath = None, getExerciseNumber = None, getPatient = None, getBpm = None, setBpm = None, changeEnabledAll = None):#, mtw_run_finished = None):
+    def __init__(self, light = True, getMusicModality = None, getMusicPath = None, getExerciseNumber = None, getPatient = None, getBpm = None, setBpm = None, changeEnabledAll = None, shared_data = None, plotter_start = None):#, mtw_run_finished = None):
         """
         This class represents the frame responsible for handling recording functionalities.
 
@@ -35,6 +35,8 @@ class RecordingFrame(QFrame):
         super().__init__()
 
         # initialize attributes
+        self.shared_data = shared_data
+        self.plotter_start = plotter_start
         self.exerciseTime = 90
         self.selectedMusic = None
         self.selectedExercise = None
@@ -224,7 +226,7 @@ class RecordingFrame(QFrame):
         """
         analyze = False if self.modality == 1 else True
         try:
-            self.signals, self.Fs, self.bpm = mtw_run(Duration=int(self.exerciseTime), MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.setStart, CalculateBpm=self.calculateBpm)
+            self.signals, self.Fs, self.bpm = mtw_run(Duration=int(self.exerciseTime), MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.setStart, CalculateBpm=self.calculateBpm, SharedData = self.shared_data)
             # gestire il dongle non inserito
             # self.mtw_run_finished.emit()
             if self.bpm != False:
@@ -258,6 +260,7 @@ class RecordingFrame(QFrame):
         """
         self.startTime = time.time()
         self.execution = True
+        self.plotter_start()
         #beepPath = "../sonicwalk/audio_samples/beep.wav"
         #wave_obj = sa.WaveObject.from_wave_file(beepPath)
         #wave_obj.play()

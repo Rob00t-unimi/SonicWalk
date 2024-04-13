@@ -65,6 +65,8 @@ from analyzer import Analyzer
 from threading import Lock
 from sharedVariables import LegDetected
 from sharedVariables import ProcessWaiting
+from sharedVariables import SharedData
+import platform
 
 
 class MtwCallback(xda.XsCallback):
@@ -298,6 +300,7 @@ class MtwAwinda(object):
     
             for i in range(2):
                 if self.mtwCallbacks[i].dataAvailable():
+                    # print(f"lenght_of_buffer: {len(self.mtwCallbacks[i].m_packetBuffer)}")
                     avail[i] = True
                     # Retrieve a packet
                     packet = self.mtwCallbacks[i].getOldestPacket()
@@ -361,7 +364,7 @@ class MtwAwinda(object):
     def mtwCalibrate():
         pass
 
-    def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True, exType:int=0, calculateBpm:bool=False):
+    def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True, exType:int=0, calculateBpm:bool=False, shared_data:object=None):
         """Record pitch data for duration seconds
         
         Returns a numpy.array object containing the data for each device and the relative index, and interesting points bidimensional array of indexes
@@ -391,11 +394,9 @@ class MtwAwinda(object):
 
         self.__cleanBuffer()
 
-        #Declare and initialize unsynchronized shared memory (not lock protected)
-        index0 = RawValue('i', 0)
-        index1 = RawValue('i', 0)
-        data0 = RawArray('d', 1000)
-        data1 = RawArray('d', 1000)
+        if shared_data is None:
+            #Declare and initialize unsynchronized shared memory (not lock protected)
+            shared_data = SharedData()
 
         interestingPoints0 = RawArray('d', 1000)
         interestingPoints1 = RawArray('d', 1000)
@@ -407,7 +408,7 @@ class MtwAwinda(object):
 
             if plot:
                 plotter = Plotter()
-                plotter_process = mp.Process(target=plotter, args=(data0, data1, index0, index1), daemon=True)
+                plotter_process = mp.Process(target=plotter, args=(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1), daemon=True)
                 plotter_process.start()
                 
             if analyze:
@@ -418,8 +419,8 @@ class MtwAwinda(object):
                 analyzer1 = Analyzer()
                 sharedLegBool = LegDetected() 
                 sharedSyncronizer = ProcessWaiting()
-                analyzer_process0 = mp.Process(target=analyzer0, args=(data0, index0, 0, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints0, betweenStepsTimes0, calculateBpm), daemon=True)
-                analyzer_process1 = mp.Process(target=analyzer1, args=(data1, index1, 1, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints1, betweenStepsTimes1, calculateBpm), daemon=True)
+                analyzer_process0 = mp.Process(target=analyzer0, args=(shared_data.data0, shared_data.index0, 0, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints0, betweenStepsTimes0, calculateBpm), daemon=True)
+                analyzer_process1 = mp.Process(target=analyzer1, args=(shared_data.data1, shared_data.index1, 1, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints1, betweenStepsTimes1, calculateBpm), daemon=True)
                 analyzer_process0.start()
                 analyzer_process1.start()
                 #delete local version of samples 
@@ -429,21 +430,24 @@ class MtwAwinda(object):
             time.sleep(1) #wait one second before starting orientation reset and to allow processes to properly start
             self.__resetOrientation()
 
-            print("Recording started...")
+            print("Recording started..." + str(time.time()))
+            os = platform.system()
 
             startTime = xda.XsTimeStamp_nowMs()
             while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
                 
                 avail = self.__getEuler()
                 if any(avail):
+                    # print("new data available at time: " + str(time.time()))
                     coords = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
                     coords = [a*b for a,b in zip(coords,avail)] #send only new data
-                    write_shared(data0, data1, index0, index1, coords)
+                    write_shared(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1, coords)
                 #allow other processes to run
                 #sleep 3ms (a new packet is received roughly every 8.33ms)
-                xda.msleep(3)
+                
+                xda.msleep(0) if os =="Windows" else xda.msleep(3)
 
-            write_shared(data0, data1, index0, index1, None, terminate=True)
+            write_shared(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1, None, terminate=True)
             
             if plot:
                 plotter_process.join()
@@ -452,7 +456,7 @@ class MtwAwinda(object):
                 analyzer_process0.join()
                 analyzer_process1.join()
                 #result of step counting is written into shared memory
-                print("Total number of steps: {:d}".format(int(data0[index0.value-1]) + int(data1[index1.value-1])))
+                print("Total number of steps: {:d}".format(int(shared_data.data0[shared_data.index0.value-1]) + int(shared_data.data1[shared_data.index1.value-1])))
 
         else:
             #record the data and return it without analisys
@@ -465,7 +469,7 @@ class MtwAwinda(object):
             array = []
             for data in rawArray:
                 if data!= (-2000):  # end value
-                    array.append(data)
+                    array.append(int(data))
                 else:
                     break
             return array

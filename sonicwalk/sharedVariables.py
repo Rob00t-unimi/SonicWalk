@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from multiprocessing import Value, Event, Lock
+from multiprocessing import Value, Event, Lock, RawArray, RawValue
 import time
 
 
@@ -89,6 +89,15 @@ class ProcessWaiting():
         else:
             with self.firstLock:
                 self._first()
+
+class SharedData:
+    def __init__(self):
+        self.index0 = RawValue('i', 0)
+        self.index1 = RawValue('i', 0)
+        self.data0 = RawArray('d', 1000)
+        self.data1 = RawArray('d', 1000)
+    
+
         
 
         

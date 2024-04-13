@@ -12,6 +12,10 @@ sys.path.append("../")
 from frames.patientFrame import PatientFrame
 from frames.exerciseFrame import ExerciseFrame
 from frames.recordingFrame import RecordingFrame
+import multiprocessing as mp
+sys.path.append("../")
+from sonicwalk.sharedVariables import SharedData
+from GUI.components.plotter import Plotter
 
 # quando si chiude il programma, se sta regstrando assicurarsi prima di terminare in modo sicuro la registrazione
 # aggiungere funzione che permette di terminare
@@ -43,6 +47,7 @@ class AnalysisPage(QFrame):
         self.light = light
         self.playButtonAbilited = False
         self.allEnabled = True
+        self.sharedData = SharedData()
 
         # # sets up pyqt signal to use with multithreading
         # self.mtw_run_finished = pyqtSignal()
@@ -62,14 +67,16 @@ class AnalysisPage(QFrame):
 
         # create sub frames
         self.selection_frame = ExerciseFrame(light=self.light)
-        self.actions_frame = RecordingFrame(setBpm = self.selection_frame.setBpm, getBpm = self.selection_frame.getBpm, getMusicModality = self.selection_frame.getMusicModality, getMusicPath = self.selection_frame.getMusicPath, getExerciseNumber = self.selection_frame.getExerciseNumber, light = self.light, changeEnabledAll = self.changeEnabledAll)#, mtw_run_finished = self.mtw_run_finished)
+        self.actions_frame = RecordingFrame(setBpm = self.selection_frame.setBpm, getBpm = self.selection_frame.getBpm, getMusicModality = self.selection_frame.getMusicModality, getMusicPath = self.selection_frame.getMusicPath, getExerciseNumber = self.selection_frame.getExerciseNumber, light = self.light, changeEnabledAll = self.changeEnabledAll, shared_data=self.sharedData, plotter_start = self.plotter_start)#, mtw_run_finished = self.mtw_run_finished)
         self.patient_frame = PatientFrame(light=self.light, enablePlayButton = self.actions_frame.enablePlayButton, disablePlayButton = self.actions_frame.disablePlayButton) 
         self.actions_frame.getPatient = self.patient_frame.getPatient
         self.plotter_frame = QFrame()
         layout_plotter = QVBoxLayout(self.plotter_frame)
         layout_plotter.setContentsMargins(10, 0, 0, 0)
-        plotter_canvas = self.createPlotter()
-        layout_plotter.addWidget(plotter_canvas)
+        
+        # self.plot_canvas = self.plot()
+        self.plotter = Plotter(self.sharedData.data0, self.sharedData.data1, self.sharedData.index0, self.sharedData.index1)
+        layout_plotter.addWidget(self.plotter)
 
         # add subframes in the grid
         grid_layout.addWidget(self.patient_frame, 0, 0)
@@ -157,27 +164,59 @@ class AnalysisPage(QFrame):
             if isinstance(widget, QPushButton) and widget.toolTip() == "Stop recording":
                 widget.setEnabled(True)
                 break  
+
+    def plotter_start(self):
+        print("starting plotter...")
+        # self.plotter.start_stream()
     
-    def createPlotter(self):
-        # Example of two simple signals
-        x = np.linspace(0, 10, 100)
-        y1 = np.sin(x)
-        y2 = np.cos(x)
+    # def plot(self):
+    #     # create static void plotter
+    #     fig, ax = plt.subplots()
+    #     ax.axhline(0, color='black', linewidth=1)
+    #     ax.set_ylim(-10, 10)  # Adjust these limits as needed
+    #     canvas = FigureCanvas(fig)
+    #     canvas.setContentsMargins(0, 0, 0, 0)
+    #     layout_plotter = self.plotter_frame.layout()
+    #     layout_plotter.addWidget(canvas)
 
-        # Create figure and axes
-        fig, ax = plt.subplots()
-        ax.plot(x, y1, label='Sin(x)')
-        ax.plot(x, y2, label='Cos(x)')
-        ax.legend()  # Show the legend
+    #     return canvas
+    
+#     def plotter_start(self):
+#         pass
+# #         # start plotter in a new process
+# #         plotter_process = PlotterProcess(self.sharedData.data0, self.sharedData.data1, self.sharedData.index0, self.sharedData.index1)
+# #         plotter_process.daemon = True
+# #         plotter_process.start()
 
-        # Create canvas for the plot
-        canvas = FigureCanvas(fig)
-        canvas.setContentsMargins(0, 0, 0, 0)
+# class PlotterProcess(mp.Process):
+#     def __init__(self, data0, data1, index0, index1):
+#         super().__init__()
+#         self.data0 = data0
+#         self.data1 = data1
+#         self.index0 = index0
+#         self.index1 = index1
 
-        # Add canvas to the plotter layout
-        layout_plotter = self.plotter_frame.layout()
-        layout_plotter.addWidget(canvas)
+#     def run(self):
+#         fig, ax = plt.subplots()
+#         ani = None
 
-        return canvas
+#         def animate(i):
+#             nonlocal ani
+#             if self.data0[self.index0.value] == 1000:
+#                 ani.event_source.stop()
+#                 plt.close(fig)
+#                 return
 
+#             pitch0 = np.array(self.data0)
+#             pitch1 = np.array(self.data1)
 
+#             ax.clear()
+#             l0, = ax.plot(self.data0, 'b')
+#             l1, = ax.plot(self.data1, 'c')
+#             return l0, l1
+
+#         mplstyle.use('fast')
+#         ani = animation.FuncAnimation(fig, animate, interval=50, cache_frame_data=False, blit=True, repeat=False)
+#         plt.show()
+
+    

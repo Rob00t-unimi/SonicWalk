@@ -64,7 +64,7 @@ class AnalysisPage(QFrame):
 
         # create sub frames
         self.selection_frame = ExerciseFrame(light=self.light)
-        self.actions_frame = RecordingFrame(setBpm = self.selection_frame.setBpm, getBpm = self.selection_frame.getBpm, getMusicModality = self.selection_frame.getMusicModality, getMusicPath = self.selection_frame.getMusicPath, getExerciseNumber = self.selection_frame.getExerciseNumber, light = self.light, changeEnabledAll = self.changeEnabledAll, shared_data=self.shared_data, plotter_start = self.plotter_start)#, mtw_run_finished = self.mtw_run_finished)
+        self.actions_frame = RecordingFrame(setBpm = self.selection_frame.setBpm, getBpm = self.selection_frame.getBpm, getMusicModality = self.selection_frame.getMusicModality, getMusicPath = self.selection_frame.getMusicPath, getExerciseNumber = self.selection_frame.getExerciseNumber, light = self.light, changeEnabledAll = self.changeEnabledAll, shared_data=self.shared_data, plotter_start = self.plotter_start, setSaved = self.setSaved)#, mtw_run_finished = self.mtw_run_finished)
         self.patient_frame = PatientFrame(light=self.light, enablePlayButton = self.actions_frame.enablePlayButton, disablePlayButton = self.actions_frame.disablePlayButton) 
         self.actions_frame.getPatient = self.patient_frame.getPatient
         self.plotter_frame = QFrame()
@@ -175,6 +175,7 @@ class AnalysisPage(QFrame):
         self.fig, self.ax = plt.subplots()
         self.ax.plot([], [], label='Data 0')
         self.ax.plot([], [], label='Data 1')
+        self.ax.set_xticks([])
         # self.ax.legend()
         self.ax.grid(True)
         self.canvas = FigureCanvas(self.fig)
@@ -182,16 +183,25 @@ class AnalysisPage(QFrame):
     def update_plot(self, data0, data1):
         # Aggiorna il plotter con i nuovi dati
         self.ax.clear()
-        self.ax.plot(data0, 'b', label='Data 0')
-        self.ax.plot(data1, 'c', label='Data 1')
+        self.ax.plot(data0, 'b')
+        self.ax.plot(data1, 'c')
+        self.ax.set_xticks([])
         # self.ax.legend()
         self.ax.grid(True)
         self.canvas.draw()
 
-    def reset_plot_and_shared_data(self):
+    def setSaved(self, data):
         self.ax.clear()
-        self.ax.grid(True)
-        self.canvas.draw()
+        self.ax.set_xticks([])
+        if data is not None:
+            self.ax.plot(data[0], 'b')
+            self.ax.plot(data[1], 'c')
+            self.isSaved = None
+            self.ax.grid(True)
+            self.canvas.draw()
+        else: self.canvas.draw()
+        
+    def reset_plot_and_shared_data(self):
         self.shared_data.index0.value = 0
         self.shared_data.index1.value = 0
         for i in range(len(self.shared_data.data0)):
@@ -221,4 +231,4 @@ class PlotterThread(QThread):
             data1 = np.array(self.data1)
 
             self.dataUpdated.emit(data0, data1)
-            time.sleep(0.1)
+            time.sleep(0.07)

@@ -15,7 +15,7 @@ from components.recButton import RecButton
 from mtw_run import mtw_run
 
 class RecordingFrame(QFrame):
-    def __init__(self, light = True, getMusicModality = None, getMusicPath = None, getExerciseNumber = None, getPatient = None, getBpm = None, setBpm = None, changeEnabledAll = None, shared_data = None, plotter_start = None):#, mtw_run_finished = None):
+    def __init__(self, light = True, getMusicModality = None, getMusicPath = None, getExerciseNumber = None, getPatient = None, getBpm = None, setBpm = None, changeEnabledAll = None, shared_data = None, plotter_start = None, setSaved = None):#, mtw_run_finished = None):
         """
         This class represents the frame responsible for handling recording functionalities.
 
@@ -37,6 +37,7 @@ class RecordingFrame(QFrame):
         # initialize attributes
         self.shared_data = shared_data
         self.plotter_start = plotter_start
+        self.setSaved = setSaved
         self.exerciseTime = 90
         self.selectedMusic = None
         self.selectedExercise = None
@@ -371,6 +372,8 @@ class RecordingFrame(QFrame):
                 # save datas into the file npy
                 np.save(filename, {"signals": self.signals, "Fs": self.Fs})
 
+                self.setSaved(self.signals)
+
                 # Confirm message
                 msg = QMessageBox()
                 msg.setIconPixmap(QPixmap("icons/checkmark.png").scaledToWidth(50))
@@ -395,6 +398,8 @@ class RecordingFrame(QFrame):
                 ok_button.setMinimumWidth(100)
                 ok_button.setMinimumHeight(40)
                 error_msg.exec_()
+
+        else: self.setSaved(None)
 
 
 

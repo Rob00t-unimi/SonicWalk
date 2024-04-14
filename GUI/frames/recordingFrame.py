@@ -226,7 +226,7 @@ class RecordingFrame(QFrame):
         """
         analyze = False if self.modality == 1 else True
         try:
-            self.signals, self.Fs, self.bpm = mtw_run(Duration=int(self.exerciseTime), MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.setStart, CalculateBpm=self.calculateBpm, SharedData = self.shared_data)
+            self.signals, self.Fs, self.bpm = mtw_run(Duration=int(self.exerciseTime), MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.setStart, CalculateBpm=self.calculateBpm, shared_data = self.shared_data)
             # gestire il dongle non inserito
             # self.mtw_run_finished.emit()
             if self.bpm != False:

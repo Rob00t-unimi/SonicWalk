@@ -395,6 +395,7 @@ class MtwAwinda(object):
         self.__cleanBuffer()
 
         if shared_data is None:
+            # print("in mtw shared data is none")
             #Declare and initialize unsynchronized shared memory (not lock protected)
             shared_data = SharedData()
 
@@ -404,65 +405,65 @@ class MtwAwinda(object):
         betweenStepsTimes0 = RawArray('d', 1000)
         betweenStepsTimes1 = RawArray('d', 1000)
 
-        if any((plot, analyze)):
+        # if any((plot, analyze)):
 
-            if plot:
-                plotter = Plotter()
-                plotter_process = mp.Process(target=plotter, args=(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1), daemon=True)
-                plotter_process.start()
-                
-            if analyze:
-                #samples are loaded only if analyzer is has to spawn
-                samples = self.__loadSamples()
-                sharedIndex = SharedCircularIndex(len(samples))
-                analyzer0 = Analyzer()
-                analyzer1 = Analyzer()
-                sharedLegBool = LegDetected() 
-                sharedSyncronizer = ProcessWaiting()
-                analyzer_process0 = mp.Process(target=analyzer0, args=(shared_data.data0, shared_data.index0, 0, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints0, betweenStepsTimes0, calculateBpm), daemon=True)
-                analyzer_process1 = mp.Process(target=analyzer1, args=(shared_data.data1, shared_data.index1, 1, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints1, betweenStepsTimes1, calculateBpm), daemon=True)
-                analyzer_process0.start()
-                analyzer_process1.start()
-                #delete local version of samples 
-                del samples
-                gc.collect()
+        if plot:
+            plotter = Plotter()
+            plotter_process = mp.Process(target=plotter, args=(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1), daemon=True)
+            plotter_process.start()
             
-            time.sleep(1) #wait one second before starting orientation reset and to allow processes to properly start
-            self.__resetOrientation()
+        if analyze:
+            #samples are loaded only if analyzer is has to spawn
+            samples = self.__loadSamples()
+            sharedIndex = SharedCircularIndex(len(samples))
+            analyzer0 = Analyzer()
+            analyzer1 = Analyzer()
+            sharedLegBool = LegDetected() 
+            sharedSyncronizer = ProcessWaiting()
+            analyzer_process0 = mp.Process(target=analyzer0, args=(shared_data.data0, shared_data.index0, 0, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints0, betweenStepsTimes0, calculateBpm), daemon=True)
+            analyzer_process1 = mp.Process(target=analyzer1, args=(shared_data.data1, shared_data.index1, 1, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints1, betweenStepsTimes1, calculateBpm), daemon=True)
+            analyzer_process0.start()
+            analyzer_process1.start()
+            #delete local version of samples 
+            del samples
+            gc.collect()
+        
+        time.sleep(1) #wait one second before starting orientation reset and to allow processes to properly start
+        self.__resetOrientation()
 
-            print("Recording started..." + str(time.time()))
-            os = platform.system()
+        print("Recording started..." + str(time.time()))
+        os = platform.system()
 
-            startTime = xda.XsTimeStamp_nowMs()
-            while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
-                
-                avail = self.__getEuler()
-                if any(avail):
-                    # print("new data available at time: " + str(time.time()))
-                    coords = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
-                    coords = [a*b for a,b in zip(coords,avail)] #send only new data
-                    write_shared(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1, coords)
-                #allow other processes to run
-                #sleep 3ms (a new packet is received roughly every 8.33ms)
-                
-                xda.msleep(0) if os =="Windows" else xda.msleep(3)
-
-            write_shared(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1, None, terminate=True)
+        startTime = xda.XsTimeStamp_nowMs()
+        while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
             
-            if plot:
-                plotter_process.join()
-                
-            if analyze:
-                analyzer_process0.join()
-                analyzer_process1.join()
-                #result of step counting is written into shared memory
-                print("Total number of steps: {:d}".format(int(shared_data.data0[shared_data.index0.value-1]) + int(shared_data.data1[shared_data.index1.value-1])))
+            avail = self.__getEuler()
+            if any(avail):
+                # print("new data available at time: " + str(time.time()))
+                coords = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
+                coords = [a*b for a,b in zip(coords,avail)] #send only new data
+                write_shared(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1, coords)
+            #allow other processes to run
+            #sleep 3ms (a new packet is received roughly every 8.33ms)
+            
+            xda.msleep(0) if os =="Windows" else xda.msleep(3)
 
-        else:
-            #record the data and return it without analisys
-            startTime = xda.XsTimeStamp_nowMs()
-            while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
-                _ = self.__getEuler() #fills object buffer with data from Mtw devices
+        write_shared(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1, None, terminate=True)
+        
+        if plot:
+            plotter_process.join()
+            
+        if analyze:
+            analyzer_process0.join()
+            analyzer_process1.join()
+            #result of step counting is written into shared memory
+            print("Total number of steps: {:d}".format(int(shared_data.data0[shared_data.index0.value-1]) + int(shared_data.data1[shared_data.index1.value-1])))
+
+        # else:
+        #     #record the data and return it without analisys
+        #     startTime = xda.XsTimeStamp_nowMs()
+        #     while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
+        #         _ = self.__getEuler() #fills object buffer with data from Mtw devices
 
         # clean raw arrays from data after termination value
         def extractData(rawArray):

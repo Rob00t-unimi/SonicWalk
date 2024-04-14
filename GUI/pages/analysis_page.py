@@ -1,10 +1,8 @@
-from PyQt5.QtWidgets import QFrame
 import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import pyqtSignal
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-import os
 import numpy as np
 
 sys.path.append("../")
@@ -12,10 +10,12 @@ sys.path.append("../")
 from frames.patientFrame import PatientFrame
 from frames.exerciseFrame import ExerciseFrame
 from frames.recordingFrame import RecordingFrame
-import multiprocessing as mp
 sys.path.append("../")
 from sonicwalk.sharedVariables import SharedData
-from GUI.components.plotter import Plotter
+import time
+from PyQt5.QtCore import QThread
+
+
 
 # quando si chiude il programma, se sta regstrando assicurarsi prima di terminare in modo sicuro la registrazione
 # aggiungere funzione che permette di terminare
@@ -25,10 +25,10 @@ from GUI.components.plotter import Plotter
 # il beep all'inizio della registrazione occupa la risorsa e genera errore quindi è temporaneamente commentato
 # bisogna gestire e recuperare l'eccezione nel caso non sia inserito il dongle
 
+
+
 class AnalysisPage(QFrame):
 
-
-    
     def __init__(self, light = True):
         """
         Requires:
@@ -47,10 +47,7 @@ class AnalysisPage(QFrame):
         self.light = light
         self.playButtonAbilited = False
         self.allEnabled = True
-        self.sharedData = SharedData()
-
-        # # sets up pyqt signal to use with multithreading
-        # self.mtw_run_finished = pyqtSignal()
+        self.shared_data = SharedData()
 
         # initialize self
         self.setup_ui()
@@ -67,16 +64,16 @@ class AnalysisPage(QFrame):
 
         # create sub frames
         self.selection_frame = ExerciseFrame(light=self.light)
-        self.actions_frame = RecordingFrame(setBpm = self.selection_frame.setBpm, getBpm = self.selection_frame.getBpm, getMusicModality = self.selection_frame.getMusicModality, getMusicPath = self.selection_frame.getMusicPath, getExerciseNumber = self.selection_frame.getExerciseNumber, light = self.light, changeEnabledAll = self.changeEnabledAll, shared_data=self.sharedData, plotter_start = self.plotter_start)#, mtw_run_finished = self.mtw_run_finished)
+        self.actions_frame = RecordingFrame(setBpm = self.selection_frame.setBpm, getBpm = self.selection_frame.getBpm, getMusicModality = self.selection_frame.getMusicModality, getMusicPath = self.selection_frame.getMusicPath, getExerciseNumber = self.selection_frame.getExerciseNumber, light = self.light, changeEnabledAll = self.changeEnabledAll, shared_data=self.shared_data, plotter_start = self.plotter_start)#, mtw_run_finished = self.mtw_run_finished)
         self.patient_frame = PatientFrame(light=self.light, enablePlayButton = self.actions_frame.enablePlayButton, disablePlayButton = self.actions_frame.disablePlayButton) 
         self.actions_frame.getPatient = self.patient_frame.getPatient
         self.plotter_frame = QFrame()
-        layout_plotter = QVBoxLayout(self.plotter_frame)
-        layout_plotter.setContentsMargins(10, 0, 0, 0)
-        
-        # self.plot_canvas = self.plot()
-        self.plotter = Plotter(self.sharedData.data0, self.sharedData.data1, self.sharedData.index0, self.sharedData.index1)
-        layout_plotter.addWidget(self.plotter)
+        self.layout_plotter = QVBoxLayout(self.plotter_frame)
+        self.layout_plotter.setContentsMargins(10, 0, 0, 0)
+
+
+        self.create_static_plotter() # initialize a void plotter
+        self.layout_plotter.addWidget(self.canvas)   # add the plotter into the gui
 
         # add subframes in the grid
         grid_layout.addWidget(self.patient_frame, 0, 0)
@@ -166,57 +163,62 @@ class AnalysisPage(QFrame):
                 break  
 
     def plotter_start(self):
-        print("starting plotter...")
-        # self.plotter.start_stream()
+        print("plotter starting...")
+        if hasattr(self, 'plot_thread') and self.plot_thread.isRunning():
+            self.plot_thread.terminate()
+        self.plot_thread = PlotterThread(self.shared_data.data0, self.shared_data.data1, self.shared_data.index0, self.shared_data.index1)
+        self.plot_thread.dataUpdated.connect(self.update_plot)
+        self.plot_thread.termination.connect(self.reset_plot_and_shared_data)
+        self.plot_thread.start()
+
+    def create_static_plotter(self):
+        self.fig, self.ax = plt.subplots()
+        self.ax.plot([], [], label='Data 0')
+        self.ax.plot([], [], label='Data 1')
+        # self.ax.legend()
+        self.ax.grid(True)
+        self.canvas = FigureCanvas(self.fig)
     
-    # def plot(self):
-    #     # create static void plotter
-    #     fig, ax = plt.subplots()
-    #     ax.axhline(0, color='black', linewidth=1)
-    #     ax.set_ylim(-10, 10)  # Adjust these limits as needed
-    #     canvas = FigureCanvas(fig)
-    #     canvas.setContentsMargins(0, 0, 0, 0)
-    #     layout_plotter = self.plotter_frame.layout()
-    #     layout_plotter.addWidget(canvas)
+    def update_plot(self, data0, data1):
+        # Aggiorna il plotter con i nuovi dati
+        self.ax.clear()
+        self.ax.plot(data0, 'b', label='Data 0')
+        self.ax.plot(data1, 'c', label='Data 1')
+        # self.ax.legend()
+        self.ax.grid(True)
+        self.canvas.draw()
 
-    #     return canvas
-    
-#     def plotter_start(self):
-#         pass
-# #         # start plotter in a new process
-# #         plotter_process = PlotterProcess(self.sharedData.data0, self.sharedData.data1, self.sharedData.index0, self.sharedData.index1)
-# #         plotter_process.daemon = True
-# #         plotter_process.start()
+    def reset_plot_and_shared_data(self):
+        self.ax.clear()
+        self.ax.grid(True)
+        self.canvas.draw()
+        self.shared_data.index0.value = 0
+        self.shared_data.index1.value = 0
+        for i in range(len(self.shared_data.data0)):
+            self.shared_data.data0[i] = 0
+        for i in range(len(self.shared_data.data1)):
+            self.shared_data.data1[i] = 0
 
-# class PlotterProcess(mp.Process):
-#     def __init__(self, data0, data1, index0, index1):
-#         super().__init__()
-#         self.data0 = data0
-#         self.data1 = data1
-#         self.index0 = index0
-#         self.index1 = index1
+class PlotterThread(QThread):
+    dataUpdated = pyqtSignal(np.ndarray, np.ndarray)
+    termination = pyqtSignal()
 
-#     def run(self):
-#         fig, ax = plt.subplots()
-#         ani = None
+    def __init__(self, data0, data1, index0, index1):
+        super().__init__()
+        print("init plotter...")
+        self.data0 = data0
+        self.data1 = data1
+        self.index0 = index0
+        self.index1 = index1
 
-#         def animate(i):
-#             nonlocal ani
-#             if self.data0[self.index0.value] == 1000:
-#                 ani.event_source.stop()
-#                 plt.close(fig)
-#                 return
+    def run(self):
+        print("plotter running...")
+        while True:
+            if self.data0[self.index0.value] == 1000:
+                self.termination.emit()
+                return
+            data0 = np.array(self.data0)
+            data1 = np.array(self.data1)
 
-#             pitch0 = np.array(self.data0)
-#             pitch1 = np.array(self.data1)
-
-#             ax.clear()
-#             l0, = ax.plot(self.data0, 'b')
-#             l1, = ax.plot(self.data1, 'c')
-#             return l0, l1
-
-#         mplstyle.use('fast')
-#         ani = animation.FuncAnimation(fig, animate, interval=50, cache_frame_data=False, blit=True, repeat=False)
-#         plt.show()
-
-    
+            self.dataUpdated.emit(data0, data1)
+            time.sleep(0.1)

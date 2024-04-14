@@ -7,7 +7,8 @@ import os
 import sys
 from datetime import datetime
 import numpy as np
-import simpleaudio as sa
+import simpleaudio as sa    # simpleaudio has problems with the python threading GIL 
+import pygame
 
 sys.path.append("../")
 
@@ -38,7 +39,7 @@ class RecordingFrame(QFrame):
         self.shared_data = shared_data
         self.plotter_start = plotter_start
         self.setSaved = setSaved
-        self.exerciseTime = 90
+        self.exerciseTime = 20 #90
         self.selectedMusic = None
         self.selectedExercise = None
         self.modality = None
@@ -69,10 +70,14 @@ class RecordingFrame(QFrame):
         self.signals = None
         self.Fs = None
 
+        # init pygame
+        pygame.init()
+        self.clock = pygame.time.Clock()
+
         # create a timer
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.timeUpdater)
-        self.timer.start(15)
+        self.timer.start(50)
 
         # set self layout
         self.layout_actions = QVBoxLayout(self)
@@ -262,9 +267,10 @@ class RecordingFrame(QFrame):
         self.startTime = time.time()
         self.execution = True
         self.plotter_start()
-        #beepPath = "../sonicwalk/audio_samples/beep.wav"
-        #wave_obj = sa.WaveObject.from_wave_file(beepPath)
-        #wave_obj.play()
+        beepPath = "../sonicwalk/audio_samples/beep.wav"
+        beep = pygame.mixer.Sound(beepPath)
+        beep.play()
+        
         if self.connection_msg and not self.connection_msg.isHidden():
             self.connection_msg.reject()
 
@@ -285,16 +291,16 @@ class RecordingFrame(QFrame):
         print("loading wave samples...")
         for f in files:
             if f.lower().endswith(".wav"):
-                music_samples.append(sa.WaveObject.from_wave_file(f))
+                music_samples.append(pygame.mixer.Sound(f))
 
         # play
         self.playingMusic = True
+        current_sample_index = 0
         while self.playingMusic:
-            for sample in music_samples:
-                    if not self.playingMusic:
-                        break
-                    sample.play()
-                    time.sleep(beat_duration)
+            sample = music_samples[current_sample_index]
+            sample.play()
+            pygame.time.wait(int(beat_duration * 1000))  # Convert seconds to milliseconds
+            current_sample_index = (current_sample_index + 1) % len(music_samples)
 
     def stopExecution(self):
         """

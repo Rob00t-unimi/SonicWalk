@@ -364,7 +364,7 @@ class MtwAwinda(object):
     def mtwCalibrate():
         pass
 
-    def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True, exType:int=0, calculateBpm:bool=False, shared_data:object=None):
+    def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True, exType:int=0, calculateBpm:bool=False, shared_data:object=None, setStart: callable=None):
         """Record pitch data for duration seconds
         
         Returns a numpy.array object containing the data for each device and the relative index, and interesting points bidimensional array of indexes
@@ -431,6 +431,7 @@ class MtwAwinda(object):
         time.sleep(1) #wait one second before starting orientation reset and to allow processes to properly start
         self.__resetOrientation()
 
+        setStart()
         print("Recording started..." + str(time.time()))
         os = platform.system()
 

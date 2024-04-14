@@ -168,7 +168,7 @@ class AnalysisPage(QFrame):
             self.plot_thread.terminate()
         self.plot_thread = PlotterThread(self.shared_data.data0, self.shared_data.data1, self.shared_data.index0, self.shared_data.index1)
         self.plot_thread.dataUpdated.connect(self.update_plot)
-        self.plot_thread.termination.connect(self.reset_plot_and_shared_data)
+        self.plot_thread.termination.connect(self.reset_shared_data)
         self.plot_thread.start()
 
     def create_static_plotter(self):
@@ -193,15 +193,15 @@ class AnalysisPage(QFrame):
     def setSaved(self, data):
         self.ax.clear()
         self.ax.set_xticks([])
+        self.ax.grid(True)
         if data is not None:
             self.ax.plot(data[0], 'b')
             self.ax.plot(data[1], 'c')
             self.isSaved = None
-            self.ax.grid(True)
             self.canvas.draw()
         else: self.canvas.draw()
         
-    def reset_plot_and_shared_data(self):
+    def reset_shared_data(self):
         self.shared_data.index0.value = 0
         self.shared_data.index1.value = 0
         for i in range(len(self.shared_data.data0)):

@@ -24,8 +24,7 @@ def mtw_run(Duration:int=90, MusicSamplesPath = "../sonicwalk/audio_samples/camm
     Shared_data = shared_data
 
     with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
-        setStart()
-        data = mtw.mtwRecord(30, plot=False, analyze=analyze, exType = exercise, calculateBpm = calculateBpm, shared_data = Shared_data)
+        data = mtw.mtwRecord(duration=duration, plot=False, analyze=analyze, exType = exercise, calculateBpm = calculateBpm, shared_data = Shared_data, setStart=setStart)
             # 0 --> walking
             # 1 --> Walking in place (High Knees, Butt Kicks)
             # 2 --> Walking in place (High Knees con sensori sulle cosce)

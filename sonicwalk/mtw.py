@@ -431,7 +431,7 @@ class MtwAwinda(object):
         time.sleep(1) #wait one second before starting orientation reset and to allow processes to properly start
         self.__resetOrientation()
 
-        setStart()
+        if setStart is not None: setStart()
         print("Recording started..." + str(time.time()))
         os = platform.system()
 

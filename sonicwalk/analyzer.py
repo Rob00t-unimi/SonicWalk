@@ -45,8 +45,11 @@ class Analyzer():
         self.__completeMovements = 0    # ex. steps
         self.__trasholdRange = 3.0
         self.__legDetected = False
-        self.__foundedPitch = False
+        self.__foundedPeak = False
         self.__pos = True
+        self.__findMininmum = False
+        self.__firstpeak = False
+
         self.__gradientThreshold = 0.3
         self.__gradientHistory = np.full(self.__history_sz, 0.6, dtype=np.float64)
 
@@ -118,7 +121,7 @@ class Analyzer():
         self.__completeMovements += 1
         return
     
-    def peakFinder(self, window, previous_window, current_window, minimum=False, positive = None):
+    def peakFinder(self, window, previous_window, current_window, minimum = False, positive = None):
         """
         Determine if there is a positive or negative peak in the window.
         
@@ -443,11 +446,19 @@ class Analyzer():
     # RILEVAZIONE MOVIMENTO GAMBA "CHE SI MOUOVE"
     def stepLeg(self):
             
-
+            #TRASH
             # IDEA:
             # La gamba in movimento genera un doppio picco positivo seguito da un doppio minimo negativo, e così via.
             # Siamo interessati solo quando il piede tocca terra, quindi per ogni coppia conta solo il primo dei due picchi (o minimi).
             # Quando rilevo un picco positivo, suono, poi cerco il secondo picco. Quando l'ho trovato, cambio la ricerca in un minimo negativo, e viceversa.
+
+            # NEW
+            # Rilevo il picco positivo, se entro 0.3 secondi non c'è un minimo positivo suono
+            # se trovo un minimo positivo prima dei 0.3 secondi suono
+            # cerco un nuovo picco positivo, quando lo trovo 
+            # cerco un minimo negativo, se entro 0.4 secondi non c'è un massimo negativo suono
+            # se trovo un massimo negativo prima dei 0.4 secondi suono
+            # cerco un nuovo minimo negativo, quando lo trovo reitero la stessa procedura
 
 
             if self.__endController() : return
@@ -482,29 +493,91 @@ class Analyzer():
             previous = self.__previousWindow
             window = self.__window
 
+            # # Remove values above or below zero
+            # pitch[pitch <= 0 if self.__pos else pitch >= 0] = 0
+            # previous[previous <= 0 if self.__pos else previous >= 0] = 0
+            # window[window <= 0 if self.__pos else window >= 0] = 0
+
+            # # Find if there are peaks or minimum values
+            # findedPeak = self.peakFinder(previous_window=previous, window=window, current_window=pitch, minimum = (not self.__pos), positive=(self.__pos))
+
+            # # If a peak or a minimum has been found, check if it is valid
+            # if findedPeak:
+            #     peak = np.max(window) if self.__pos else (-1*np.min(window))
+            #     # self.__interestingPoints.append(self.__currentGlobalIndex)
+            #     elapsed_time = time.time() - self.__timestamp
+            #     if elapsed_time > self.__timeThreshold*(5 if self.__foundedPeak else 2) and peak > 5:
+            #         self.__timestamp = time.time()
+            #         if not self.__foundedPeak:
+            #             self.__interestingPoints.append(self.__currentGlobalIndex)  # add the pick into the interesting points list
+            #             self._playSample() if not self.__calculateBpm else self.__betweenStepTimes.append(self.__timestamp)
+            #             self.__foundedPeak = True  # first valid pitch is founded
+            #         else:
+            #             self.__foundedPeak = False # second muted pitch is founded
+            #             self.__pos = not self.__pos # alternate searching types of pitch every 2 peaks founded
+
+            time_thresh = 0.4 if not self.__pos else 0.3
+            if time.time() - self.__timestamp >= 0.4 and self.__firstpeak and not self.__foundedPeak:
+                # sound here after a delay
+                self.__interestingPoints.append(self.__currentGlobalIndex)
+                self._playSample() if not self.__calculateBpm else self.__betweenStepTimes.append(self.__timestamp)
+                self.__foundedPeak = True
+                self.__findMininmum = not self.__findMininmum
+                self._updateWindows() 
+                self.__timestamp = time.time()
+                return
+
             # Remove values above or below zero
+            if self.__findMininmum == self.__pos and self.__pos == True:              
+                pitch = pitch + 5               # traslo in alto quando cerco minimi positivi, per assicurarmi di prenderli tutti
+                previous = previous + 5         # al contratio non serve traslare perchè andando indietro non arrivo mai a 0 (perderei l'equilibrio)
+                window = window + 5
             pitch[pitch <= 0 if self.__pos else pitch >= 0] = 0
             previous[previous <= 0 if self.__pos else previous >= 0] = 0
             window[window <= 0 if self.__pos else window >= 0] = 0
 
-            # Find if there are peaks or minimum values
-            findedPeak = self.peakFinder(previous_window=previous, window=window, current_window=pitch, minimum = (not self.__pos), positive=(self.__pos))
+            findedPeak = self.peakFinder(previous_window=previous, window=window, current_window=pitch, minimum = self.__findMininmum, positive=self.__pos) # if findMininmum is true search mininmum else search peaks, positive indicates if search is on positive or negative part of the plan
 
             # If a peak or a minimum has been found, check if it is valid
             if findedPeak:
-                peak = np.max(window) if self.__pos else (-1*np.min(window))
+                peak = abs(np.max(window)) if not self.__findMininmum else (abs(np.min(window)))
                 # self.__interestingPoints.append(self.__currentGlobalIndex)
                 elapsed_time = time.time() - self.__timestamp
-                if elapsed_time > self.__timeThreshold*(5 if self.__foundedPitch else 2) and peak > 5:
+                thresh = 0 if self.__findMininmum == self.__pos else 5
+                if elapsed_time > self.__timeThreshold*2.5 and peak > thresh:
                     self.__timestamp = time.time()
-                    if not self.__foundedPitch:
-                        self.__interestingPoints.append(self.__currentGlobalIndex)  # add the pick into the interesting points list
+
+                    # findMininmum starts false
+                    # firstpeak starts false
+                    # pos starts true
+                    # foundedPeak starts false
+
+                    if not self.__firstpeak :   # if there is no first peak - this is the first
+                        print("max pos") if self.__findMininmum == False else print("min neg")
+                        self.__findMininmum = not self.__findMininmum    # set search minimum
+                        self.__firstpeak = True  # set first peak finded
+                        # self.__interestingPoints.append(self.__currentGlobalIndex)
+
+
+                    elif not self.__foundedPeak:   # if there is no interesting peak - this it the interesting peak
+                        print("max neg") if self.__findMininmum == False else print("min pos")
+                        self.__foundedPeak = True  # set the interesting peak finded
+                        self.__findMininmum = not self.__findMininmum   # set search peak  
+
+                        # sound here could be too late, if it arrives after 0.4 seconds the sound is already reproduced and this part skipped
+                        self.__interestingPoints.append(self.__currentGlobalIndex)
                         self._playSample() if not self.__calculateBpm else self.__betweenStepTimes.append(self.__timestamp)
-                        self.__foundedPitch = True  # first valid pitch is founded
-                    else:
-                        self.__foundedPitch = False # second muted pitch is founded
-                        self.__pos = not self.__pos # alternate searching types of pitch every 2 peaks founded
-            
+
+                    else:   # if there is the first peak and the interesting peak - this is the last peak
+                        print("max pos 2") if self.__findMininmum == False else print("min neg 2")
+                        self.__pos = not self.__pos # switch search
+                        self.__findMininmum = not self.__findMininmum   # set search minimum
+                        self.__foundedPeak = False  # reset interesting peak
+                        self.__firstpeak = False    # reset first peak
+                        # self.__interestingPoints.append(self.__currentGlobalIndex)
+                        
+
+
             # update windows
             self._updateWindows() 
 
@@ -529,7 +602,8 @@ class Analyzer():
         if self.__endController() : return
         self.__nextWindow()
 
-        pitch = (self.__pitch - 5) if not self.__pos else (self.__pitch + 5)
+        # pitch = (self.__pitch - 5) if not self.__pos else (self.__pitch + 5)
+        pitch = (self.__pitch - 1) if not self.__pos else (self.__pitch + 2)      # da positivo a negativo è più veloce quindi non anticipo, da negativo a positivo è più lento e anticipo
 
         # ricerca di zero crossing positivo o negativo entro la soglia
         positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+0.3)     # + 0.25 per permettere alla soglia anche di salire

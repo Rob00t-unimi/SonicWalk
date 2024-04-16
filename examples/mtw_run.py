@@ -10,13 +10,13 @@ import multiprocessing as mp
 if __name__ == "__main__":
 
     
-    duration = 20
+    duration = 60
     samplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2"
 
     plotPoints = True
 
     with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
-        data = mtw.mtwRecord(duration, plot=True, analyze=True, exType = 0, calculateBpm=False)
+        data = mtw.mtwRecord(duration, plot=True, analyze=True, exType = 4, calculateBpm=False)
             # 0 --> walking
             # 1 --> Walking in place (High Knees, Butt Kicks)3
             # 2 --> Walking in place (High Knees con sensori sulle cosce)

@@ -13,7 +13,7 @@ import pygame
 sys.path.append("../")
 
 from components.recButton import RecButton
-from mtw_run import mtw_run
+from mtw_run import MtwThread
 
 class RecordingFrame(QFrame):
     def __init__(self, light = True, getMusicModality = None, getMusicPath = None, getExerciseNumber = None, getPatient = None, getBpm = None, setBpm = None, changeEnabledAll = None, shared_data = None, plotter_start = None, setSaved = None):#, mtw_run_finished = None):
@@ -195,9 +195,14 @@ class RecordingFrame(QFrame):
         self.changeEnabledAll()
 
         # Execute mtw_run in a different thread
-        self.record_thread = threading.Thread(target=self.run_mtw)
+        analyze = False if self.modality == 1 else True
+        self.record_thread = MtwThread(Duration=self.exerciseTime, MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.setStart, CalculateBpm=self.calculateBpm, shared_data = self.shared_data)
         self.record_thread.daemon = True
-        self.record_thread.start()
+        try:
+            self.record_thread.start()
+        except Exception as e:
+            self.setSaved(None)
+            # have to return only some errors in a message
 
         # open connection message
 
@@ -217,33 +222,25 @@ class RecordingFrame(QFrame):
         # print("thread alive")
         if not self.record_thread.is_alive():
             print("closed thread")
+
             self.playingMusic = False   # stops music
             self.execution = False
             self.startTime = None
             self.changeEnabledAll()
-            self.saveRecording()
             self.check_mtw_run_timer.stop()
 
-    def run_mtw(self):
-        """
-            Modifies:   self.signals
-                        self.Fs
-            Effects:    Runs the mtw_run function for recording in a different thread.
-                        Get recorded signal and Fs
-        """
-        analyze = False if self.modality == 1 else True
-        try:
-            self.signals, self.Fs, self.bpm = mtw_run(Duration=self.exerciseTime, MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.setStart, CalculateBpm=self.calculateBpm, shared_data = self.shared_data)
-            # gestire il dongle non inserito
-            # self.mtw_run_finished.emit()
-            if self.setBpm and self.bpm != False:
-                print("bpm: " + str(self.bpm))
-                self.setBpm(self.bpm) 
+            result= self.record_thread.get_results()
+            if result is not None:
+                self.signals, self.Fs, self.bpm = result
+                if self.setBpm and self.bpm != False:
+                    print("bpm: " + str(self.bpm))
+                    self.setBpm(self.bpm) 
+                elif self.setBpm and self.bpm == False:
+                    print("Bpm Estimation Failed")
+
+                self.saveRecording()   
             else:
-                raise RuntimeError("Bpm Estimation Failed")
-        except RuntimeError as e:
-            pass
-            # have to return only some errors in a message
+                self.setSaved(None) # clean plotter
 
     def setStart(self):
         """
@@ -298,12 +295,15 @@ class RecordingFrame(QFrame):
                         self.startTime
             Effects:    Stops the recording.
         """
-        # per implementarla bisogna rivedere la logica del codice di sonicwalk
-        self.execution = False
-        self.startTime = None
-
-        ## interruzione della registrazione (sicura), deve rimettere i sensori nella modalità corretta
-        return
+        if self.execution:
+            # per implementarla bisogna rivedere la logica del codice di sonicwalk
+            self.check_mtw_run_timer.stop()
+            self.execution = False
+            self.startTime = None
+            self.playingMusic = False
+            self.changeEnabledAll()
+            ## interruzione della registrazione (sicura), deve rimettere i sensori nella modalità corretta
+            self.record_thread.interrupt_recording()
     
     def saveRecording(self):
         """

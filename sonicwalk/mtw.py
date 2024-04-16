@@ -166,6 +166,7 @@ class MtwAwinda(object):
         self.__maxNumberofCoords = 72000 #equivalent to 10 minutes at 120Hz
         self.__eulerData = np.zeros((2, self.__maxNumberofCoords), dtype=np.float64) #we have only two Mtw devices
         self.__index = np.zeros(2, dtype=np.uint32)
+        self.__recordingStopped = False
 
 
     def __enter__(self):
@@ -437,7 +438,9 @@ class MtwAwinda(object):
 
         startTime = xda.XsTimeStamp_nowMs()
         while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
-            
+            if self.__recordingStopped:
+                self.__recordingStopped = False 
+                return None
             avail = self.__getEuler()
             if any(avail):
                 # print("new data available at time: " + str(time.time()))
@@ -497,7 +500,9 @@ class MtwAwinda(object):
                     # average in minutes
                     mediumTimeValue = (sum(elapsed_times)/len(elapsed_times))/60
                     # calculate bpm
-                    bpmTimeValue = 1/mediumTimeValue
+                    if mediumTimeValue != 0: bpmTimeValue = 1/mediumTimeValue 
+                    else: bpmTimeValue = False
+                else: bpmTimeValue = False
             else: bpmTimeValue = False
 
             return (self.__eulerData, self.__index, interestingPoints, bpmTimeValue)
@@ -530,6 +535,10 @@ class MtwAwinda(object):
             sys.exit(1)
         else:
             print("Successful clean")
+
+    def stopRecording(self):
+        self.__recordingStopped = True
+        # self.__clean()
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.__clean()

@@ -191,6 +191,8 @@ class AnalysisPage(QFrame):
         self.canvas.draw()
 
     def setSaved(self, data):
+        if hasattr(self, 'plot_thread'):
+            self.plot_thread.force_stop()
         self.ax.clear()
         self.ax.set_xticks([])
         self.ax.grid(True)
@@ -198,8 +200,7 @@ class AnalysisPage(QFrame):
             self.ax.plot(data[0], 'b')
             self.ax.plot(data[1], 'c')
             self.isSaved = None
-            self.canvas.draw()
-        else: self.canvas.draw()
+        self.canvas.draw()
         
     def reset_shared_data(self):
         self.shared_data.index0.value = 0
@@ -220,10 +221,16 @@ class PlotterThread(QThread):
         self.data1 = data1
         self.index0 = index0
         self.index1 = index1
+        self.stop = False
 
     def run(self):
         print("plotter running...")
         while True:
+            if self.stop: 
+                print("SELF STOP")
+                self.stop = False
+                self.termination.emit()
+                return
             if self.data0[self.index0.value] == 1000:
                 self.termination.emit()
                 return
@@ -232,3 +239,7 @@ class PlotterThread(QThread):
 
             self.dataUpdated.emit(data0, data1)
             time.sleep(0.07)
+
+    def force_stop(self):
+        if self.isRunning():
+            self.stop = True

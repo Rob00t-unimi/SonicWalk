@@ -16,7 +16,7 @@ if __name__ == "__main__":
     plotPoints = True
 
     with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
-        data = mtw.mtwRecord(duration, plot=True, analyze=True, exType = 4, calculateBpm=False)
+        data = mtw.mtwRecord(duration, plot=True, analyze=True, exType = 3, calculateBpm=False)
             # 0 --> walking
             # 1 --> Walking in place (High Knees, Butt Kicks)3
             # 2 --> Walking in place (High Knees con sensori sulle cosce)

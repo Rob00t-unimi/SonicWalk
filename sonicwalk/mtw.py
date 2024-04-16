@@ -375,7 +375,7 @@ class MtwAwinda(object):
         exType defines the type of analysis to be performed
         """
 
-        if not isinstance(duration, int) or duration < 10:
+        if not isinstance(duration, int) or duration <= 10:
             raise ValueError("duration must be a positive integer (> 10) indicating the number of seconds")
         
         def write_shared(data0, data1, index0, index1, coords, terminate=False):
@@ -482,23 +482,23 @@ class MtwAwinda(object):
             points1 = extractData(interestingPoints1)
             interestingPoints = [points0, points1]      
             
-            # convert timestamps to bpm value
-            times0 = extractData(betweenStepsTimes0)
-            times1 = extractData(betweenStepsTimes1)
-            times0.extend(times1)
-            print(str(times0))
-            if len(times0) != 0:
-                times0.sort()
-                elapsed_times = []
-                for i in range(len(times0) - 1):
-                    elapsed_time = times0[i + 1] - times0[i]
-                    elapsed_times.append(elapsed_time)
-                # average in minutes
-                mediumTimeValue = (sum(elapsed_times)/len(elapsed_times))/60
-                # calculate bpm
-                bpmTimeValue = 1/mediumTimeValue
-            else:
-                bpmTimeValue = False
+            if calculateBpm:
+                # convert timestamps to bpm value
+                times0 = extractData(betweenStepsTimes0)
+                times1 = extractData(betweenStepsTimes1)
+                times0.extend(times1)
+                # print(str(times0))
+                if len(times0) != 0:
+                    times0.sort()
+                    elapsed_times = []
+                    for i in range(len(times0) - 1):
+                        elapsed_time = times0[i + 1] - times0[i]
+                        elapsed_times.append(elapsed_time)
+                    # average in minutes
+                    mediumTimeValue = (sum(elapsed_times)/len(elapsed_times))/60
+                    # calculate bpm
+                    bpmTimeValue = 1/mediumTimeValue
+            else: bpmTimeValue = False
 
             return (self.__eulerData, self.__index, interestingPoints, bpmTimeValue)
         return (self.__eulerData, self.__index, [[],[]], False)

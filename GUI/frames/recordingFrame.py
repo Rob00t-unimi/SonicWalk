@@ -39,7 +39,7 @@ class RecordingFrame(QFrame):
         self.shared_data = shared_data
         self.plotter_start = plotter_start
         self.setSaved = setSaved
-        self.exerciseTime = 20 #90
+        self.exerciseTime = 11 #90
         self.selectedMusic = None
         self.selectedExercise = None
         self.modality = None
@@ -194,18 +194,17 @@ class RecordingFrame(QFrame):
         # disable all buttons and selects except stop button
         self.changeEnabledAll()
 
-        # show sensors pairing message
-        self.showConnectionMessage()
-
         # Execute mtw_run in a different thread
         self.record_thread = threading.Thread(target=self.run_mtw)
         self.record_thread.daemon = True
         self.record_thread.start()
 
+        # open connection message
+
         # create execuiton timer
         self.check_mtw_run_timer = QTimer(self)
         self.check_mtw_run_timer.timeout.connect(self.check_mtw_run_status)
-        self.check_mtw_run_timer.start(100)
+        self.check_mtw_run_timer.start(50)
 
     def check_mtw_run_status(self):
         """
@@ -215,7 +214,9 @@ class RecordingFrame(QFrame):
             Effects:    Checks the status of the mtw_run thread.
                         if is not alive executes saveRecording
         """
+        # print("thread alive")
         if not self.record_thread.is_alive():
+            print("closed thread")
             self.playingMusic = False   # stops music
             self.execution = False
             self.startTime = None
@@ -232,29 +233,17 @@ class RecordingFrame(QFrame):
         """
         analyze = False if self.modality == 1 else True
         try:
-            self.signals, self.Fs, self.bpm = mtw_run(Duration=int(self.exerciseTime), MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.setStart, CalculateBpm=self.calculateBpm, shared_data = self.shared_data)
+            self.signals, self.Fs, self.bpm = mtw_run(Duration=self.exerciseTime, MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.setStart, CalculateBpm=self.calculateBpm, shared_data = self.shared_data)
             # gestire il dongle non inserito
             # self.mtw_run_finished.emit()
-            if self.bpm != False:
+            if self.setBpm and self.bpm != False:
                 print("bpm: " + str(self.bpm))
                 self.setBpm(self.bpm) 
             else:
                 raise RuntimeError("Bpm Estimation Failed")
         except RuntimeError as e:
-            self.connection_msg.setText(str(e))
-            # non restituisce l'errore
-
-    def showConnectionMessage(self):
-        """
-            Modifies:   self
-            Effects:    Shows a message to the user that the sensors are connecting.
-        """
-        if self.connection_msg is None:
-            self.connection_msg = QMessageBox(QMessageBox.Information, "Waiting for Sensor Connection", "Please wait while the sensors are connecting...", QMessageBox.NoButton, self)
-        self.connection_msg.setWindowModality(Qt.ApplicationModal)
-        self.connection_msg.setIcon(QMessageBox.NoIcon)
-        self.connection_msg.setStandardButtons(QMessageBox.NoButton)
-        self.connection_msg.show()
+            pass
+            # have to return only some errors in a message
 
     def setStart(self):
         """
@@ -266,17 +255,18 @@ class RecordingFrame(QFrame):
         """
         self.startTime = time.time()
         self.execution = True
-        self.plotter_start()
-        beepPath = "../sonicwalk/audio_samples/beep.wav"
-        beep = pygame.mixer.Sound(beepPath)
-        beep.play()
-        
-        if self.connection_msg and not self.connection_msg.isHidden():
-            self.connection_msg.reject()
+
+        # close connection message
 
         if self.modality == 1:
             music_thread = threading.Thread(target=self._play_music)
             music_thread.start()
+
+        self.plotter_start()
+        print("after plotter start")
+        beepPath = "../sonicwalk/audio_samples/beep.wav"
+        beep = pygame.mixer.Sound(beepPath)
+        beep.play()
 
     def _play_music(self):
         bpm = self.getBpm()

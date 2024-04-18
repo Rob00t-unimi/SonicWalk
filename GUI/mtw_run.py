@@ -52,8 +52,8 @@ class MtwThread(threading.Thread):
         return self.result
 
     def interrupt_recording(self, function = None):
-        self.mtw.stopRecording()
         if function is not None:
             function()
+        self.mtw.stopRecording()
 
 

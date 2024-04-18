@@ -226,11 +226,6 @@ class PlotterThread(QThread):
     def run(self):
         print("plotter running...")
         while True:
-            if self.stop: 
-                print("SELF STOP")
-                self.stop = False
-                self.termination.emit()
-                return
             if self.data0[self.index0.value] == 1000:
                 self.termination.emit()
                 return
@@ -242,4 +237,5 @@ class PlotterThread(QThread):
 
     def force_stop(self):
         if self.isRunning():
+            self.data0[self.index0.value] = 1000
             self.stop = True

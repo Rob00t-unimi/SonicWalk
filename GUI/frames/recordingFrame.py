@@ -303,7 +303,7 @@ class RecordingFrame(QFrame):
             self.playingMusic = False
             self.changeEnabledAll()
             ## interruzione della registrazione (sicura), deve rimettere i sensori nella modalità corretta
-            self.record_thread.interrupt_recording()
+            self.record_thread.interrupt_recording(lambda: self.setSaved(None))
     
     def saveRecording(self):
         """

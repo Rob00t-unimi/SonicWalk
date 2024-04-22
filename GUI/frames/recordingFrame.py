@@ -1,7 +1,7 @@
 import threading
 import time
 from PyQt5.QtWidgets import QVBoxLayout, QFrame, QHBoxLayout, QLabel, QMessageBox
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
 from PyQt5.QtGui import QPixmap
 import os
 import sys
@@ -34,6 +34,8 @@ class RecordingFrame(QFrame):
             - Manages recording functionalities such as starting, stopping, and saving recordings.
         """
         super().__init__()
+
+        self.setObjectName("recording_frame")
 
         # initialize attributes
         self.shared_data = shared_data
@@ -69,6 +71,8 @@ class RecordingFrame(QFrame):
         self.connection_msg = None
         self.signals = None
         self.Fs = None
+
+        self.record_thread = None
 
         # init pygame
         pygame.init()
@@ -128,6 +132,11 @@ class RecordingFrame(QFrame):
         self.layout_actions.setContentsMargins(25, 25, 25, 25)
 
         self.disablePlayButton()
+
+    def closeEvent(self, event):
+        print("bye bye")
+        if self.record_thread is not None and self.record_thread.is_alive():
+            self.record_thread.interrupt_recording(lambda: self.setSaved(None))
 
     def toggleTheme(self):
         """
@@ -242,6 +251,7 @@ class RecordingFrame(QFrame):
                 if isinstance(result, Exception):
                     # close connection message
                     self.connection_msg.reject()
+                    self.connection_msg = None
                     self.setSaved(None)
                     # have to return only some errors in a message
                     error_msg = QMessageBox()
@@ -281,6 +291,9 @@ class RecordingFrame(QFrame):
         self.connection_msg.reject()
 
         if self.modality == 1:
+            # self.music_thread = QThread()
+            # self.music_thread.run = self._play_music
+            # self.music_thread.start()
             music_thread = threading.Thread(target=self._play_music)
             music_thread.start()
 
@@ -292,27 +305,40 @@ class RecordingFrame(QFrame):
 
     def _play_music(self):
         bpm = self.getBpm()
-        beats_per_second = bpm / 60.0  # Convert BPM to beats per second
-        beat_duration = 1.0 / beats_per_second  # Duration of each beat in seconds
+        beats_per_second = bpm / 60.0
+        beat_duration = 1.0 / beats_per_second
 
-        # Load and sort music samples
-        files = [os.path.join(self.selectedMusic, f) for f in os.listdir(self.selectedMusic) 
-                if os.path.isfile(os.path.join(self.selectedMusic, f))]
-        files.sort() #sort filenames in order
-        music_samples = []
-        print("loading wave samples...")
-        for f in files:
-            if f.lower().endswith((".wav", ".mp3")):
-                music_samples.append(pygame.mixer.Sound(f))
+        try:
+            # Load and sort music samples
+            files = [os.path.join(self.selectedMusic, f) for f in os.listdir(self.selectedMusic) 
+                    if os.path.isfile(os.path.join(self.selectedMusic, f))]
+            files.sort()
+            music_samples = []
+            print("loading wave samples...")
+            for f in files:
+                if f.lower().endswith((".wav", ".mp3")):
+                    music_samples.append(pygame.mixer.Sound(f))
 
-        # play
-        self.playingMusic = True
-        current_sample_index = 0
-        while self.playingMusic:
-            sample = music_samples[current_sample_index]
-            sample.play()
-            pygame.time.wait(int(beat_duration * 1000))  # Convert seconds to milliseconds
-            current_sample_index = (current_sample_index + 1) % len(music_samples)
+            # play
+            self.playingMusic = True
+            current_sample_index = 0
+            while self.playingMusic:
+                sample = music_samples[current_sample_index]
+                sample.play()
+                pygame.time.wait(int(beat_duration * 1000))
+                current_sample_index = (current_sample_index + 1) % len(music_samples)
+        except Exception as e:
+            self.stopExecution()
+            print("An error occurred while loading music samples:", e)
+            # self.showErrorMessage("Impossible to load Music Samples: " + str(e))
+
+    # def showErrorMessage(self, message):
+    #     error_msg = QMessageBox()
+    #     error_msg.setIcon(QMessageBox.Information)
+    #     error_msg.setWindowTitle("Error")
+    #     error_msg.setText(message)
+    #     error_msg.setStandardButtons(QMessageBox.Ok)
+    #     error_msg.exec_()
 
     def stopExecution(self):
         """

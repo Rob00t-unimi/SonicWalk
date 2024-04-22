@@ -23,7 +23,6 @@
 import simpleaudio
 import time
 import numpy as np
-from scipy.signal import correlate
 from scipy.ndimage import gaussian_filter1d
 
 class ZeroCrossingDetectionResult:

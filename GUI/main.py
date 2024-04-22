@@ -22,7 +22,7 @@
 
 
 import json
-from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QWidget, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QWidget, QVBoxLayout, QFrame
 from frames.sideMenu import SideMenu
 from pages.analysis_page import AnalysisPage
 from pages.archive_page import ArchivePage
@@ -138,6 +138,12 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print("Error loading settings:", e)
             return True  # Use default theme (light) in case of any errors
+        
+    def closeEvent(self, event):
+        # close the recording frame safely if running
+        frame_to_close = self.findChild(QFrame, "recording_frame")
+        frame_to_close.close()
+        super().closeEvent(event)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

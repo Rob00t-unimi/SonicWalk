@@ -89,8 +89,8 @@ class AnalysisPage(QFrame):
 
         self.patient_frame.setMinimumWidth(200)
         self.plotter_frame.setMinimumWidth(200)
-        self.selection_frame.setMinimumWidth(200)
-        self.actions_frame.setMinimumWidth(200)
+        self.selection_frame.setMinimumWidth(375)
+        self.actions_frame.setMinimumWidth(375)
 
         # expansion policy
         grid_layout.setRowStretch(0, 1)
@@ -228,6 +228,7 @@ class PlotterThread(QThread):
         while True:
             if self.data0[self.index0.value] == 1000:
                 self.termination.emit()
+                print("terminate plotter process...")
                 return
             data0 = np.array(self.data0)
             data1 = np.array(self.data1)

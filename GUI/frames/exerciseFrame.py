@@ -110,7 +110,7 @@ class ExerciseFrame(QFrame):
             self.setStyleSheet(self.lightTheme if self.light else self.darkTheme)
 
             # call default button
-            self.music_button.clickCall()
+            self.noMusic_button.clickCall()
             if len(self.MusicNames)>0:
                 self.selectMusic(self.MusicNames[0])
 

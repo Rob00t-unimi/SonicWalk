@@ -1,5 +1,6 @@
 import threading
 import sys
+import time
 sys.path.append("../sonicwalk")
 import numpy as np
 
@@ -17,6 +18,7 @@ class MtwThread(threading.Thread):
         self.result = None
         self._stop_event = threading.Event()  # Evento per segnalare al thread di terminare
         self.mtw = None
+        self.stop_plotter = None
 
     def run(self):
         import mtw
@@ -25,35 +27,42 @@ class MtwThread(threading.Thread):
                 self.mtw = mtw
                 data = mtw.mtwRecord(duration=self.Duration, plot=False, analyze=self.Analyze, exType=self.Exercise, calculateBpm=self.CalculateBpm, shared_data=self.shared_data, setStart=self.setStart)
 
-                if data is not None:
-                    data0 = data[0][0]
-                    data1 = data[0][1]
-                    index0 = data[1][0]
-                    index1 = data[1][1]
-                    bpmValue = data[3]
+            if data is not None:
+                data0 = data[0][0]
+                data1 = data[0][1]
+                index0 = data[1][0]
+                index1 = data[1][1]
+                bpmValue = data[3]
 
-                    pitch0 = data0[:index0]
-                    pitch1 = data1[:index1]
+                pitch0 = data0[:index0]
+                pitch1 = data1[:index1]
 
-                    max_length = max(len(pitch0), len(pitch1))
-                    new_pitch0 = np.pad(pitch0, (0, max_length - len(pitch0)), mode='constant')
-                    new_pitch1 = np.pad(pitch1, (0, max_length - len(pitch1)), mode='constant')
+                max_length = max(len(pitch0), len(pitch1))
+                new_pitch0 = np.pad(pitch0, (0, max_length - len(pitch0)), mode='constant')
+                new_pitch1 = np.pad(pitch1, (0, max_length - len(pitch1)), mode='constant')
 
-                    combined_data = np.vstack((new_pitch0, new_pitch1))
+                combined_data = np.vstack((new_pitch0, new_pitch1))
 
-                    Fs = max_length / self.Duration
+                Fs = max_length / self.Duration
 
-                    self.result = combined_data, Fs, bpmValue
+                self.result = combined_data, Fs, bpmValue
 
+            else: 
+                if self.stop_plotter is not None: self.stop_plotter()
+                return
+
+        except RuntimeError as e:
+            self.result = e
+            # time.sleep(0.5)
         except Exception as e:
-            raise Exception(e)
+            self.result = e
+            # time.sleep(0.5)
 
     def get_results(self):
         return self.result
 
-    def interrupt_recording(self, function = None):
-        if function is not None:
-            function()
-        self.mtw.stopRecording()
+    def interrupt_recording(self, stop_plotter = None):
+        self.stop_plotter = stop_plotter
+        self.mtw.stopRecording()    # stop mtw recording
 
 

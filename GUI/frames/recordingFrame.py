@@ -39,7 +39,7 @@ class RecordingFrame(QFrame):
         self.shared_data = shared_data
         self.plotter_start = plotter_start
         self.setSaved = setSaved
-        self.exerciseTime = 11 #90
+        self.exerciseTime = 45 #90
         self.selectedMusic = None
         self.selectedExercise = None
         self.modality = None
@@ -90,21 +90,26 @@ class RecordingFrame(QFrame):
 
         # Buttons
 
-        # si vuole implementare lo stop?
-        # se si stoppa si vuole poter salvare o si scarta la registrazione?
-        self.stop_button = RecButton(light=self.light, icons_paths=["icons/square.svg", "icons/square.svg"], tooltip="Stop recording")
-        self.buttons_layoutActions.addWidget(self.stop_button)
-        self.stop_button.onClick(self.stopExecution)
+        self.buttons_layoutActions.addStretch()
 
         # create custom recording buttons
         self.play_button = RecButton(light=self.light, icons_paths=[self.blackIcons+"/play.svg", self.whiteIcons+"/play.svg"], tooltip="Start recording")
         self.buttons_layoutActions.addWidget(self.play_button)
         self.play_button.onClick(self.startExecution)
 
-        # si vuole implementare salva manuale o si chiede sempre automaticamente?
-        self.save_button = RecButton(light=self.light, icons_paths=[self.blackIcons+"/save.svg", self.whiteIcons+"/save.svg"], tooltip="Save the recording")
-        self.buttons_layoutActions.addWidget(self.save_button)
-        self.save_button.setEnabled(False)
+        self.buttons_layoutActions.addStretch()
+
+        self.stop_button = RecButton(light=self.light, icons_paths=["icons/square.svg", "icons/square.svg"], tooltip="Stop recording")
+        self.buttons_layoutActions.addWidget(self.stop_button)
+        self.stop_button.onClick(self.stopExecution)
+
+        # # si vuole implementare salva manuale o si chiede sempre automaticamente?
+        # self.save_button = RecButton(light=self.light, icons_paths=[self.blackIcons+"/save.svg", self.whiteIcons+"/save.svg"], tooltip="Save the recording")
+        # self.buttons_layoutActions.addWidget(self.save_button)
+        # self.save_button.setEnabled(False)
+
+        self.buttons_layoutActions.addStretch()
+
 
 
         # Create timer label
@@ -133,7 +138,7 @@ class RecordingFrame(QFrame):
         self.time_label.setStyleSheet("color: black;" if self.light else "color: white;")
         self.play_button.toggleTheme()
         self.stop_button.toggleTheme()
-        self.save_button.toggleTheme()
+        # self.save_button.toggleTheme()
 
     def enablePlayButton(self):
         """
@@ -196,15 +201,18 @@ class RecordingFrame(QFrame):
 
         # Execute mtw_run in a different thread
         analyze = False if self.modality == 1 else True
+        
         self.record_thread = MtwThread(Duration=self.exerciseTime, MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.setStart, CalculateBpm=self.calculateBpm, shared_data = self.shared_data)
         self.record_thread.daemon = True
-        try:
-            self.record_thread.start()
-        except Exception as e:
-            self.setSaved(None)
-            # have to return only some errors in a message
+        self.record_thread.start()
 
-        # open connection message
+        # connection message
+        self.connection_msg = QMessageBox()
+        self.connection_msg.setIcon(QMessageBox.Information)
+        self.connection_msg.setWindowTitle("Connection...")
+        self.connection_msg.setText("Please wait. We are trying to connect with the sensors...")
+        self.connection_msg.setStandardButtons(QMessageBox.NoButton)
+        self.connection_msg.show()
 
         # create execuiton timer
         self.check_mtw_run_timer = QTimer(self)
@@ -219,7 +227,6 @@ class RecordingFrame(QFrame):
             Effects:    Checks the status of the mtw_run thread.
                         if is not alive executes saveRecording
         """
-        # print("thread alive")
         if not self.record_thread.is_alive():
             print("closed thread")
 
@@ -231,14 +238,31 @@ class RecordingFrame(QFrame):
 
             result= self.record_thread.get_results()
             if result is not None:
-                self.signals, self.Fs, self.bpm = result
-                if self.setBpm and self.bpm != False:
-                    print("bpm: " + str(self.bpm))
-                    self.setBpm(self.bpm) 
-                elif self.setBpm and self.bpm == False:
-                    print("Bpm Estimation Failed")
 
-                self.saveRecording()   
+                if isinstance(result, Exception):
+                    # close connection message
+                    self.connection_msg.reject()
+                    self.setSaved(None)
+                    # have to return only some errors in a message
+                    error_msg = QMessageBox()
+                    error_msg.setIcon(QMessageBox.Question)
+                    error_msg.setWindowTitle("Error")
+                    error_msg.setText(str(result) +". Do you want to try again?")
+                    error_msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+                    response = error_msg.exec_()
+
+                    if response == QMessageBox.Yes:
+                        self.startExecution()
+
+                else:
+                    self.signals, self.Fs, self.bpm = result
+                    if self.setBpm and self.bpm != False:
+                        print("bpm: " + str(self.bpm))
+                        self.setBpm(self.bpm) 
+                    elif self.setBpm and self.bpm == False:
+                        print("Bpm Estimation Failed")
+
+                    self.saveRecording()   
             else:
                 self.setSaved(None) # clean plotter
 
@@ -250,10 +274,11 @@ class RecordingFrame(QFrame):
                         It closes the connection message.
                         If music modality is setted on Music it starts to play the music in a different thread.
         """
+
         self.startTime = time.time()
         self.execution = True
 
-        # close connection message
+        self.connection_msg.reject()
 
         if self.modality == 1:
             music_thread = threading.Thread(target=self._play_music)
@@ -277,7 +302,7 @@ class RecordingFrame(QFrame):
         music_samples = []
         print("loading wave samples...")
         for f in files:
-            if f.lower().endswith(".wav"):
+            if f.lower().endswith((".wav", ".mp3")):
                 music_samples.append(pygame.mixer.Sound(f))
 
         # play
@@ -304,6 +329,7 @@ class RecordingFrame(QFrame):
             self.changeEnabledAll()
             ## interruzione della registrazione (sicura), deve rimettere i sensori nella modalità corretta
             self.record_thread.interrupt_recording(lambda: self.setSaved(None))
+
     
     def saveRecording(self):
         """

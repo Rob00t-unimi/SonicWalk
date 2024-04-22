@@ -1,6 +1,8 @@
 import json
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QFont
+from PyQt5.QtCore import Qt
+
 
 import sys
 sys.path.append("../")
@@ -35,11 +37,11 @@ class MusicFolders(QFrame):
         self.noMusicLabel = None
         self.light = light
 
-        self.setFixedHeight(300)
-        self.setFixedWidth(1000)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.setStyleSheet(
             "MusicFolders {"
-            "   border-radius: 15px;"
+            "   border-bottom-left-radius: 15px;"
+            "   border-bottom-right-radius: 15px;"
             "   background-color: #B6C2CF;"
             "}"
         )
@@ -96,6 +98,8 @@ class MusicFolders(QFrame):
 
         self.addMusicButton = CustomButton(text="Add Music Folder", light=light, dimensions=[200, 50])
         self.addMusicButton.clicked.connect(self.addMusic)
+        self.addMusicButton.setToolTip("Add new Folder")
+
 
         headerFrame = QFrame()
         headerFrame.setStyleSheet(
@@ -115,6 +119,10 @@ class MusicFolders(QFrame):
         layout.addWidget(headerFrame)
         layout.addWidget(self.scrollArea)
         self.setLayout(layout)
+
+        self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
 
 
     def populateMusicFrame(self):
@@ -140,11 +148,25 @@ class MusicFolders(QFrame):
                 font = QFont("Sans-serif", 12)
                 nameLabel = QLabel(name)
                 nameLabel.setFont(font)
+                nameLabel.setMaximumWidth(100)
+                nameLabel.setToolTip(name)
+                nameLabel.setWordWrap(False)
+                nameLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+                
+                # Create path label
                 pathLabel = QLabel(path)
+                # pathLabel.setFont(font)
+                pathLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # Imposta l'allineamento del testo a sinistra
+                pathLabel.setMaximumWidth(220)  # Imposta una larghezza fissa per il percorso
+                pathLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+                pathLabel.setToolTip(path)  # Mostra il percorso completo al passaggio del mouse
+                pathLabel.setWordWrap(False)  # Disabilita il word wrapping
+
 
                 removeButton = CustomButton(text="", light=self.light, icons_paths=["icons/black/trash.svg", "icons/white/trash.svg"], dimensions=[50, 50])
                 removeButton.setStyleSheet("QPushButton { text-align: center; border-radius: 10px; background-color: rgba(255,0,0,30%);} QPushButton:hover { background-color: rgba(255,0,0,50%); } QPushButton:pressed { background-color: rgba(255,0,0,70%); ")
                 removeButton.clicked.connect(lambda _, n=name, p=path: self.deleteMusicFolder(n, p))
+                removeButton.setToolTip("Remove Folder")
 
                 rowLayout.addWidget(nameLabel)
                 rowLayout.addStretch()
@@ -152,10 +174,14 @@ class MusicFolders(QFrame):
                 rowLayout.addStretch()
                 rowLayout.addWidget(removeButton)
 
+                rowLayout.setSizeConstraint(QLayout.SetMaximumSize)
+
                 row = [nameLabel, pathLabel, removeButton]
+                rowLayout.setAlignment(Qt.AlignLeft | Qt.AlignTop)
                 self.rows.append(row)
 
                 self.musicFrame.layout().addLayout(rowLayout)
+
 
     def deleteMusicFolder(self, name, path):
         try:

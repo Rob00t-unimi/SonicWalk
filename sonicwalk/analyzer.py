@@ -602,8 +602,8 @@ class Analyzer():
         if self.__endController() : return
         self.__nextWindow()
 
-        # pitch = (self.__pitch - 5) if not self.__pos else (self.__pitch + 5)
-        pitch = (self.__pitch - 1) if not self.__pos else (self.__pitch + 2)      # da positivo a negativo è più veloce quindi non anticipo, da negativo a positivo è più lento e anticipo
+        pitch = (self.__pitch - 5) if not self.__pos else (self.__pitch + 5)
+        # pitch = (self.__pitch - 1) if not self.__pos else (self.__pitch + 2)      # da positivo a negativo è più veloce quindi non anticipo, da negativo a positivo è più lento e anticipo
 
         # ricerca di zero crossing positivo o negativo entro la soglia
         positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+0.3)     # + 0.25 per permettere alla soglia anche di salire

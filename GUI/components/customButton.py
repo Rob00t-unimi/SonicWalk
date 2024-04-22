@@ -32,7 +32,7 @@ class CustomButton(QPushButton):
 
         # light style
         self.lightTheme = "QPushButton { border: none; padding-left: 10px; border-radius: 10px; background-color: rgba(108, 60, 229, 30%); color: black;} QPushButton:hover { background-color: rgba(108, 60, 229, 50%); } QPushButton:pressed { background-color: rgba(108, 60, 229, 70%); }"
-        self.lightThemeSelected = "QPushButton { border: none; border-radius: 10px; background-color: rgba(108, 60, 229, 50%); color: black;}"
+        self.lightThemeSelected = "QPushButton { border: none; border-radius: 10px; background-color: rgba(108, 60, 229, 65%); color: black;}"
 
         # dark style
         self.darkTheme = "QPushButton { border: none; padding-left: 10px; border-radius: 10px; background-color: rgba(108, 60, 229, 30%); color: white;} QPushButton:hover { background-color: rgba(108, 60, 229, 50%); } QPushButton:pressed { background-color: rgba(108, 60, 229, 70%); }"

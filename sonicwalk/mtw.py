@@ -147,6 +147,7 @@ class WirelessMasterCallback(xda.XsCallback):
             self.m_connectedMTWs.remove(dev)
         self.m_lock.release()
 
+
 class MtwAwinda(object):
     """Class that allows mtwAwinda devices handling
     
@@ -279,10 +280,12 @@ class MtwAwinda(object):
 
         except RuntimeError as error:
             print(error)
-            sys.exit(1)
+            raise
+            # sys.exit(1)
         except Exception as error:
             print(error)
-            sys.exit(1)
+            raise
+            # sys.exit(1)
         else:
             print("Successful init.")
     
@@ -314,10 +317,12 @@ class MtwAwinda(object):
     
         except RuntimeError as error:
             print(error)
-            sys.exit(1)
+            # sys.exit(1)
+            raise
         except Exception as error:
             print(error)
-            sys.exit(1)
+            # sys.exit(1)
+            raise
 
     def __cleanBuffer(self):
         self.__eulerData = np.zeros((2, self.__maxNumberofCoords), dtype=np.float64)
@@ -336,13 +341,15 @@ class MtwAwinda(object):
                     samples.append(sa.WaveObject.from_wave_file(f))
         except:
             print("samples could not be loaded...Aborting. Check pathname syntax")
-            sys.exit(1)
+            # sys.exit(1)
+            raise Exception("samples could not be loaded.")
         else:
             print("...wave samples loaded successfully")
 
         if not samples:
             print("No wav file was found at given pathname...Aborting. Check file extensions")
-            sys.exit(1)
+            # sys.exit(1)
+            raise Exception("No wav file was found at given pathname.")
     
         return samples 
 
@@ -354,10 +361,12 @@ class MtwAwinda(object):
                 self.mtwDevices[i].resetOrientation(xda.XRM_Inclination)
         except RuntimeError as error:
             print(error)
-            sys.exit(1)
+            # sys.exit(1)
+            raise
         except Exception as error:
             print(error)
-            sys.exit(1)
+            # sys.exit(1)
+            raise
         else:
             print("...Orientation reset successfully scheduled")
 
@@ -421,8 +430,8 @@ class MtwAwinda(object):
             analyzer1 = Analyzer()
             sharedLegBool = LegDetected() 
             sharedSyncronizer = ProcessWaiting()
-            analyzer_process0 = mp.Process(target=analyzer0, args=(shared_data.data0, shared_data.index0, 0, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints0, betweenStepsTimes0, calculateBpm), daemon=True)
-            analyzer_process1 = mp.Process(target=analyzer1, args=(shared_data.data1, shared_data.index1, 1, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints1, betweenStepsTimes1, calculateBpm), daemon=True)
+            analyzer_process0 = mp.Process(target=analyzer0, name="analyzer0", args=(shared_data.data0, shared_data.index0, 0, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints0, betweenStepsTimes0, calculateBpm), daemon=True)
+            analyzer_process1 = mp.Process(target=analyzer1, name="analyzer1", args=(shared_data.data1, shared_data.index1, 1, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints1, betweenStepsTimes1, calculateBpm), daemon=True)
             analyzer_process0.start()
             analyzer_process1.start()
             #delete local version of samples 
@@ -440,6 +449,8 @@ class MtwAwinda(object):
         while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
             if self.__recordingStopped:
                 self.__recordingStopped = False 
+                analyzer_process0.terminate()
+                analyzer_process1.terminate()
                 return None
             avail = self.__getEuler()
             if any(avail):
@@ -529,16 +540,17 @@ class MtwAwinda(object):
 
         except RuntimeError as error:
             print(error)
-            sys.exit(1)
+            # sys.exit(1)
+            raise
         except Exception as error:
             print(error)
-            sys.exit(1)
+            # sys.exit(1)
+            raise
         else:
             print("Successful clean")
 
     def stopRecording(self):
         self.__recordingStopped = True
-        # self.__clean()
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.__clean()

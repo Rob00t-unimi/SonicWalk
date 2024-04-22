@@ -200,16 +200,24 @@ class SideMenu(QFrame):
 
     def _save_theme(self):
         """
-            Modifies:   JSON settings file
-            Effects:    Saves theme settings in the JSON settings file
+        Modify: JSON settings file
+        Effects: Saves theme settings in the JSON settings file
         """
-        settings_to_save = {
-            "light_theme": self.light
-        }
+        try:
+            # Load current settings from the JSON file
+            with open(self.settings_file, "r") as file:
+                current_settings = json.load(file)
+        except Exception as e:
+            print("Error loading settings:", e)
+            return
+
+        # Modify the current settings
+        current_settings["light_theme"] = self.light
 
         try:
+            # Save the modified settings to the JSON file
             with open(self.settings_file, "w") as file:
-                json.dump(settings_to_save, file)
+                json.dump(current_settings, file)
         except Exception as e:
             print("Error saving settings:", e)
 

@@ -1,11 +1,9 @@
 {
     "light_theme": true,
     "music_directories": [
-        "C:/Users/rober/Desktop/MainFolder/CodingProjects/SonicWalk/SonicWalk/sonicwalk/audio_samples/cammino_1_fase_2",
-        "C:/Users/rober/Desktop/MainFolder/CodingProjects/SonicWalk/SonicWalk/GUI/components"
+        "C:/Users/rober/Desktop/MainFolder/CodingProjects/SonicWalk/SonicWalk/sonicwalk/audio_samples/cammino_1_fase_2"
     ],
     "music_names": [
-        "sound 1",
-        "non valido"
+        "sound 1"
     ]
 }

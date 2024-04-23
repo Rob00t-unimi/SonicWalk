@@ -449,8 +449,10 @@ class MtwAwinda(object):
         while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
             if self.__recordingStopped:
                 self.__recordingStopped = False 
-                analyzer_process0.terminate()
-                analyzer_process1.terminate()
+                if analyze:
+                    if analyzer_process0.is_alive(): analyzer_process0.terminate()
+                    if analyzer_process1.is_alive(): analyzer_process1.terminate()
+                if plot and plotter_process.is_alive(): plotter_process.terminate()
                 return None
             avail = self.__getEuler()
             if any(avail):

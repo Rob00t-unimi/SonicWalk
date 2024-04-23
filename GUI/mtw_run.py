@@ -26,7 +26,7 @@ class MtwThread(threading.Thread):
             with mtw.MtwAwinda(120, 19, self.MusicSamplesPath) as mtw:
                 self.mtw = mtw
                 data = mtw.mtwRecord(duration=self.Duration, plot=False, analyze=self.Analyze, exType=self.Exercise, calculateBpm=self.CalculateBpm, shared_data=self.shared_data, setStart=self.setStart)
-
+                
             if data is not None:
                 data0 = data[0][0]
                 data1 = data[0][1]
@@ -53,10 +53,8 @@ class MtwThread(threading.Thread):
 
         except RuntimeError as e:
             self.result = e
-            # time.sleep(0.5)
         except Exception as e:
             self.result = e
-            # time.sleep(0.5)
 
     def get_results(self):
         return self.result

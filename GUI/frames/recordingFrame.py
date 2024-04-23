@@ -255,8 +255,9 @@ class RecordingFrame(QFrame):
 
                 if isinstance(result, Exception):
                     # close connection message
-                    self.connection_msg.reject()
-                    self.connection_msg = None
+                    if self.connection_msg is not None:
+                        self.connection_msg.reject()
+                        self.connection_msg = None
                     self.setSaved(None)
                     # have to return only some errors in a message
                     error_msg = QMessageBox()

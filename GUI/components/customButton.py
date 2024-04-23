@@ -31,12 +31,12 @@ class CustomButton(QPushButton):
         self.icons_paths = icons_paths
 
         # light style
-        self.lightTheme = "QPushButton { border: none; padding-left: 10px; border-radius: 10px; background-color: rgba(108, 60, 229, 30%); color: black;} QPushButton:hover { background-color: rgba(108, 60, 229, 50%); } QPushButton:pressed { background-color: rgba(108, 60, 229, 70%); }"
-        self.lightThemeSelected = "QPushButton { border: none; border-radius: 10px; background-color: rgba(108, 60, 229, 65%); color: black;}"
+        self.lightTheme = """QPushButton { border: none; border-radius: 10px; background-color: rgba(108, 60, 229, 0.3); color: black;} QPushButton:hover { background-color: rgba(108, 60, 229, 0.5); } QPushButton:pressed { background-color: rgba(108, 60, 229, 0.7); }"""
+        self.lightThemeSelected = """QPushButton { border: none; border-radius: 10px; background-color: rgba(108, 60, 229, 0.65); color: black;}"""
 
         # dark style
-        self.darkTheme = "QPushButton { border: none; padding-left: 10px; border-radius: 10px; background-color: rgba(108, 60, 229, 30%); color: white;} QPushButton:hover { background-color: rgba(108, 60, 229, 50%); } QPushButton:pressed { background-color: rgba(108, 60, 229, 70%); }"
-        self.darkThemeSelected = "QPushButton { border: none; border-radius: 10px; background-color: rgba(108, 60, 229, 50%); color: white;}"
+        self.darkTheme = """QPushButton { border: none; border-radius: 10px; background-color: rgba(108, 60, 229, 0.3); color: white;} QPushButton:hover { background-color: rgba(108, 60, 229, 0.5); } QPushButton:pressed { background-color: rgba(108, 60, 229, 0.7); }"""
+        self.darkThemeSelected = """QPushButton { border: none; border-radius: 10px; background-color: rgba(108, 60, 229, 0.5); color: white;}"""
 
         # initialization of the object
         if icons_paths is not None:

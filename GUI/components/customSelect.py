@@ -23,11 +23,11 @@ class CustomSelect(QComboBox):
         self.light = light
         self.lightTheme = """
             QComboBox {
-                border: 1px solid #B99AFF;
+                border: 1px solid #9B90DB;
                 border-radius: 15px;
                 padding: 10px; 
                 background-color: #FFFFFF; 
-                selection-background-color: #B99AFF; 
+                selection-background-color: #9B90DB; 
                 font-size: 15px;
                 color: #4C4C4C;
             }
@@ -39,13 +39,13 @@ class CustomSelect(QComboBox):
                 border-left-color: transparent;
                 border-top-right-radius: 15px;
                 border-bottom-right-radius: 15px;
-                background-color: #B99AFF;
+                background-color: #9B90DB;
             }
             QComboBox QAbstractItemView {
-                border: 1px solid #B99AFF;
+                border: 1px solid #9B90DB;
                 selection-background-color: #9C6BE5;
                 background-color: #FFFFFF;
-                font-size: 14px;
+                font-size: 13px;
                 color: #4C4C4C;
             }
             QScrollBar:vertical {
@@ -67,11 +67,11 @@ class CustomSelect(QComboBox):
         """
         self.darkTheme = """
             QComboBox {
-                border: 1px solid #B99AFF; 
+                border: 1px solid #9B90DB; 
                 border-radius: 15px;
                 padding: 10px; 
                 background-color: #333333; 
-                selection-background-color: #B99AFF;
+                selection-background-color: #9B90DB;
                 font-size: 15px;
                 color: #FFFFFF;
             }
@@ -83,13 +83,13 @@ class CustomSelect(QComboBox):
                 border-left-color: transparent;
                 border-top-right-radius: 15px;
                 border-bottom-right-radius: 15px;
-                background-color: #B99AFF; 
+                background-color: #9B90DB; 
             }
             QComboBox QAbstractItemView {
-                border: 1px solid #B99AFF;
+                border: 1px solid #9B90DB;
                 selection-background-color: #9C6BE5; 
                 background-color: #1E1E1E;
-                font-size: 14px;
+                font-size: 13px;
                 color: #FFFFFF; 
             }
             QScrollBar:vertical {

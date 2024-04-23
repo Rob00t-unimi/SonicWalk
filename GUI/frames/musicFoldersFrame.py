@@ -62,6 +62,7 @@ class MusicFolders(QFrame):
             """
         )
         music_frame_layout = QVBoxLayout()
+        music_frame_layout.setAlignment(Qt.AlignTop)
         self.musicFrame.setLayout(music_frame_layout)  # Set layout for musicFrame
         self.scrollArea = QScrollArea()
         self.scrollArea.setStyleSheet(
@@ -149,7 +150,7 @@ class MusicFolders(QFrame):
                 font = QFont("Sans-serif", 12)
                 nameLabel = QLabel(name)
                 nameLabel.setFont(font)
-                nameLabel.setMaximumWidth(100)
+                nameLabel.setMaximumWidth(120)
                 nameLabel.setToolTip(name)
                 nameLabel.setWordWrap(False)
                 nameLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)

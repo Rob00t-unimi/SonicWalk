@@ -350,9 +350,9 @@ class MtwAwinda(object):
             print("...wave samples loaded successfully")
 
         if not samples:
-            print("No wav file was found at given pathname...Aborting. Check file extensions")
+            print("No wav or mp3 file was found at given pathname...Aborting. Check file extensions")
             # sys.exit(1)
-            raise Exception("No wav file was found at given pathname.")
+            raise Exception("No wav or mp3 file was found at given pathname.")
     
         return samples 
 

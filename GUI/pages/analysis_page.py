@@ -69,7 +69,7 @@ class AnalysisPage(QFrame):
         self.actions_frame.getPatient = self.patient_frame.getPatient
         self.plotter_frame = QFrame()
         self.layout_plotter = QVBoxLayout(self.plotter_frame)
-        self.layout_plotter.setContentsMargins(10, 0, 0, 0)
+        self.layout_plotter.setContentsMargins(0, 0, 0, 0)
 
 
         self.create_static_plotter() # initialize a void plotter
@@ -177,7 +177,10 @@ class AnalysisPage(QFrame):
         self.ax.plot([], [], label='Data 1')
         self.ax.set_xticks([])
         # self.ax.legend()
-        self.ax.grid(True)
+        self.ax.grid(True, color=(1, 0.7, 0.7))
+        self.fig.patch.set_facecolor('none')
+        self.fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1, wspace=0.1, hspace=0)
+
         self.canvas = FigureCanvas(self.fig)
     
     def update_plot(self, data0, data1):
@@ -187,7 +190,9 @@ class AnalysisPage(QFrame):
         self.ax.plot(data1, 'c')
         self.ax.set_xticks([])
         # self.ax.legend()
-        self.ax.grid(True)
+        self.ax.grid(True, color=(1, 0.7, 0.7))
+        self.fig.patch.set_facecolor('none')
+        self.fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1, wspace=0.1, hspace=0)
         self.canvas.draw()
 
     def setSaved(self, data):
@@ -195,11 +200,13 @@ class AnalysisPage(QFrame):
             self.plot_thread.force_stop()
         self.ax.clear()
         self.ax.set_xticks([])
-        self.ax.grid(True)
+        self.ax.grid(True, color=(1, 0.7, 0.7))
+        self.fig.patch.set_facecolor('none')
         if data is not None:
             self.ax.plot(data[0], 'b')
             self.ax.plot(data[1], 'c')
             self.isSaved = None
+        self.fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1, wspace=0.1, hspace=0)
         self.canvas.draw()
         
     def reset_shared_data(self):

@@ -92,7 +92,6 @@ class RecordingFrame(QFrame):
 
         # set self layout
         self.layout_actions = QVBoxLayout(self)
-        self.layout_actions.addWidget(self)
         self.layout_actions.setContentsMargins(25, 25, 25, 25)
 
         # create new frame and set layout
@@ -294,18 +293,13 @@ class RecordingFrame(QFrame):
                         If music modality is setted on Music it starts to play the music in a different thread.
         """
 
-        print("here")
         self.startTime = time.time()
-        print("here2")
-
         self.execution = True
-        print("here3")
 
+        print("msg closing..")
         self.connection_msg.reject()
-        print("here4")
 
         self.plotter_start()
-        print("after plotter start")
         beepPath = "../sonicwalk/audio_samples/beep.wav"
         beep = pygame.mixer.Sound(beepPath)
         beep.play()

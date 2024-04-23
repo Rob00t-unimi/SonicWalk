@@ -25,5 +25,5 @@ class SettingsPage(QFrame):
 
         left_box.setFixedWidth(500)
         layout.addStretch()
-        left_layout.addStretch()
+        # left_layout.addStretch()
 

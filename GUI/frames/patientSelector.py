@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QFrame
 from PyQt5.QtWidgets import *
+from PyQt5.QtCore import Qt
 import json
 from datetime import datetime, date
 import sys
@@ -121,6 +122,7 @@ class PatientSelector(QFrame):
         # patient frame
         patient_frame = QFrame()
         patient_frame_layout = QVBoxLayout()
+        patient_frame_layout.setAlignment(Qt.AlignTop)
         patient_frame.setLayout(patient_frame_layout)
 
         # scrollable area with patient frame

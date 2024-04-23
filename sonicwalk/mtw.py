@@ -441,7 +441,11 @@ class MtwAwinda(object):
         time.sleep(1) #wait one second before starting orientation reset and to allow processes to properly start
         self.__resetOrientation()
 
-        if setStart is not None: setStart()
+        try:
+            if setStart is not None: setStart()
+        except:
+            raise RuntimeError("Impossible to call setStart function")
+        
         print("Recording started..." + str(time.time()))
         os = platform.system()
 

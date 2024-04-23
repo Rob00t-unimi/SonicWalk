@@ -18,6 +18,7 @@ from mtw_run import MtwThread
 class RecordingFrame(QFrame):
 
     thread_signal = pyqtSignal()
+    thread_signal_start = pyqtSignal()
 
     def __init__(self, light = True, getMusicModality = None, getMusicPath = None, getExerciseNumber = None, getPatient = None, getBpm = None, setBpm = None, changeEnabledAll = None, shared_data = None, plotter_start = None, setSaved = None):#, mtw_run_finished = None):
         """
@@ -41,6 +42,7 @@ class RecordingFrame(QFrame):
         self.setObjectName("recording_frame")
 
         self.thread_signal.connect(self.stop_by_musicError)
+        self.thread_signal_start.connect(self.setStart)
 
         # initialize attributes
         self.shared_data = shared_data
@@ -216,7 +218,7 @@ class RecordingFrame(QFrame):
         # Execute mtw_run in a different thread
         analyze = False if self.modality == 1 else True
         
-        self.record_thread = MtwThread(Duration=self.exerciseTime, MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.setStart, CalculateBpm=self.calculateBpm, shared_data = self.shared_data)
+        self.record_thread = MtwThread(Duration=self.exerciseTime, MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.emit_startSignal, CalculateBpm=self.calculateBpm, shared_data = self.shared_data)
         self.record_thread.daemon = True
         self.record_thread.start()
 
@@ -255,9 +257,7 @@ class RecordingFrame(QFrame):
 
                 if isinstance(result, Exception):
                     # close connection message
-                    if self.connection_msg is not None:
-                        self.connection_msg.reject()
-                        self.connection_msg = None
+                    self.connection_msg.reject()
                     self.setSaved(None)
                     # have to return only some errors in a message
                     error_msg = QMessageBox()
@@ -282,6 +282,9 @@ class RecordingFrame(QFrame):
             else:
                 self.setSaved(None) # clean plotter
 
+    def emit_startSignal(self):
+        self.thread_signal_start.emit()
+
     def setStart(self):
         """
             Modifies:   self.startTime
@@ -291,11 +294,15 @@ class RecordingFrame(QFrame):
                         If music modality is setted on Music it starts to play the music in a different thread.
         """
 
+        print("here")
         self.startTime = time.time()
+        print("here2")
+
         self.execution = True
+        print("here3")
 
         self.connection_msg.reject()
-        self.connection_msg = None
+        print("here4")
 
         self.plotter_start()
         print("after plotter start")

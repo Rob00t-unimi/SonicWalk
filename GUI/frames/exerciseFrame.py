@@ -34,7 +34,7 @@ class ExerciseFrame(QFrame):
                 # 4 --> Double Step
             self.musicModality = 2
             self.light = light
-            self.bpm = 75
+            self.bpm = 60
             self.firstRendering = True
 
             # theme style
@@ -83,8 +83,8 @@ class ExerciseFrame(QFrame):
             
             self.slider_frame = QFrame()
             self.bpm_slider = QSlider(Qt.Horizontal)  
-            self.bpm_slider.setRange(0, 150) 
-            self.bpm_slider.setValue(75)  
+            self.bpm_slider.setRange(1, 150) 
+            self.bpm_slider.setValue(60)  
             self.bpm_slider.setTickInterval(5)  
             self.bpm_slider.setStyleSheet(
                 "QSlider::groove:horizontal { height: 10px; background-color: gray; border-radius: 5px; }"

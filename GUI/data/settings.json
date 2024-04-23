@@ -1,11 +1,1 @@
-{
-    "light_theme": true,
-    "music_directories": [
-        "C:/Users/rober/Desktop/MainFolder/CodingProjects/SonicWalk/SonicWalk/sonicwalk/audio_samples/cammino_1_fase_2",
-        "C:/Users/rober/Desktop/MainFolder/CodingProjects/SonicWalk/SonicWalk/sonicwalk/audio_samples/cammino_1_fase_2_mp3"
-    ],
-    "music_names": [
-        "sound 1",
-        "sound 1.mp3"
-    ]
-}
+{"light_theme": true, "music_directories": ["C:/Users/rober/Desktop/MainFolder/CodingProjects/SonicWalk/SonicWalk/sonicwalk/audio_samples/cammino_1_fase_2", "C:/Users/rober/Desktop/MainFolder/CodingProjects/SonicWalk/SonicWalk/sonicwalk/audio_samples/cammino_1_fase_2_mp3"], "music_names": ["sound 1", "sound 1.mp3"]}

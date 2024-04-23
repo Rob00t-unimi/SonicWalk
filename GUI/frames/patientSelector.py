@@ -45,7 +45,7 @@ class PatientSelector(QFrame):
 
         if self.light:
             dialog.setStyleSheet("""
-                background-color: #FFFFFF;
+                background-color: #DCDFE4;
                 color: #333333;
                 font-size: 12pt;
             """)

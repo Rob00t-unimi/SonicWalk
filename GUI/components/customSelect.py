@@ -26,7 +26,7 @@ class CustomSelect(QComboBox):
                 border: 1px solid #9B90DB;
                 border-radius: 15px;
                 padding: 10px; 
-                background-color: #FFFFFF; 
+                background-color: #F5F5F5; 
                 selection-background-color: #9B90DB; 
                 font-size: 15px;
                 color: #4C4C4C;
@@ -44,7 +44,7 @@ class CustomSelect(QComboBox):
             QComboBox QAbstractItemView {
                 border: 1px solid #9B90DB;
                 selection-background-color: #9C6BE5;
-                background-color: #FFFFFF;
+                background-color: #F5F5F5;
                 font-size: 13px;
                 color: #4C4C4C;
             }

@@ -269,6 +269,7 @@ class ExerciseFrame(QFrame):
                 self.music_selector.deleteLater()  # Clean up the old widget
                 self.layout_selection.insertWidget(index, new_music_selector)
                 self.music_selector = new_music_selector
+                self.music_selector.currentTextChanged.connect(self.selectMusic)
             super().paintEvent(event)
 
         else:

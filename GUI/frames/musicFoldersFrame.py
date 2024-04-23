@@ -61,7 +61,8 @@ class MusicFolders(QFrame):
             }
             """
         )
-        self.musicFrame.setLayout(QVBoxLayout())  # Set layout for musicFrame
+        music_frame_layout = QVBoxLayout()
+        self.musicFrame.setLayout(music_frame_layout)  # Set layout for musicFrame
         self.scrollArea = QScrollArea()
         self.scrollArea.setStyleSheet(
             """
@@ -181,6 +182,7 @@ class MusicFolders(QFrame):
                 self.rows.append(row)
 
                 self.musicFrame.layout().addLayout(rowLayout)
+                
 
 
     def deleteMusicFolder(self, name, path):

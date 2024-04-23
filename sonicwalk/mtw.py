@@ -57,7 +57,7 @@ import gc
 import xsensdeviceapi as xda
 import multiprocessing as mp
 import numpy as np
-import simpleaudio as sa
+# import simpleaudio as sa
 from multiprocessing.sharedctypes import RawValue, RawArray
 from sharedVariables import SharedCircularIndex
 from plotter import Plotter
@@ -328,7 +328,8 @@ class MtwAwinda(object):
         self.__eulerData = np.zeros((2, self.__maxNumberofCoords), dtype=np.float64)
         self.__index = np.zeros(2, dtype=np.uint32)
 
-    def __loadSamples(self):
+    def __loadSamples(self, loadSamples=True):
+        if not loadSamples: return None
         #check if sample list is empty before returning
         try:
             files = [os.path.join(self.__samplesPath, f) for f in os.listdir(self.__samplesPath) 
@@ -337,8 +338,10 @@ class MtwAwinda(object):
             samples = []
             print("loading wave samples...")
             for f in files:
-                if f.lower().endswith(".wav"):
-                    samples.append(sa.WaveObject.from_wave_file(f))
+                if f.lower().endswith((".wav", ".mp3")):
+                # if f.lower().endswith(".wav"):
+                    # samples.append(sa.WaveObject.from_wave_file(f))
+                    samples.append(f)
         except:
             print("samples could not be loaded...Aborting. Check pathname syntax")
             # sys.exit(1)
@@ -424,8 +427,9 @@ class MtwAwinda(object):
             
         if analyze:
             #samples are loaded only if analyzer is has to spawn
-            samples = self.__loadSamples()
-            sharedIndex = SharedCircularIndex(len(samples))
+            samples = self.__loadSamples(not calculateBpm)
+            if samples is not None: sharedIndex = SharedCircularIndex(len(samples))
+            else: sharedIndex = None
             analyzer0 = Analyzer()
             analyzer1 = Analyzer()
             sharedLegBool = LegDetected() 

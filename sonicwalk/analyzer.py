@@ -20,7 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import simpleaudio
+# import simpleaudio
+import pygame
 import time
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
@@ -115,7 +116,11 @@ class Analyzer():
         """
             It play a sample and increment the step counter
         """
-        _ = self.__samples[self.__sharedIndex.value()].play()
+        # _ = self.__samples[self.__sharedIndex.value()].play()     # with simpleaudio
+
+        sample = self.__samples[self.__sharedIndex.value()]
+        pygame.mixer.Sound(sample).play()
+        
         self.__sharedIndex.increment()
         self.__completeMovements += 1
         return
@@ -693,6 +698,7 @@ class Analyzer():
         self.__data = data
         self.__index = index
         self.__sharedIndex = sharedIndex
+        if self.__sharedIndex is not None: pygame.init()
         self.__samples = samples
         self.__timestamp = time.time()
         self.__active = True

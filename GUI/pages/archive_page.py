@@ -1,3 +1,4 @@
+from datetime import datetime, date
 import json
 import os
 from PyQt5.QtWidgets import *
@@ -26,7 +27,7 @@ class ArchivePage(QFrame):
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
-        # create left box
+        # create left box   ------------------------------------------------------------------------------
         left_box = QWidget()
         left_box.setStyleSheet(self.lightTheme if light else self.darkTheme)
         left_box.setFixedWidth(375)
@@ -48,9 +49,14 @@ class ArchivePage(QFrame):
         research_box_layout = QVBoxLayout()
         research_box.setLayout(research_box_layout)
 
-        # create an add patient button
-        add_patient_button = CustomButton(text="Add new patient", light=light, dimensions=[160, 40])
-        research_box_layout.addWidget(add_patient_button, alignment=Qt.AlignTop | Qt.AlignHCenter)
+        select_patient_label = QLabel("Select Patient")
+        research_box_layout.addWidget(select_patient_label, alignment=Qt.AlignTop | Qt.AlignHCenter)
+        font = QFont("Sans-serif", 15)
+        select_patient_label.setFont(font)
+
+        # # create an add patient button
+        # add_patient_button = CustomButton(text="Add new patient", light=light, dimensions=[160, 40])
+        # research_box_layout.addWidget(add_patient_button, alignment=Qt.AlignTop | Qt.AlignHCenter)
 
         search_and_toggle_layout = QHBoxLayout()
 
@@ -69,6 +75,11 @@ class ArchivePage(QFrame):
             font-size: 15px;
         """)
         search_and_toggle_layout.addWidget(search_lineedit, alignment=Qt.AlignCenter)
+        self.current_search_text = ""
+        search_lineedit.textChanged.connect(lambda text: update_text(text))
+        def update_text(text):
+            self.current_search_text = text
+            self.updatesearchresults()
 
         # filters
 
@@ -81,12 +92,10 @@ class ArchivePage(QFrame):
             if research_box.height() == 175:
                 research_box.setFixedHeight(240)
                 toggle_filter_button.setText("-")
-                # research_box_layout.addWidget(filter_box, alignment=Qt.AlignCenter)
                 filter_box.setVisible(True)
             else:
                 research_box.setFixedHeight(175)
                 toggle_filter_button.setText("+")
-                # research_box_layout.removeWidget(filter_box)
                 filter_box.setVisible(False)
 
         # Collega il pulsante alla funzione di gestione
@@ -141,6 +150,13 @@ class ArchivePage(QFrame):
             }
         """
 
+        self.filters = {
+            "Hospitals": None,
+            "Groups": None,
+            "Genders": None,
+            "Ages": None
+        }
+
         hospital_combo = QComboBox()
         hospital_combo.addItems(["Hospitals"] + sorted(hospitals))
         hospital_combo.setStyleSheet(combo_style)
@@ -154,9 +170,13 @@ class ArchivePage(QFrame):
         sex_combo.setStyleSheet(combo_style)
 
         age_combo = QComboBox()
-        age_combo.addItems(["Age"] + sorted(age_ranges))
+        age_combo.addItems(["Ages"] + sorted(age_ranges))
         age_combo.setStyleSheet(combo_style)
 
+        hospital_combo.currentIndexChanged.connect(lambda index: self.updatefilters("Hospitals", hospital_combo.currentText()))
+        group_combo.currentIndexChanged.connect(lambda index: self.updatefilters("Groups", group_combo.currentText()))
+        sex_combo.currentIndexChanged.connect(lambda index: self.updatefilters("Genders", sex_combo.currentText()))
+        age_combo.currentIndexChanged.connect(lambda index: self.updatefilters("Ages", age_combo.currentText()))
 
         filter_box = QWidget()
         filter_box.setMinimumWidth(300)
@@ -171,6 +191,7 @@ class ArchivePage(QFrame):
         filter_box.setLayout(filter_layout)
         research_box_layout.addWidget(filter_box, alignment=Qt.AlignLeft)
         filter_box.setVisible(False)
+        toggleFilterBox()
 
         # Patient Box
         patients_box = QScrollArea()
@@ -234,7 +255,7 @@ class ArchivePage(QFrame):
         left_layout.addWidget(self.patients_list)
         self.load_patients_from_json()
 
-        # create Central box
+        # create Central box ------------------------------------------------------------------------------------
         central_box = QWidget()
         central_box.setMinimumWidth(650)
 
@@ -258,7 +279,7 @@ class ArchivePage(QFrame):
 
         central_bottom_box = QWidget()
         central_bottom_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        central_bottom_box.setMaximumHeight(350)
+        central_bottom_box.setMaximumHeight(250)
 
         # create Central bottom layout
         central_bottom_layout = QHBoxLayout()
@@ -267,7 +288,7 @@ class ArchivePage(QFrame):
         central_layout.addWidget(central_bottom_box)
 
 
-        # right box
+        # right box ---------------------------------------------------------------------------------------------------
         right_box = QWidget()
         right_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         right_box.setStyleSheet("""
@@ -283,10 +304,9 @@ class ArchivePage(QFrame):
 
         # create Matplotlib plot
         self.fig, self.ax = plt.subplots()
-        self.ax.plot([], [])
         self.ax.grid(True, color="#FFE6E6")
         self.fig.patch.set_facecolor('none')
-        self.fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1, wspace=0.1, hspace=0)
+        self.fig.tight_layout()
 
         # create a canvas for the plot
         self.canvas = FigureCanvas(self.fig)
@@ -295,11 +315,43 @@ class ArchivePage(QFrame):
         self.central_top_layout.addWidget(self.canvas)
 
 
+        # Creazione delle liste e dei loro modelli
         self.listView_folders = QListView()
-        central_bottom_layout.addWidget(self.listView_folders)
-
         self.listView_files = QListView()
-        central_bottom_layout.addWidget(self.listView_files)
+
+        # Creazione delle etichette per i titoli
+        label_folders = QLabel("Folders")
+        label_files = QLabel("Files")
+
+        # Aggiunta di un padding sinistro alle etichette
+        label_folders.setStyleSheet("padding-left: 5px; font-size: 17px;")
+        label_files.setStyleSheet("padding-left: 5px; font-size: 17px;")
+
+        # Creazione dei layout per ciascuna coppia di lista e titolo
+        layout_folders = QVBoxLayout()
+        layout_files = QVBoxLayout()
+
+        # Aggiunta della lista e del titolo al layout
+        layout_folders.addWidget(label_folders)
+        layout_folders.addWidget(self.listView_folders)
+        layout_files.addWidget(label_files)
+        layout_files.addWidget(self.listView_files)
+
+        # Creazione dei widget di gruppo per ciascuna coppia di lista e titolo
+        group_box_folders = QGroupBox()
+        group_box_folders.setLayout(layout_folders)
+        group_box_files = QGroupBox()
+        group_box_files.setLayout(layout_files)
+
+        # Rimozione del padding dai QGroupBox
+        layout_folders.setContentsMargins(0, 0, 0, 0)
+        layout_files.setContentsMargins(0, 0, 0, 0)
+
+        # Aggiunta dei widget di gruppo al layout principale
+        central_bottom_layout.addWidget(group_box_folders)
+        central_bottom_layout.addWidget(group_box_files)
+        
+        
 
         list_style = """
             QListView {
@@ -336,18 +388,14 @@ class ArchivePage(QFrame):
         self.listView_files.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
 
-        self.folder_model = QFileSystemModel()
-        current_path = os.getcwd()
-        self.folder_path = os.path.join(current_path, "data", "archive")
-        self.folder_model.setRootPath(self.folder_path)  
+        self.folder_model = QFileSystemModel() 
         self.folder_model.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs)
-        self.listView_folders.setModel(self.folder_model)
+        self.folder_model.directoryLoaded.connect(self.on_folder_loaded) 
+
         self.listView_folders.clicked.connect(self.folder_clicked)
-        self.folder_model.directoryLoaded.connect(self.on_folder_loaded)  # Aggiunto
 
         # Modello per i file
         self.file_model = QFileSystemModel()
-        self.listView_files.setModel(self.file_model)
         self.file_model.setFilter(QDir.Files | QDir.NoDotAndDotDot)
         self.file_model.setNameFilters(["*.npy"])
 
@@ -355,11 +403,11 @@ class ArchivePage(QFrame):
 
         self.navigation_toolbar = None
 
-
     def on_folder_loaded(self):
         self.listView_folders.setRootIndex(self.folder_model.index(self.folder_path))
 
     def folder_clicked(self, index):
+        self.listView_files.setModel(self.file_model)
         folder_path = self.folder_model.fileInfo(index).absoluteFilePath()
         self.file_model.setRootPath(folder_path)
         self.listView_files.setRootIndex(self.file_model.index(folder_path))
@@ -393,6 +441,7 @@ class ArchivePage(QFrame):
             # Aggiorna il canvas per visualizzare il nuovo plot
             self.canvas.draw()
             if self.navigation_toolbar is None: self.navigation_toolbar = NavigationToolbar(self.canvas, self)
+            else: self.navigation_toolbar.setVisible(True)
             self.central_top_layout.addWidget(self.navigation_toolbar)
 
         except Exception as e:
@@ -402,18 +451,105 @@ class ArchivePage(QFrame):
         with open('data/dataset.json', 'r') as file:
             patient_data = json.load(file)
 
+        self.selected_items = [False] * len(patient_data)
         # Aggiungi ogni paziente alla lista
         for patient in patient_data:
-            # Crea il testo del paziente con nome, cognome e ID
             patient_text = f"{patient['Name']} {patient['Surname']} (ID: {patient['ID']})"
             
-            # Crea un elemento della lista per il paziente
             item = QListWidgetItem(patient_text)
-            item.setData(Qt.UserRole, patient)  # Salva i dati del paziente nell'elemento della lista
+            item.setData(Qt.UserRole, patient)
 
-            # Applica lo stile all'elemento della lista
             item.setTextAlignment(Qt.AlignLeft)
-            # item.setFlags(item.flags() | Qt.ItemIsSelectable | Qt.ItemIsEnabled)
 
-            # Aggiungi l'elemento alla lista
             self.patients_list.addItem(item)
+
+        # Connetti il segnale itemClicked al metodo clicked_patient
+        self.patients_list.itemClicked.connect(self.clicked_patient)
+
+    def clicked_patient(self, item):
+        index = self.patients_list.row(item)
+
+        if not self.selected_items[index]:
+            self.select_patient_folder(item.text())
+        else:
+            self.listView_folders.setModel(None)
+            self.reset()
+            item.setSelected(False)
+        for i, _ in enumerate(self.selected_items):
+            if i == index: self.selected_items[i] = not self.selected_items[i]
+            else: self.selected_items[i] = False
+
+    def updatesearchresults(self):
+        search_text = self.current_search_text.lower()
+        with open('data/dataset.json', 'r') as file:
+            patient_data = json.load(file)
+
+        # Nascondi tutti gli elementi nella lista dei pazienti
+        for i in range(self.patients_list.count()):
+            item = self.patients_list.item(i)
+            item.setHidden(True)
+
+        def age_in_range(date_of_birth_str, age_range):
+            date_of_birth = datetime.strptime(date_of_birth_str, "%Y-%m-%d").date()
+            # Calcola l'età del paziente dalla data di nascita
+            today = date.today()
+            age = today.year - date_of_birth.year - ((today.month, today.day) < (date_of_birth.month, date_of_birth.day))
+            # Verifica se l'età rientra nell'intervallo specificato
+            if age_range == "0-20":
+                return 0 <= age <= 20
+            elif age_range == "21-40":
+                return 21 <= age <= 40
+            elif age_range == "41-60":
+                return 41 <= age <= 60
+            elif age_range == "61-80":
+                return 61 <= age <= 80
+            elif age_range == "81+":
+                return age >= 81
+            else:
+                return False
+
+        # Filtra i pazienti e mostra solo quelli corrispondenti
+        for patient in patient_data:
+            if (
+                (not self.filters["Hospitals"] or patient['Hospital'] == self.filters["Hospitals"]) and
+                (not self.filters["Groups"] or patient['Group'] == self.filters["Groups"]) and
+                (not self.filters["Genders"] or patient['Gender'] == self.filters["Genders"]) and
+                (not self.filters["Ages"] or age_in_range(patient['Date_of_Birth'], self.filters["Ages"]))
+            ):
+                # Cerca l'item nella lista dei pazienti che ha come sottostringa l'ID del paziente
+                for i in range(self.patients_list.count()):
+                    item = self.patients_list.item(i)
+                    if patient['ID'].lower() in item.text().lower() and (search_text == "" or search_text in item.text().lower()):
+                        item.setHidden(False)
+
+    def updatefilters(self, type, text):
+        if type == text: 
+            self.filters[type] = None
+        else:
+            self.filters[type] = text
+        self.updatesearchresults()
+
+    def select_patient_folder(self, text):
+        text = text.upper().replace(")", "").split()
+        id = text[-1]
+        print(id)
+        current_path = os.getcwd()
+        self.folder_path = os.path.join(current_path, "data", "archive", id)
+        if os.path.exists(self.folder_path):
+            self.folder_model.setRootPath(self.folder_path) 
+            self.listView_folders.setModel(self.folder_model)
+            self.listView_folders.setRootIndex(self.folder_model.index(self.folder_path))
+        else: self.listView_folders.setModel(None)
+        self.listView_folders.clearSelection()
+        self.reset()
+
+    def reset(self):
+        if self.navigation_toolbar is not None: self.navigation_toolbar.setVisible(False)
+        self.ax.clear()
+        self.ax.grid(True, color="#FFE6E6")
+        self.canvas.draw()
+        self.listView_files.setModel(None)
+        self.listView_files.clearSelection()
+
+
+

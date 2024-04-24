@@ -1,6 +1,6 @@
 import threading
 import time
-from PyQt5.QtWidgets import QVBoxLayout, QFrame, QHBoxLayout, QLabel, QMessageBox
+from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
 from PyQt5.QtGui import QPixmap
 import os
@@ -185,12 +185,15 @@ class RecordingFrame(QFrame):
                 minutes, seconds = divmod(current_time, 60)
                 centiseconds = int((current_time - int(current_time)) * 100)
                 self.time_label.setText("{:02}:{:02}.{:02}".format(int(minutes), int(seconds), centiseconds))
+                if max(0, self.exerciseTime - current_time) <= 10:
+                    self.time_label.setStyleSheet("color: red")
             else:
                 minutes, seconds = divmod(self.exerciseTime, 60)
                 centiseconds = int((self.exerciseTime - int(self.exerciseTime)) * 100)
                 self.time_label.setText("{:02}:{:02}.{:02}".format(int(minutes), int(seconds), centiseconds))
         else:
             self.time_label.setText("00:00.00")
+            self.time_label.setStyleSheet("color: black;" if self.light else "color: white;")
             self.startTime = None
 
     def startExecution(self):
@@ -321,6 +324,7 @@ class RecordingFrame(QFrame):
                     raise Exception("No music samples")
 
                 music_thread = threading.Thread(target=self._play_music)
+                music_thread.setDaemon(True)
                 music_thread.start()
 
             except Exception as e:
@@ -389,6 +393,14 @@ class RecordingFrame(QFrame):
 
         # if user says yes, save the recording
         if response == QMessageBox.Yes:
+
+            dialog = QInputDialog()
+            session_number, ok = dialog.getInt(None, "Session Number", "Enter the session number for today's date:", 1)
+
+            if not ok: 
+                self.setSaved(None)
+                return
+
             self.patient_info_data = self.getPatient()
             try:
                 if self.signals is None or self.Fs is None:
@@ -424,8 +436,11 @@ class RecordingFrame(QFrame):
                 parent_dir = os.path.dirname(os.path.abspath(__file__))
                 directory_path = os.path.join(parent_dir.replace("frames",""), f"data/archive/{patient_id}")
                 os.makedirs(directory_path, exist_ok=True)  # Crea la directory se non esiste
+                session_number_str = str(session_number).zfill(2)
+                session_dir = os.path.join(directory_path, f"{today_date}_session_{session_number_str}")
+                os.makedirs(session_dir, exist_ok=True)
                 current_time = datetime.now().strftime("%H%M%S")
-                filename = os.path.join(directory_path, f"{today_date}_{current_time}_{patient_id}_{exName}_{musicMode}.npy")
+                filename = os.path.join(session_dir, f"{exName}_{musicMode}_{patient_id}_session_{session_number_str}_{today_date}_{current_time}.npy")
 
                 # save datas into the file npy
                 np.save(filename, {"signals": self.signals, "Fs": self.Fs})

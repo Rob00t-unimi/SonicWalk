@@ -179,8 +179,7 @@ class AnalysisPage(QFrame):
         # self.ax.legend()
         self.ax.grid(True, color="#FFE6E6")
         self.fig.patch.set_facecolor('none')
-        self.fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1, wspace=0.1, hspace=0)
-
+        self.fig.tight_layout()
         self.canvas = FigureCanvas(self.fig)
     
     def update_plot(self, data0, data1):
@@ -192,7 +191,7 @@ class AnalysisPage(QFrame):
         # self.ax.legend()
         self.ax.grid(True, color="#FFE6E6")
         self.fig.patch.set_facecolor('none')
-        self.fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1, wspace=0.1, hspace=0)
+        self.fig.tight_layout()
         self.canvas.draw()
 
     def setSaved(self, data):
@@ -206,7 +205,7 @@ class AnalysisPage(QFrame):
             self.ax.plot(data[0], 'b')
             self.ax.plot(data[1], 'c')
             self.isSaved = None
-        self.fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1, wspace=0.1, hspace=0)
+        self.fig.tight_layout()
         self.canvas.draw()
         
     def reset_shared_data(self):

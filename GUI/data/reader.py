@@ -27,5 +27,5 @@ def plot_signals_from_npy(filename):
     plt.show()
 
 # Esempio di utilizzo
-filename = 'Test/2024-03-23_175840_Test_walk_realTime.npy'  # Specifica il percorso del tuo file .npy
+filename = 'YOUR_FILENAME'  # Specifica il percorso del tuo file .npy
 plot_signals_from_npy(filename)

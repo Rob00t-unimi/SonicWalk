@@ -1,6 +1,7 @@
 from datetime import datetime, date
 import json
 import os
+import shutil
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt, QDir
 from PyQt5.QtGui import QFont
@@ -53,10 +54,6 @@ class ArchivePage(QFrame):
         research_box_layout.addWidget(select_patient_label, alignment=Qt.AlignTop | Qt.AlignHCenter)
         font = QFont("Sans-serif", 15)
         select_patient_label.setFont(font)
-
-        # # create an add patient button
-        # add_patient_button = CustomButton(text="Add new patient", light=light, dimensions=[160, 40])
-        # research_box_layout.addWidget(add_patient_button, alignment=Qt.AlignTop | Qt.AlignHCenter)
 
         search_and_toggle_layout = QHBoxLayout()
 
@@ -287,21 +284,6 @@ class ArchivePage(QFrame):
         central_bottom_box.setLayout(central_bottom_layout)
         central_layout.addWidget(central_bottom_box)
 
-
-        # right box ---------------------------------------------------------------------------------------------------
-        right_box = QWidget()
-        right_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        right_box.setStyleSheet("""
-            background-color: #ABB7C3;
-        """
-        )
-        right_box.setMaximumWidth(375)
-        right_layout = QVBoxLayout()
-        right_layout.setContentsMargins(0, 0, 0, 0)
-        right_box.setLayout(right_layout)
-        layout.addWidget(right_box)
-
-
         # create Matplotlib plot
         self.fig, self.ax = plt.subplots()
         self.ax.grid(True, color="#FFE6E6")
@@ -350,8 +332,6 @@ class ArchivePage(QFrame):
         # Aggiunta dei widget di gruppo al layout principale
         central_bottom_layout.addWidget(group_box_folders)
         central_bottom_layout.addWidget(group_box_files)
-        
-        
 
         list_style = """
             QListView {
@@ -403,6 +383,237 @@ class ArchivePage(QFrame):
 
         self.navigation_toolbar = None
 
+        # Creazione del menu contestuale per le cartelle
+        self.folder_context_menu = QMenu(self)
+        delete_folder_action = self.folder_context_menu.addAction("Delete")
+        delete_folder_action.triggered.connect(self.delete_selected_folder)
+
+        # Collegamento del menu contestuale alla lista delle cartelle
+        self.listView_folders.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.listView_folders.customContextMenuRequested.connect(self.show_folder_context_menu)
+
+        # Creazione del menu contestuale per i file
+        self.file_context_menu = QMenu(self)
+        delete_file_action = self.file_context_menu.addAction("Delete")
+        delete_file_action.triggered.connect(self.delete_selected_file)
+
+        # Collegamento del menu contestuale alla lista dei file
+        self.listView_files.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.listView_files.customContextMenuRequested.connect(self.show_file_context_menu)
+        # Collegamento del menu contestuale alla lista dei file
+        self.listView_files.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.listView_files.customContextMenuRequested.connect(self.show_file_context_menu)
+
+        # right box ---------------------------------------------------------------------------------------------------
+        right_box = QWidget()
+        right_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        right_box.setStyleSheet("""
+            background-color: #ABB7C3;
+        """
+        )
+        right_box.setMaximumWidth(375)
+        right_layout = QVBoxLayout()
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_box.setLayout(right_layout)
+        layout.addWidget(right_box)
+
+        # create an add patient button
+        add_patient_button = CustomButton(text="Add new patient", light=light, dimensions=[160, 40])
+        # right_layout.addWidget(add_patient_button, alignment=Qt.AlignTop | Qt.AlignHCenter)
+        add_patient_button.onClick(self.add_patient_modal)
+
+    def add_patient_modal(self):
+        modal = QDialog()
+        modal.setWindowTitle("Add New Patient")
+        layout = QVBoxLayout(modal)
+
+        # Add widgets for patient information
+        fields = [
+            ("Name:", QLineEdit()),
+            ("Surname:", QLineEdit()),
+            ("Group:", QComboBox()),
+            ("Hospital:", QLineEdit()),
+            ("CF:", QLineEdit()),
+            ("Right Leg Length:", QSpinBox()),
+            ("Left Leg Length:", QSpinBox()),
+            ("Weight (kg):", QDoubleSpinBox()),
+            ("Height (cm):", QSpinBox()),
+            ("Gender:", QComboBox()),
+            ("Date of Birth:", QDateEdit())
+        ]
+
+        # Populate comboboxes with options
+        group_combobox = fields[2][1]
+        group_combobox.addItems(["Parkinson", "ALS", "Healthy", "Stroke", "Other"])
+        gender_combobox = fields[9][1]
+        gender_combobox.addItems(["M", "F"])
+
+        for label, widget in fields:
+            layout.addWidget(QLabel(label))
+            layout.addWidget(widget)
+
+        # Add buttons
+        buttons_layout = QHBoxLayout()
+        layout.addLayout(buttons_layout)
+
+        add_button = QPushButton("Add Patient")
+
+        # Connect button click to lambda function passing patient data
+        add_button.clicked.connect(lambda: self.add_patient({
+            "Name": fields[0][1].text(),
+            "Surname": fields[1][1].text(),
+            "Group": fields[2][1].currentText(),
+            "Hospital": fields[3][1].text(),
+            "CF": fields[4][1].text(),
+            "Right_Leg_Length": str(fields[5][1].value()) + " cm",
+            "Left_Leg_Length": str(fields[6][1].value()) + " cm",
+            "Weight": str(fields[7][1].value()) + " kg",
+            "Height": str(fields[8][1].value()) + " cm",
+            "Gender": str(fields[9][1].currentText()),
+            "Date_of_Birth": fields[10][1].date().toString("yyyy-MM-dd")
+        }, modal.close))
+        buttons_layout.addWidget(add_button)
+
+        cancel_button = QPushButton("Close")
+        cancel_button.clicked.connect(modal.close)
+        buttons_layout.addWidget(cancel_button)
+
+        modal.exec_()
+
+
+    def add_patient(self, patient_data, close_modal = None):
+        # Generate ID for the new patient
+        json_path = os.path.join(os.getcwd(), "data", "dataset.json")
+        try:
+            with open(json_path, 'r') as file:
+                data = json.load(file)
+        except FileNotFoundError:
+            data = []
+        except json.JSONDecodeError:
+            QMessageBox.critical(self, "Error", "Error decoding patient database file.")
+            return
+
+        existing_ids = set(patient["ID"] for patient in data)
+        new_id = 1
+        while str(new_id).zfill(5) in existing_ids:
+            new_id += 1
+        new_id_str = str(new_id).zfill(5)
+
+        patient_data["ID"] = new_id_str
+
+        # Add the new patient to the existing JSON data
+        data.append(patient_data)
+
+        try:
+            with open(json_path, 'w') as file:
+                json.dump(data, file)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred while saving patient data: {str(e)}")
+            return
+        
+        if close_modal is not None: close_modal()
+
+        # Update the patient list in the UI
+        self.patients_list.clear()
+        self.load_patients_from_json()
+        self.updatesearchresults()
+
+    def delete_patient(self, patient_id):
+        json_path = os.path.join(os.getcwd(), "data", "dataset.json")
+        
+        try:
+            with open(json_path, 'r') as file:
+                data = json.load(file)
+        except FileNotFoundError:
+            QMessageBox.critical(self, "Error", "Patient database file not found.")
+            return
+        except json.JSONDecodeError:
+            QMessageBox.critical(self, "Error", "Error decoding patient database file.")
+            return
+
+        confirmation = QMessageBox.question(self, "Confirm Deletion", "Are you sure you want to delete this patient?", QMessageBox.Yes | QMessageBox.No)
+        if confirmation == QMessageBox.No:
+            return
+
+        try:
+            # Remove the patient from the data list
+            for patient in data:
+                if patient["ID"] == patient_id:
+                    data.remove(patient)
+                    break
+
+            # Write the updated data back to the JSON file
+            with open(json_path, 'w') as file:
+                json.dump(data, file)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred while deleting the patient: {str(e)}")
+            return
+
+        # Remove the corresponding item from the patient list in the UI
+        for i in range(self.patients_list.count()):
+            item = self.patients_list.item(i)
+            if item.data(Qt.UserRole)["ID"] == patient_id:
+                self.patients_list.takeItem(i)
+                break
+
+        # Remove the patient folder from the archive
+        patient_folder = os.path.join(os.getcwd(), "data", "archive", patient_id.upper())
+        try:
+            shutil.rmtree(patient_folder)
+        except FileNotFoundError:
+            pass
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred while deleting the patient folder: {str(e)}")
+
+
+    def show_folder_context_menu(self, position):
+        # Ottieni l'indice dell'item nella lista
+        index = self.listView_folders.indexAt(position)
+        if index.isValid():
+            # Mostra il menu contestuale per le cartelle solo se l'indice è valido
+            self.folder_context_menu.exec_(self.listView_folders.mapToGlobal(position))
+
+    def show_file_context_menu(self, position):
+        # Ottieni l'indice dell'item nella lista
+        index = self.listView_files.indexAt(position)
+        if index.isValid():
+            # Mostra il menu contestuale per i file solo se l'indice è valido
+            self.file_context_menu.exec_(self.listView_files.mapToGlobal(position))
+
+    def delete_selected_folder(self):
+        selected_indexes = self.listView_folders.selectedIndexes()
+        if selected_indexes:
+            reply = QMessageBox.question(self, 'Deleting Folder', 
+                                         "Are you sure you want to delete the selected folder(s)?",
+                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                for index in selected_indexes:
+                    folder_path = self.folder_model.filePath(index)
+                    try:
+                        shutil.rmtree(folder_path)
+                    except Exception as e:
+                        QMessageBox.warning(self, 'Error', 
+                                            f"Error while deleting folder '{folder_path}': {e}",
+                                            QMessageBox.Ok, QMessageBox.Ok)
+
+    def delete_selected_file(self):
+        # Codice per eliminare i file selezionati
+        selected_indexes = self.listView_files.selectedIndexes()
+        if selected_indexes:
+            reply = QMessageBox.question(self, 'Deleting File', 
+                                         "Are you sure you want to delete the selected file?",
+                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                for index in selected_indexes:
+                    file_path = self.file_model.filePath(index)
+                    try:
+                        os.remove(file_path)
+                    except OSError as e:
+                        QMessageBox.warning(self, 'Error', 
+                                            f"Error while deleting file '{file_path}': {e}",
+                                            QMessageBox.Ok, QMessageBox.Ok)
+
+                    
     def on_folder_loaded(self):
         self.listView_folders.setRootIndex(self.folder_model.index(self.folder_path))
 
@@ -465,6 +676,7 @@ class ArchivePage(QFrame):
 
         # Connetti il segnale itemClicked al metodo clicked_patient
         self.patients_list.itemClicked.connect(self.clicked_patient)
+
 
     def clicked_patient(self, item):
         index = self.patients_list.row(item)
@@ -551,5 +763,6 @@ class ArchivePage(QFrame):
         self.listView_files.setModel(None)
         self.listView_files.clearSelection()
 
-
-
+    def show_context_menu(self, position):
+        # Mostra il menu contestuale nella posizione del cursore
+        self.context_menu.exec_(self.sender().mapToGlobal(position))

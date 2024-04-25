@@ -30,6 +30,8 @@ from pages.settings_page import SettingsPage
 from pages.statistics_page import StatisticsPage
 import sys
 
+# from qt_material import apply_stylesheet
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -145,8 +147,10 @@ class MainWindow(QMainWindow):
         frame_to_close.close()
         super().closeEvent(event)
 
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
+    # apply_stylesheet(app, theme='light_blue.xml')
     window.show()
     sys.exit(app.exec_())

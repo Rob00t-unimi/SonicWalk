@@ -27,7 +27,7 @@ from PyQt5.QtCore import QThread
 
 
 
-class AnalysisPage(QFrame):
+class AnalysisPage(QWidget):
 
     def __init__(self, light = True):
         """
@@ -60,14 +60,14 @@ class AnalysisPage(QFrame):
 
         # set layout
         grid_layout = QGridLayout(self)
-        grid_layout.setContentsMargins(0, 0, 0, 0)
+        # grid_layout.setContentsMargins(0, 0, 0, 0)
 
         # create sub frames
         self.selection_frame = ExerciseFrame(light=self.light)
         self.actions_frame = RecordingFrame(setBpm = self.selection_frame.setBpm, getBpm = self.selection_frame.getBpm, getMusicModality = self.selection_frame.getMusicModality, getMusicPath = self.selection_frame.getMusicPath, getExerciseNumber = self.selection_frame.getExerciseNumber, light = self.light, changeEnabledAll = self.changeEnabledAll, shared_data=self.shared_data, plotter_start = self.plotter_start, setSaved = self.setSaved)#, mtw_run_finished = self.mtw_run_finished)
         self.patient_frame = PatientFrame(light=self.light, enablePlayButton = self.actions_frame.enablePlayButton, disablePlayButton = self.actions_frame.disablePlayButton) 
         self.actions_frame.getPatient = self.patient_frame.getPatient
-        self.plotter_frame = QFrame()
+        self.plotter_frame = QWidget()
         self.layout_plotter = QVBoxLayout(self.plotter_frame)
         self.layout_plotter.setContentsMargins(0, 0, 0, 0)
 
@@ -97,18 +97,8 @@ class AnalysisPage(QFrame):
         grid_layout.setRowStretch(1, 1)
 
         # margins
-        grid_layout.setContentsMargins(0, 0, 0, 0)
-        self.setContentsMargins(0, 0, 0, 0)
-
-    def toggleTheme(self):
-        """
-            Modifies:   self
-            Effects:    Toggles the theme for UI components including patient frame, exercise frame, and recording frame.
-        """
-        self.light = not self.light
-        self.patient_frame.toggleTheme()
-        self.selection_frame.toggleTheme()
-        self.actions_frame.toggleTheme()
+        # grid_layout.setContentsMargins(0, 0, 0, 0)
+        # self.setContentsMargins(0, 0, 0, 0)
 
     def changeEnabledAll(self):
         """

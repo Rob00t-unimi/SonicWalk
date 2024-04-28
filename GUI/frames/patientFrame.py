@@ -28,26 +28,22 @@ class PatientFrame(QFrame):
         self.light = light
         self.data = None
 
-        # theme style
-        self.lightTheme = "background-color: #B6C2CF; border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;"
-        self.darkTheme ="background-color: #282E33; border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;"
-
         # layout
         layout_patient = QVBoxLayout(self)
         layout_patient.setContentsMargins(30, 30, 30, 30)
-        self.setStyleSheet(self.lightTheme if light else self.darkTheme)
 
         # table
-        self.table = PatientTable(reducedTable=True, light=light)
+        self.table = PatientTable(reducedTable=True)
         layout_patient.addWidget(self.table)
 
         # spacer
         layout_patient.setSpacing(20)
 
         # button
-        self.selectPatientButton = CustomButton(dimensions=[180, 40], text = "Select Patient", light = light)
+        self.selectPatientButton = QPushButton("Select Patient")
+        self.selectPatientButton.setProperty("class", "fill_button_inverted")
         layout_patient.addWidget(self.selectPatientButton, alignment=Qt.AlignHCenter)
-        self.selectPatientButton.onClick(self.selectPatient)
+        self.selectPatientButton.clicked.connect(self.selectPatient)
 
     def selectPatient(self):
         """
@@ -75,18 +71,6 @@ class PatientFrame(QFrame):
                 dataEmpty = False
                 break
         if dataEmpty: self.disablePlayButton()
-
-    def toggleTheme(self):
-        """
-            Modifies:   self.light: toggles the light theme status
-                        self.stylesheet: updates the stylesheet based on the light theme status
-                        all custom elements
-            Effects:    Switches between light and dark themes.
-        """
-        self.light = not self.light
-        self.setStyleSheet(self.lightTheme if self.light else self.darkTheme)
-        self.table.toggleTheme()
-        self.selectPatientButton.toggleTheme()
 
     def getPatient(self):
         """

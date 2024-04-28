@@ -1,0 +1,99 @@
+/* QTableWidget {{
+    border-radius: 10px;
+}} */
+QFrame {{
+    border-radius: 15px;
+}}
+QPushButton {{
+    border-radius: 10px;
+}}
+QPushButton:checked {{
+    color: {QTMATERIAL_PRIMARYTEXTCOLOR};
+}}
+.menu_button {{
+    border-radius: 10px;
+    color: {QTMATERIAL_SECONDARYTEXTCOLOR};
+    border: none;
+    background-color: transparent;
+}}
+.menu_button:hover{{
+    padding-left: 10px;
+}}
+.menu_button:checked{{
+    padding-left: 5px;
+}}
+.fill_button {{
+    border-radius: 10px;
+    background-color: {QTMATERIAL_PRIMARYCOLOR};
+    color: {QTMATERIAL_PRIMARYTEXTCOLOR}
+}}
+.fill_button_inverted {{
+    border-radius: 10px;
+    background-color: {QTMATERIAL_PRIMARYCOLOR};
+    color: {QTMATERIAL_SECONDARYCOLOR}
+}}
+QPushButton:hover {{
+    background-color: {QTMATERIAL_PRIMARYLIGHTCOLOR};
+    color: {QTMATERIAL_PRIMARYTEXTCOLOR}
+}}
+.danger:hover {{
+    background-color: #ffeded;
+}}
+QLabel {{
+    font-size: 18px;
+}}
+QLineEdit {{
+    border-radius: 15px;
+    padding: 5px;
+    font-size: 18px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}}
+QComboBox {{
+    border-radius: 10px;
+    font-size: 15px;
+    color: {QTMATERIAL_SECONDARYTEXTCOLOR}
+}}
+QComboBox QAbstractItemView {{
+    color: {QTMATERIAL_SECONDARYTEXTCOLOR};
+}}
+QScrollBar:vertical {{
+    width: 10px; 
+    background-color: transparent;
+}}
+QScrollBar::handle:vertical {{
+    background-color: {QTMATERIAL_PRIMARYCOLOR}; 
+    border-radius: 5px;
+}}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+    background-color: transparent; 
+}}
+.archive_list {{
+    border: none;
+    border-radius: 10px;
+    padding: 15px;
+    font-size: 18px;
+}}
+.archive_list::item {{
+    padding: 10px;
+}}
+.archive_list::item:hover {{
+    background-color: {QTMATERIAL_PRIMARYLIGHTCOLOR};
+    border-radius: 10px;
+    padding: 15px;
+    color: {QTMATERIAL_PRIMARYTEXTCOLOR};
+}}
+.archive_list::item:selected {{
+    padding: 20px;
+    border-radius: 10px;
+}}
+.rec_button {{
+    border-radius: 40px;
+    background-color: {QTMATERIAL_SECONDARYLIGHTCOLOR};
+    border: 1px solid gray;
+}}
+.custom_menu {{
+    border: none;
+    border-radius: 0px;
+    background-color: {QTMATERIAL_SECONDARYCOLOR};
+}}

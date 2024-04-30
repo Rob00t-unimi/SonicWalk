@@ -7,10 +7,8 @@ import sys
 
 sys.path.append("../")
 
-from components.customSelect import CustomSelect
-
 class PatientSelector(QFrame):
-    def __init__(self, light = True):
+    def __init__(self):
         """
         Requires:
             - light: a boolean indicating whether the theme is light or dark
@@ -20,8 +18,6 @@ class PatientSelector(QFrame):
             - Initializes a patient selector frame.
         """
         super().__init__()
-
-        self.light = light
 
         self.patient_info_data = [
             ("Name:", ""),
@@ -40,21 +36,9 @@ class PatientSelector(QFrame):
                     Reloads and updates patient list when filters are changed.
         """
         # open dialog window
-        dialog = QDialog()
-        dialog.setWindowTitle("Select Patient")
-
-        if self.light:
-            dialog.setStyleSheet("""
-                background-color: #DCDFE4;
-                color: #333333;
-                font-size: 12pt;
-            """)
-        else:
-            dialog.setStyleSheet("""
-                background-color: #1F1F23;
-                color: #CCCCCC;
-                font-size: 12pt;
-            """)
+        self.dialog = QDialog()
+        self.dialog.setFixedSize(600, 494)
+        self.dialog.setWindowTitle("Select Patient")
 
         # read json dataset
         with open('data/dataset.json', 'r') as file:
@@ -66,52 +50,49 @@ class PatientSelector(QFrame):
         sexes = {'M', 'F'}
         age_ranges = {'0-20', '21-40', '41-60', '61-80', '81+'}
 
-        # initialize custom selects for filters
-        hospital_combo = CustomSelect(light=self.light, options=["All hospitals"])
-        hospital_combo.addItems(sorted(hospitals))
+        self.filters = {
+            "Hospitals": None,
+            "Groups": None,
+            "Genders": None,
+            "Ages": None
+        }
 
-        group_combo = CustomSelect(light=self.light, options=["All groups"])
-        group_combo.addItems(sorted(groups))
+        # initialize selects for filters
+        hospital_combo = QComboBox()
+        hospital_combo.addItems(["Hospitals"] + sorted(hospitals))
 
-        sex_combo = CustomSelect(light=self.light, options=["All"])
-        sex_combo.addItems(sorted(sexes))
+        group_combo = QComboBox()
+        group_combo.addItems(["Groups"] + sorted(groups))
 
-        age_combo =  CustomSelect(light=self.light, options=["All Age"])
-        age_combo.addItems(sorted(age_ranges))
+        sex_combo = QComboBox()
+        sex_combo.addItems(["Genders"] + sorted(sexes))
+
+        age_combo = QComboBox()
+        age_combo.addItems(["Ages"] + sorted(age_ranges))
+
+        hospital_combo.currentIndexChanged.connect(lambda index: self.updatefilters("Hospitals", hospital_combo.currentText()))
+        group_combo.currentIndexChanged.connect(lambda index: self.updatefilters("Groups", group_combo.currentText()))
+        sex_combo.currentIndexChanged.connect(lambda index: self.updatefilters("Genders", sex_combo.currentText()))
+        age_combo.currentIndexChanged.connect(lambda index: self.updatefilters("Ages", age_combo.currentText()))
 
         # search box
         search_lineedit = QLineEdit()
         search_lineedit.setPlaceholderText("Enter name, surname, ID or CF")
-        if self.light:
-            search_lineedit.setStyleSheet("""
-                background-color: #F5F5F5;
-                border: 1px solid #DCDFE4;
-                border-radius: 15px;
-                padding: 5px;
-                margin-top: 20px;
-                margin-bottom: 20px;
-            """)
-        else:
-            search_lineedit.setStyleSheet("""
-            background-color: #333333;
-            border: 1px solid #666666;
-            border-radius: 15px;
-            padding: 5px;
-            margin-top: 20px;
-            margin-bottom: 20px;
-            color: #CCCCCC;
-        """)
-
+        self.current_search_text = ""
+        search_lineedit.textChanged.connect(lambda text: update_text(text))
+        def update_text(text):
+            self.current_search_text = text
+            self.updatesearchresults()
 
         # filters layout
         filter_layout = QHBoxLayout()
-        filter_layout.addWidget(QLabel("Hospital:"))
+        # filter_layout.addWidget(QLabel("Hospital:"))
         filter_layout.addWidget(hospital_combo)
-        filter_layout.addWidget(QLabel("Group:"))
+        # filter_layout.addWidget(QLabel("Group:"))
         filter_layout.addWidget(group_combo)
-        filter_layout.addWidget(QLabel("Sex:"))
+        # filter_layout.addWidget(QLabel("Sex:"))
         filter_layout.addWidget(sex_combo)
-        filter_layout.addWidget(QLabel("Age:"))
+        # filter_layout.addWidget(QLabel("Age:"))
         filter_layout.addWidget(age_combo)
 
         # search box layout
@@ -125,200 +106,55 @@ class PatientSelector(QFrame):
         patient_frame_layout.setAlignment(Qt.AlignTop)
         patient_frame.setLayout(patient_frame_layout)
 
-        # scrollable area with patient frame
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(patient_frame)
-
-        temp = """
-            QScrollArea {
-                border: none;
-            }
-            QScrollBar:vertical {
-                background: #F5F5F5;
-                width: 10px;
-                margin: 20px 0 20px 0;
-            }
-
-            QScrollBar::handle:vertical {
-                background: #DCDFE4;
-                min-height: 30px;
-                border-radius: 5px;
-            }
-
-            QScrollBar::add-line:vertical {
-                background: none;
-            }
-
-            QScrollBar::sub-line:vertical {
-                background: none;
-            }
-        """
-
-        scroll_area.setStyleSheet(temp)
-
-        # calculate age
-        def calculate_age(birth_date):
-            today = date.today()
-            age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
-            return age      
-
-        # ages partitioning
-        def age_in_range(age, age_range):
-            if age_range == "0-20":
-                return 0 <= age <= 20
-            elif age_range == "21-40":
-                return 21 <= age <= 40
-            elif age_range == "41-60":
-                return 41 <= age <= 60
-            elif age_range == "61-80":
-                return 61 <= age <= 80
-            elif age_range == "81+":
-                return age >= 81
-            return False  
-        
-        # patient list filtered
-        def filter_patients():
-            filtered_patients = []
-            for patient in patient_data:
-                sex = "M" if patient['Gender'] == "M" else "F"
-                if (
-                    hospital_combo.currentText() == "All hospitals"
-                    or patient['Hospital'] == hospital_combo.currentText()
-                ) and (
-                    group_combo.currentText() == "All groups"
-                    or patient['Group'] == group_combo.currentText()
-                ) and (
-                    sex_combo.currentText() == "All" or sex == sex_combo.currentText()
-                ):
-                    # Calcolo dell'età dal campo "Data di nascita"
-                    birth_date = datetime.strptime(patient['Date_of_Birth'], "%Y-%m-%d")
-                    age = calculate_age(birth_date)
-                    if (
-                        age_combo.currentText() == "All Age"
-                        or age_in_range(age, age_combo.currentText())
-                    ):
-                        filtered_patients.append(patient)
-            return filtered_patients
-        
-        # update search results by keyword search
-        def update_search_results():
-            search_text = search_lineedit.text().lower()
-            noFound = True
-            for button in buttons:
-                button_text = button.layout().itemAt(0).widget().text() + button.layout().itemAt(1).widget().text()
-                button_text = button_text.replace("ID:", "")
-                button_text = button_text.replace("CF:", "")
-                button_text = button_text.replace("(", "")
-                button_text = button_text.replace(")", "")
-                button_text = button_text.replace(",", "")
-                button.setVisible(search_text in button_text.lower())
-                if search_text in button_text.lower():
-                    noFound = False
-
-            # Rimuovi la label "No results found." se è già presente nel layout
-            for i in reversed(range(patient_frame_layout.count())):
-                widget = patient_frame_layout.itemAt(i).widget()
-                if widget is not None and widget.text() == "No results found.":
-                    widget.deleteLater()
-
-            # Aggiungi la label "No results found." solo se non sono stati trovati risultati
-            if noFound:
-                no_results_label = QLabel("No results found.")
-                patient_frame_layout.addWidget(no_results_label)
-
-        # reload patient list
-        def reload_buttons():
-            nonlocal buttons
-            filtered_patients = filter_patients()
-
-            # delete previous buttons
-            for button in buttons:
-                button.deleteLater()
-            for i in reversed(range(patient_frame_layout.count())):
-                widget = patient_frame_layout.itemAt(i).widget()
-                if widget is not None and widget.text() == "No results found.":
-                    widget.deleteLater()
-
-            buttons = []
-            # create a button
-            def create_patient_button(patient, dialog):
-                button_layout = QHBoxLayout()
-
-                if self.light:
-                    button_label_1 = QLabel(f"<span style='color: black; text-align: center;'>{patient['Name']} {patient['Surname']}</span>")
-                else:
-                    button_label_1 = QLabel(f"<span style='color: white; text-align: center;'>{patient['Name']} {patient['Surname']}</span>")
-                button_label_2 = QLabel(f"<span style='color: gray; text-align: center;'>ID: ({patient['ID']}),  CF: {patient['CF']}</span>")
-
-                button_label_1.setStyleSheet("background-color: transparent;")
-                button_label_2.setStyleSheet("background-color: transparent;")
-
-                button_layout.addWidget(button_label_1)
-                button_layout.addWidget(button_label_2)
-
-                button = QPushButton()
-                button.setLayout(button_layout)
-
-                button.setStyleSheet("""
-                    QPushButton {
-                        border: none;
-                        padding-left: 10px;
-                        border-radius: 10px;
-                        height: 60px;
-                        background-color: rgba(108, 60, 229, 10%);
-                    }
-                    QPushButton:hover {
-                        background-color: rgba(108, 60, 229, 30%);
-                    }
-                    QPushButton:checked {
-                        background-color: rgba(108, 60, 229, 100%);
-                    }                 
-                """)
-                button.clicked.connect(lambda _, patient=patient, dialog=dialog: self.loadPatientData(patient, dialog))
-
-                def label_click_event(event):
-                    button.click()
-
-                button_label_1.mousePressEvent = label_click_event
-                button_label_2.mousePressEvent = label_click_event
-
-                patient_frame_layout.addWidget(button)
-                buttons.append(button)
-
-            for patient in filtered_patients:
-                create_patient_button(patient, dialog)
-
-            if len(filtered_patients) == 0:
-                for i in reversed(range(patient_frame_layout.count())):
-                    widget = patient_frame_layout.itemAt(i).widget()
-                no_results_label = QLabel("No results found.")
-                patient_frame_layout.addWidget(no_results_label)
-
-        # when change a filter  reload and update
-        def on_filter_changed():
-            reload_buttons()
-            update_search_results()
-
-        # filter change actions
-        hospital_combo.currentIndexChanged.connect(on_filter_changed)
-        group_combo.currentIndexChanged.connect(on_filter_changed)
-        sex_combo.currentIndexChanged.connect(on_filter_changed)
-        age_combo.currentIndexChanged.connect(on_filter_changed)
-        search_lineedit.textChanged.connect(update_search_results)
-
-        # initial buttons
-        buttons = []
-        on_filter_changed()
+        # list
+        self.patients_list = QListWidget()
+        self.patients_list.setProperty("class", "archive_list")
+        patient_frame_layout.addWidget(self.patients_list)
+        self.load_patients_from_json()
 
         # dialog window layout
         main_layout = QVBoxLayout()
         main_layout.addLayout(search_layout)
-        main_layout.addWidget(scroll_area)
-        dialog.setLayout(main_layout)
+        main_layout.addWidget(self.patients_list)
+        self.dialog.setLayout(main_layout)
 
-        dialog.exec_()
+        self.dialog.exec_()
 
+    def load_patients_from_json(self):
+        with open('data/dataset.json', 'r') as file:
+            patient_data = json.load(file)
+
+        self.selected_items = [False] * len(patient_data)
+        for patient in patient_data:
+
+            patientview = QWidget()
+            patientview.setContentsMargins(0,0,0,0)
+            patientview.setStyleSheet("background-color: transparent;")
+            patientview_layout = QHBoxLayout()
+            patientview_label_1 = QLabel(f"<span style='text-align: center;'>{patient['Name']} {patient['Surname']}</span>")
+            patientview_label_1.setContentsMargins(0,0,0,0)
+            patientview_label_2 = QLabel(f"<span style='color: gray; text-align: center;'>ID: ({patient['ID']})</span>")
+            patientview_label_2.setContentsMargins(0,0,0,0)
+            patientview_label_1.setStyleSheet("background-color: transparent;")
+            patientview_label_2.setStyleSheet("background-color: transparent;")
+            patientview_layout.addWidget(patientview_label_1)
+            patientview_layout.addWidget(patientview_label_2)
+            patientview.setLayout(patientview_layout)
+            patientview.setMinimumHeight(40)
+            
+            item = QListWidgetItem()
+            item.setData(Qt.UserRole, patient)
+            item.setTextAlignment(Qt.AlignLeft|Qt.AlignVCenter)
+            patientview.setDisabled(True)
+
+            self.patients_list.addItem(item)
+            self.patients_list.setItemWidget(item, patientview)
+
+        self.patients_list.itemClicked.connect(self.handle_patient_click)
+
+    def handle_patient_click(self, item):
+        patient = item.data(Qt.UserRole)
+        self.loadPatientData(patient, self.dialog)
 
     def loadPatientData(self, patient, dialog):
         """
@@ -336,7 +172,6 @@ class PatientSelector(QFrame):
             ("Group:", patient["Group"]),
             ("Hospital:", patient["Hospital"])
         ]
-
         dialog.accept()
 
     def getSelectedPatientInfo(self):
@@ -345,3 +180,48 @@ class PatientSelector(QFrame):
         """
         return self.patient_info_data
 
+    def updatesearchresults(self):
+        search_text = self.current_search_text.lower()
+        with open('data/dataset.json', 'r') as file:
+            patient_data = json.load(file)
+
+        for i in range(self.patients_list.count()):
+            item = self.patients_list.item(i)
+            item.setHidden(True)
+
+        def age_in_range(date_of_birth_str, age_range):
+            date_of_birth = datetime.strptime(date_of_birth_str, "%Y-%m-%d").date()
+            today = date.today()
+            age = today.year - date_of_birth.year - ((today.month, today.day) < (date_of_birth.month, date_of_birth.day))
+            if age_range == "0-20":
+                return 0 <= age <= 20
+            elif age_range == "21-40":
+                return 21 <= age <= 40
+            elif age_range == "41-60":
+                return 41 <= age <= 60
+            elif age_range == "61-80":
+                return 61 <= age <= 80
+            elif age_range == "81+":
+                return age >= 81
+            else:
+                return False
+
+        for patient in patient_data:
+            if (
+                (not self.filters["Hospitals"] or patient['Hospital'] == self.filters["Hospitals"]) and
+                (not self.filters["Groups"] or patient['Group'] == self.filters["Groups"]) and
+                (not self.filters["Genders"] or patient['Gender'] == self.filters["Genders"]) and
+                (not self.filters["Ages"] or age_in_range(patient['Date_of_Birth'], self.filters["Ages"]))
+            ):
+                for i in range(self.patients_list.count()):
+                    item = self.patients_list.item(i)
+                    data = item.data(Qt.UserRole)
+                    if patient['ID'] == data["ID"] and (search_text == "" or search_text.lower() in data["ID"].lower() or search_text.lower() in data["CF"].lower() or search_text.lower() in data["Name"].lower() or search_text.lower() in data["Surname"].lower()):
+                        item.setHidden(False)
+
+    def updatefilters(self, type, text):
+        if type == text: 
+            self.filters[type] = None
+        else:
+            self.filters[type] = text
+        self.updatesearchresults()

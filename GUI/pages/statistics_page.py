@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QFrame
+from PyQt5.QtWidgets import QWidget
 
-class StatisticsPage(QFrame):
-    def __init__(self, light = True, parent=None):
-        super().__init__(parent)
+class StatisticsPage(QWidget):
+    def __init__(self):
+        super().__init__()
         # Altri codici per l'inizializzazione dell'oggetto...

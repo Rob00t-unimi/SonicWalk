@@ -4,7 +4,7 @@ import os
 import shutil
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt, QDir
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QIcon
 import matplotlib.pyplot  as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
@@ -12,16 +12,12 @@ import numpy as np
 
 import sys
 sys.path.append("../")
-from components.customButton import CustomButton
-from components.customSelect import CustomSelect
 
-class ArchivePage(QFrame):
+class ArchivePage(QWidget):
     def __init__(self, light = True, parent=None):
         super().__init__(parent)
 
-        # theme style
-        self.lightTheme = "background-color: #B6C2CF;"
-        self.darkTheme ="background-color: #282E33;"
+        self.light = light
 
         # principal layout
         layout = QHBoxLayout()
@@ -30,17 +26,16 @@ class ArchivePage(QFrame):
 
         # create left box   ------------------------------------------------------------------------------
         left_box = QWidget()
-        left_box.setStyleSheet(self.lightTheme if light else self.darkTheme)
-        left_box.setFixedWidth(375)
+        left_box.setFixedWidth(400)
 
         # create left layout
         left_layout = QVBoxLayout()
-        left_layout.setContentsMargins(5, 0, 5, 0)
+        # left_layout.setContentsMargins(5, 0, 5, 0)
         left_box.setLayout(left_layout)
         layout.addWidget(left_box)
 
         # create research box
-        research_box = QWidget()
+        research_box = QFrame()
         research_box.setFixedHeight(175)
         left_layout.addWidget(research_box)
         left_layout.setAlignment(Qt.AlignTop)
@@ -52,8 +47,7 @@ class ArchivePage(QFrame):
 
         select_patient_label = QLabel("Select Patient")
         research_box_layout.addWidget(select_patient_label, alignment=Qt.AlignTop | Qt.AlignHCenter)
-        font = QFont("Sans-serif", 15)
-        select_patient_label.setFont(font)
+        select_patient_label.setStyleSheet("""font-size: 20px""")
 
         search_and_toggle_layout = QHBoxLayout()
 
@@ -62,15 +56,6 @@ class ArchivePage(QFrame):
         search_lineedit.setFixedWidth(300)
         search_lineedit.setFixedHeight(80)
         search_lineedit.setPlaceholderText("Enter name, surname, ID or CF")
-        search_lineedit.setStyleSheet("""
-            background-color: #F5F5F5;
-            border: 1px solid #DCDFE4;
-            border-radius: 15px;
-            padding: 5px;
-            margin-top: 20px;
-            margin-bottom: 20px;
-            font-size: 15px;
-        """)
         search_and_toggle_layout.addWidget(search_lineedit, alignment=Qt.AlignCenter)
         self.current_search_text = ""
         search_lineedit.textChanged.connect(lambda text: update_text(text))
@@ -79,24 +64,26 @@ class ArchivePage(QFrame):
             self.updatesearchresults()
 
         # filters
-
-        # Aggiungi un pulsante per abilitare/disabilitare i filtri
-        toggle_filter_button = CustomButton(text="+", dimensions = [35, 35], stayActive = True, light=light)
+        toggle_filter_button = QPushButton()
+        fold = "black" if self.light else "white"
+        toggle_filter_button.setIcon(QIcon(f"icons/{fold}/minus-circle.svg"))
+        toggle_filter_button.setFixedHeight(35)
+        toggle_filter_button.setFixedWidth(35)
+        toggle_filter_button.setStyleSheet("""border: None;""")
         search_and_toggle_layout.addWidget(toggle_filter_button)
 
-        # Funzione per gestire il cambiamento di altezza della casella dei filtri
         def toggleFilterBox():
             if research_box.height() == 175:
                 research_box.setFixedHeight(240)
-                toggle_filter_button.setText("-")
+                toggle_filter_button.setIcon(QIcon(f"icons/{fold}/minus-circle.svg"))
                 filter_box.setVisible(True)
             else:
                 research_box.setFixedHeight(175)
-                toggle_filter_button.setText("+")
+                toggle_filter_button.setIcon(QIcon(f"icons/{fold}/plus-circle.svg"))
                 filter_box.setVisible(False)
 
         # Collega il pulsante alla funzione di gestione
-        toggle_filter_button.onClick(toggleFilterBox)
+        toggle_filter_button.clicked.connect(toggleFilterBox)
 
         research_box_layout.addLayout(search_and_toggle_layout)
 
@@ -110,43 +97,6 @@ class ArchivePage(QFrame):
         sexes = {'M', 'F'}
         age_ranges = {'0-20', '21-40', '41-60', '61-80', '81+'}
 
-        # initialize normal selects for filters
-        combo_style = """
-            QComboBox {
-                border: 1px solid #9B90DB; 
-                border-radius: 5px;
-                padding: 3px; 
-                background-color: #f5f5f5; 
-                font-size: 12px;
-                color: #4C4C4C;
-            }
-            QComboBox::drop-down {
-                width: 15px;
-                border-left-width: 0px;
-                border-left-color: transparent;
-                border-top-right-radius: 5px;
-                border-bottom-right-radius: 5px;
-                background-color: #9B90DB; 
-            }
-            QComboBox QAbstractItemView {
-                border: 1px solid #9B90DB;
-                background-color: #f5f5f5; /* Coerente con lo sfondo del ComboBox */
-                selection-background-color: #9B90DB; /* Colore di sfondo per l'elemento selezionato */
-                color: #4C4C4C;
-            }
-            QScrollBar:vertical {
-                width: 10px; /* Larghezza della scrollbar */
-                background-color: #f5f5f5; /* Coerente con lo sfondo del ComboBox */
-            }
-            QScrollBar::handle:vertical {
-                background-color: #9B90DB; /* Colore della maniglia della scrollbar */
-                border-radius: 5px; /* Bordi arrotondati */
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                background-color: transparent; /* Rimuove le linee aggiuntive sopra e sotto */
-            }
-        """
-
         self.filters = {
             "Hospitals": None,
             "Groups": None,
@@ -156,19 +106,15 @@ class ArchivePage(QFrame):
 
         hospital_combo = QComboBox()
         hospital_combo.addItems(["Hospitals"] + sorted(hospitals))
-        hospital_combo.setStyleSheet(combo_style)
 
         group_combo = QComboBox()
         group_combo.addItems(["Groups"] + sorted(groups))
-        group_combo.setStyleSheet(combo_style)
 
         sex_combo = QComboBox()
         sex_combo.addItems(["Genders"] + sorted(sexes))
-        sex_combo.setStyleSheet(combo_style)
 
         age_combo = QComboBox()
         age_combo.addItems(["Ages"] + sorted(age_ranges))
-        age_combo.setStyleSheet(combo_style)
 
         hospital_combo.currentIndexChanged.connect(lambda index: self.updatefilters("Hospitals", hospital_combo.currentText()))
         group_combo.currentIndexChanged.connect(lambda index: self.updatefilters("Groups", group_combo.currentText()))
@@ -190,65 +136,9 @@ class ArchivePage(QFrame):
         filter_box.setVisible(False)
         toggleFilterBox()
 
-        # Patient Box
-        patients_box = QScrollArea()
-        patients_box.setStyleSheet("""
-            QScrollArea {
-                border: none;                                   
-            }
-            QScrollBar:vertical {
-                width: 10px; 
-                background-color: transparent;
-            }
-            QScrollBar::handle:vertical {
-                background-color: #9B90DB; 
-                border-radius: 5px;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                background-color: transparent; 
-            }
-        """)
-        patients_box.setWidgetResizable(True)  # Abilita la possibilità di scorrere all'interno dell'area
-
-        # Creazione del widget contenitore per i pazienti
-        patients_container = QWidget()
-        patients_container_layout = QVBoxLayout()
-        patients_container.setLayout(patients_container_layout)
-
         # Leggiamo il dataset JSON
-        self.patients_list = QListWidget()  # Crea l'oggetto QListWidget per la lista dei pazienti
-        self.patients_list.setStyleSheet("""
-            QListWidget {
-                border: none;
-                border-radius: 10px;
-                padding: 15px;
-                font-size: 17px;
-                font-family: sans-serif;
-            }
-            QListWidget::item {
-                padding: 10px;
-            }
-            QListWidget::item:hover {
-                background-color: #DADFE5;
-                border-radius: 10px;
-            }
-            QListWidget::item:selected {
-                background-color: #9B90DB;
-                color: white;
-                border-radius: 10px;
-            }
-            QScrollBar:vertical {
-                width: 10px;
-                background-color: #EAEAEA;
-                border-radius: 5px;
-            }
-            QScrollBar::handle:vertical {
-                background-color: #9B90DB;
-                border-radius: 5px;
-            }
-        """)
-
-
+        self.patients_list = QListWidget()
+        self.patients_list.setProperty("class", "archive_list")
         left_layout.addWidget(self.patients_list)
         self.load_patients_from_json()
 
@@ -258,7 +148,7 @@ class ArchivePage(QFrame):
 
         # create Central layout
         central_layout = QVBoxLayout()
-        central_layout.setContentsMargins(0, 0, 0, 0)
+        # central_layout.setContentsMargins(0, 0, 0, 0)
         central_box.setLayout(central_layout)
         layout.addWidget(central_box)
 
@@ -306,8 +196,8 @@ class ArchivePage(QFrame):
         label_files = QLabel("Files")
 
         # Aggiunta di un padding sinistro alle etichette
-        label_folders.setStyleSheet("padding-left: 5px; font-size: 17px;")
-        label_files.setStyleSheet("padding-left: 5px; font-size: 17px;")
+        label_folders.setStyleSheet("padding-left: 5px;")
+        label_files.setStyleSheet("padding-left: 5px;")
 
         # Creazione dei layout per ciascuna coppia di lista e titolo
         layout_folders = QVBoxLayout()
@@ -320,9 +210,9 @@ class ArchivePage(QFrame):
         layout_files.addWidget(self.listView_files)
 
         # Creazione dei widget di gruppo per ciascuna coppia di lista e titolo
-        group_box_folders = QGroupBox()
+        group_box_folders = QWidget()
         group_box_folders.setLayout(layout_folders)
-        group_box_files = QGroupBox()
+        group_box_files = QWidget()
         group_box_files.setLayout(layout_files)
 
         # Rimozione del padding dai QGroupBox
@@ -333,38 +223,8 @@ class ArchivePage(QFrame):
         central_bottom_layout.addWidget(group_box_folders)
         central_bottom_layout.addWidget(group_box_files)
 
-        list_style = """
-            QListView {
-                background-color: #EAEAEA;
-                border: none;
-                border-radius: 10px;
-                padding: 15px;
-            }
-            QListView::item {
-                padding: 10px;
-            }
-            QListView::item:hover {
-                background-color: #C1C8D3;
-                border-radius: 10px;
-            }
-            QListView::item:selected {
-                background-color: #9B90DB;
-                color: white;
-                border-radius: 10px;
-            }
-            QScrollBar:vertical {
-                width: 10px;
-                background-color: #EAEAEA;
-                border-radius: 5px;
-            }
-            QScrollBar::handle:vertical {
-                background-color: #9B90DB;
-                border-radius: 5px;
-            }
-        """
-
-        self.listView_folders.setStyleSheet(list_style)
-        self.listView_files.setStyleSheet(list_style)
+        self.listView_folders.setProperty("class", "archive_list")
+        self.listView_files.setProperty("class", "archive_list")
         self.listView_files.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
 
@@ -407,10 +267,6 @@ class ArchivePage(QFrame):
         # right box ---------------------------------------------------------------------------------------------------
         right_box = QWidget()
         right_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        right_box.setStyleSheet("""
-            background-color: #ABB7C3;
-        """
-        )
         right_box.setMaximumWidth(375)
         right_layout = QVBoxLayout()
         right_layout.setContentsMargins(0, 0, 0, 0)
@@ -418,70 +274,133 @@ class ArchivePage(QFrame):
         layout.addWidget(right_box)
 
         # create an add patient button
-        add_patient_button = CustomButton(text="Add new patient", light=light, dimensions=[160, 40])
-        # right_layout.addWidget(add_patient_button, alignment=Qt.AlignTop | Qt.AlignHCenter)
-        add_patient_button.onClick(self.add_patient_modal)
+        add_patient_button = QPushButton("Add new patient")
+        add_patient_button.setProperty("class", "fill_button_inverted")
+        right_layout.addWidget(add_patient_button, alignment=Qt.AlignTop | Qt.AlignHCenter)
+        add_patient_button.clicked.connect(self.add_patient_modal)
 
     def add_patient_modal(self):
+
+        # Create a modal window
         modal = QDialog()
         modal.setWindowTitle("Add New Patient")
+        modal.setFixedWidth(650)
         layout = QVBoxLayout(modal)
 
-        # Add widgets for patient information
-        fields = [
-            ("Name:", QLineEdit()),
-            ("Surname:", QLineEdit()),
-            ("Group:", QComboBox()),
-            ("Hospital:", QLineEdit()),
-            ("CF:", QLineEdit()),
-            ("Right Leg Length:", QSpinBox()),
-            ("Left Leg Length:", QSpinBox()),
-            ("Weight (kg):", QDoubleSpinBox()),
-            ("Height (cm):", QSpinBox()),
-            ("Gender:", QComboBox()),
-            ("Date of Birth:", QDateEdit())
+        # Add hospital details section
+        hospital_section = QGroupBox("Hospital Details")
+        hospital_layout = QFormLayout()
+        hospital_section.setLayout(hospital_layout)
+
+        hospital_fields = [
+            ("Hospital:", QLineEdit()),  # ospedale
+            ("Group:", QComboBox())       # ospedale
         ]
 
         # Populate comboboxes with options
-        group_combobox = fields[2][1]
+        group_combobox = hospital_fields[1][1]
         group_combobox.addItems(["Parkinson", "ALS", "Healthy", "Stroke", "Other"])
-        gender_combobox = fields[9][1]
-        gender_combobox.addItems(["M", "F"])
 
-        for label, widget in fields:
-            layout.addWidget(QLabel(label))
-            layout.addWidget(widget)
+        for label, widget in hospital_fields:
+            row = QHBoxLayout()
+            label_widget = QLabel(label)
+            label_widget.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # Allineamento verticale per la label
+            row.addWidget(label_widget)
+            row.addWidget(widget)
+            hospital_layout.addRow(row)
+
+        layout.addWidget(hospital_section)
+
+        # Add patient information section
+        personal_section = QGroupBox("Patient Information")
+        personal_section.setFixedHeight(265)
+        personal_layout = QVBoxLayout()
+        personal_section.setLayout(personal_layout)
+
+        personal_table = QTableWidget()
+        personal_table.setColumnCount(1)
+        personal_fields = ["Name:", "Surname:", "Date of Birth:", "CF:", "Gender:"]
+
+        personal_table.horizontalHeader().setVisible(False)  # Hide default horizontal header
+
+        for i, label in enumerate(personal_fields):
+            personal_table.insertRow(i)
+            personal_table.setVerticalHeaderItem(i, QTableWidgetItem(label))
+            if i == 2:
+                date_edit = QDateEdit() 
+                date_edit.setDisplayFormat("yyyy-MM-dd")
+                date_edit.setCalendarPopup(True)
+                personal_table.setCellWidget(i, 0, date_edit)
+            elif i != len(personal_fields) - 1:
+                line_edit = QLineEdit()
+                line_edit.setFixedHeight(21)
+                line_edit.setAlignment(Qt.AlignVCenter)
+                personal_table.setCellWidget(i, 0, line_edit)
+            else:
+                gender_combo_box = QComboBox()
+                gender_combo_box.addItems(["M", "F"])
+                personal_table.setCellWidget(i, 0, gender_combo_box)
+        
+        personal_table.horizontalHeader().setStretchLastSection(True)
+        personal_table.verticalHeader().setMinimumWidth(150)
+        personal_layout.addWidget(personal_table)
+        layout.addWidget(personal_section)
+
+        # Add measurements section
+        measurements_section = QGroupBox("Measurements")
+        measurements_section.setFixedHeight(230)
+        measurements_layout = QVBoxLayout()
+        measurements_section.setLayout(measurements_layout)
+
+        measurements_table = QTableWidget()
+        measurements_table.setColumnCount(1)
+        measurement_fields = ["Height (cm):", "Weight (kg):", "Right Leg Length (cm):", "Left Leg Length (cm):"]
+
+        measurements_table.horizontalHeader().setVisible(False)  # Hide default horizontal header
+
+        for i, label in enumerate(measurement_fields):
+            measurements_table.insertRow(i)
+            measurements_table.setVerticalHeaderItem(i, QTableWidgetItem(label))
+            measurements_table.setCellWidget(i, 0, QSpinBox())  
+            measurements_table.cellWidget(i,0).setMaximum(300)
+
+        measurements_table.horizontalHeader().setStretchLastSection(True)
+        measurements_table.verticalHeader().setMinimumWidth(200)
+        measurements_layout.addWidget(measurements_table)
+        layout.addWidget(measurements_section)
 
         # Add buttons
         buttons_layout = QHBoxLayout()
-        layout.addLayout(buttons_layout)
-
         add_button = QPushButton("Add Patient")
-
-        # Connect button click to lambda function passing patient data
         add_button.clicked.connect(lambda: self.add_patient({
-            "Name": fields[0][1].text(),
-            "Surname": fields[1][1].text(),
-            "Group": fields[2][1].currentText(),
-            "Hospital": fields[3][1].text(),
-            "CF": fields[4][1].text(),
-            "Right_Leg_Length": str(fields[5][1].value()) + " cm",
-            "Left_Leg_Length": str(fields[6][1].value()) + " cm",
-            "Weight": str(fields[7][1].value()) + " kg",
-            "Height": str(fields[8][1].value()) + " cm",
-            "Gender": str(fields[9][1].currentText()),
-            "Date_of_Birth": fields[10][1].date().toString("yyyy-MM-dd")
+            "Name": personal_table.cellWidget(0, 0).text(),
+            "Surname": personal_table.cellWidget(1, 0).text(),
+            "Date_of_Birth": personal_table.cellWidget(2, 0).date().toString("yyyy-MM-dd"),
+            "CF": personal_table.cellWidget(3, 0).text(),
+            "Gender": personal_table.cellWidget(4, 0).currentText(),
+            "Hospital": hospital_fields[0][1].text(),
+            "Group": hospital_fields[1][1].currentText(),
+            "Height": str(measurements_table.cellWidget(0, 0).value()) + " cm",
+            "Weight": str(measurements_table.cellWidget(1, 0).value()) + " kg",
+            "Right_Leg_Length": str(measurements_table.cellWidget(2, 0).value()) + " cm",
+            "Left_Leg_Length": str(measurements_table.cellWidget(3, 0).value()) + " cm",
         }, modal.close))
-        buttons_layout.addWidget(add_button)
 
         cancel_button = QPushButton("Close")
         cancel_button.clicked.connect(modal.close)
+
+        buttons_layout.addWidget(add_button)
         buttons_layout.addWidget(cancel_button)
+        layout.addLayout(buttons_layout)
 
         modal.exec_()
 
-
     def add_patient(self, patient_data, close_modal = None):
+
+        if patient_data["Name"]=="" or patient_data["Surname"]=="" or patient_data["Name"] is None or patient_data["Surname"] is None:
+            QMessageBox.warning(self, "Error", "Please fill in all required fields (Name, Surname).")
+            return
+
         # Generate ID for the new patient
         json_path = os.path.join(os.getcwd(), "data", "dataset.json")
         try:
@@ -518,6 +437,8 @@ class ArchivePage(QFrame):
         self.load_patients_from_json()
         self.updatesearchresults()
 
+        QMessageBox.information(self, "Success", f"Patient {patient_data['Name']} {patient_data['Surname']} added successfully.")
+
     def delete_patient(self, patient_id):
         json_path = os.path.join(os.getcwd(), "data", "dataset.json")
         
@@ -531,7 +452,7 @@ class ArchivePage(QFrame):
             QMessageBox.critical(self, "Error", "Error decoding patient database file.")
             return
 
-        confirmation = QMessageBox.question(self, "Confirm Deletion", "Are you sure you want to delete this patient?", QMessageBox.Yes | QMessageBox.No)
+        confirmation = QMessageBox.warning(self, "Confirm Deletion", "Are you sure you want to delete this patient?", QMessageBox.Yes | QMessageBox.No)
         if confirmation == QMessageBox.No:
             return
 
@@ -549,14 +470,12 @@ class ArchivePage(QFrame):
             QMessageBox.critical(self, "Error", f"An error occurred while deleting the patient: {str(e)}")
             return
 
-        # Remove the corresponding item from the patient list in the UI
         for i in range(self.patients_list.count()):
             item = self.patients_list.item(i)
             if item.data(Qt.UserRole)["ID"] == patient_id:
                 self.patients_list.takeItem(i)
                 break
 
-        # Remove the patient folder from the archive
         patient_folder = os.path.join(os.getcwd(), "data", "archive", patient_id.upper())
         try:
             shutil.rmtree(patient_folder)
@@ -567,24 +486,20 @@ class ArchivePage(QFrame):
 
 
     def show_folder_context_menu(self, position):
-        # Ottieni l'indice dell'item nella lista
         index = self.listView_folders.indexAt(position)
         if index.isValid():
-            # Mostra il menu contestuale per le cartelle solo se l'indice è valido
             self.folder_context_menu.exec_(self.listView_folders.mapToGlobal(position))
 
     def show_file_context_menu(self, position):
-        # Ottieni l'indice dell'item nella lista
         index = self.listView_files.indexAt(position)
         if index.isValid():
-            # Mostra il menu contestuale per i file solo se l'indice è valido
             self.file_context_menu.exec_(self.listView_files.mapToGlobal(position))
 
     def delete_selected_folder(self):
         selected_indexes = self.listView_folders.selectedIndexes()
         if selected_indexes:
-            reply = QMessageBox.question(self, 'Deleting Folder', 
-                                         "Are you sure you want to delete the selected folder(s)?",
+            reply = QMessageBox.warning(self, 'Deleting Folder', 
+                                         "Are you sure you want to delete the selected folder?",
                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 for index in selected_indexes:
@@ -597,10 +512,9 @@ class ArchivePage(QFrame):
                                             QMessageBox.Ok, QMessageBox.Ok)
 
     def delete_selected_file(self):
-        # Codice per eliminare i file selezionati
         selected_indexes = self.listView_files.selectedIndexes()
         if selected_indexes:
-            reply = QMessageBox.question(self, 'Deleting File', 
+            reply = QMessageBox.warning(self, 'Deleting File', 
                                          "Are you sure you want to delete the selected file?",
                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
@@ -626,30 +540,20 @@ class ArchivePage(QFrame):
     def load_selected_file(self, index):
         file_path = self.file_model.fileInfo(index).absoluteFilePath()
         try:
-            # Carica il file numpy
             loaded_data = np.load(file_path, allow_pickle=True)
-
-            # Estrai i dati dal dizionario
             signals = loaded_data.item().get("signals")
             Fs = loaded_data.item().get("Fs")
-
-            # Calcola il tempo per ogni campione
             time = np.arange(len(signals[0])) / Fs
-
-            # Cancella i plot precedenti
             self.ax.clear()
-
-            # Fai qualcosa con i dati (esempio: plottali)
             colors = ["b", "c"]
             i = 0
             for signal in signals:
-                self.ax.plot(time, signal, color=colors[i])  # Stampa i segnali rispetto al tempo
+                self.ax.plot(time, signal, color=colors[i])  
                 i += 1
             self.ax.set_xlabel('Time (s)')
             self.ax.set_ylabel('Angle (Deg)')
             self.ax.grid(True, color="#FFE6E6")
 
-            # Aggiorna il canvas per visualizzare il nuovo plot
             self.canvas.draw()
             if self.navigation_toolbar is None: self.navigation_toolbar = NavigationToolbar(self.canvas, self)
             else: self.navigation_toolbar.setVisible(True)
@@ -663,18 +567,31 @@ class ArchivePage(QFrame):
             patient_data = json.load(file)
 
         self.selected_items = [False] * len(patient_data)
-        # Aggiungi ogni paziente alla lista
         for patient in patient_data:
-            patient_text = f"{patient['Name']} {patient['Surname']} (ID: {patient['ID']})"
-            
-            item = QListWidgetItem(patient_text)
-            item.setData(Qt.UserRole, patient)
 
-            item.setTextAlignment(Qt.AlignLeft)
+            patientview = QWidget()
+            patientview.setContentsMargins(0,0,0,0)
+            patientview.setStyleSheet("background-color: transparent;")
+            patientview_layout = QHBoxLayout()
+            patientview_label_1 = QLabel(f"<span style='text-align: center;'>{patient['Name']} {patient['Surname']}</span>")
+            patientview_label_1.setContentsMargins(0,0,0,0)
+            patientview_label_2 = QLabel(f"<span style='color: gray; text-align: center;'>ID: ({patient['ID']})</span>")
+            patientview_label_2.setContentsMargins(0,0,0,0)
+            patientview_label_1.setStyleSheet("background-color: transparent;")
+            patientview_label_2.setStyleSheet("background-color: transparent;")
+            patientview_layout.addWidget(patientview_label_1)
+            patientview_layout.addWidget(patientview_label_2)
+            patientview.setLayout(patientview_layout)
+            patientview.setMinimumHeight(40)
+            
+            item = QListWidgetItem()
+            item.setData(Qt.UserRole, patient)
+            item.setTextAlignment(Qt.AlignLeft|Qt.AlignVCenter)
+            patientview.setDisabled(True)
 
             self.patients_list.addItem(item)
+            self.patients_list.setItemWidget(item, patientview)
 
-        # Connetti il segnale itemClicked al metodo clicked_patient
         self.patients_list.itemClicked.connect(self.clicked_patient)
 
 
@@ -682,7 +599,7 @@ class ArchivePage(QFrame):
         index = self.patients_list.row(item)
 
         if not self.selected_items[index]:
-            self.select_patient_folder(item.text())
+            self.select_patient_folder(item)
         else:
             self.listView_folders.setModel(None)
             self.reset()
@@ -696,17 +613,14 @@ class ArchivePage(QFrame):
         with open('data/dataset.json', 'r') as file:
             patient_data = json.load(file)
 
-        # Nascondi tutti gli elementi nella lista dei pazienti
         for i in range(self.patients_list.count()):
             item = self.patients_list.item(i)
             item.setHidden(True)
 
         def age_in_range(date_of_birth_str, age_range):
             date_of_birth = datetime.strptime(date_of_birth_str, "%Y-%m-%d").date()
-            # Calcola l'età del paziente dalla data di nascita
             today = date.today()
             age = today.year - date_of_birth.year - ((today.month, today.day) < (date_of_birth.month, date_of_birth.day))
-            # Verifica se l'età rientra nell'intervallo specificato
             if age_range == "0-20":
                 return 0 <= age <= 20
             elif age_range == "21-40":
@@ -720,7 +634,6 @@ class ArchivePage(QFrame):
             else:
                 return False
 
-        # Filtra i pazienti e mostra solo quelli corrispondenti
         for patient in patient_data:
             if (
                 (not self.filters["Hospitals"] or patient['Hospital'] == self.filters["Hospitals"]) and
@@ -728,10 +641,10 @@ class ArchivePage(QFrame):
                 (not self.filters["Genders"] or patient['Gender'] == self.filters["Genders"]) and
                 (not self.filters["Ages"] or age_in_range(patient['Date_of_Birth'], self.filters["Ages"]))
             ):
-                # Cerca l'item nella lista dei pazienti che ha come sottostringa l'ID del paziente
                 for i in range(self.patients_list.count()):
                     item = self.patients_list.item(i)
-                    if patient['ID'].lower() in item.text().lower() and (search_text == "" or search_text in item.text().lower()):
+                    data = item.data(Qt.UserRole)
+                    if patient['ID'] == data["ID"] and (search_text == "" or search_text.lower() in data["ID"].lower() or search_text.lower() in data["CF"].lower() or search_text.lower() in data["Name"].lower() or search_text.lower() in data["Surname"].lower()):
                         item.setHidden(False)
 
     def updatefilters(self, type, text):
@@ -741,12 +654,12 @@ class ArchivePage(QFrame):
             self.filters[type] = text
         self.updatesearchresults()
 
-    def select_patient_folder(self, text):
-        text = text.upper().replace(")", "").split()
-        id = text[-1]
-        print(id)
+    def select_patient_folder(self, item):
+
+        patient = item.data(Qt.UserRole)
+        patient_id = (patient['ID']).upper()
         current_path = os.getcwd()
-        self.folder_path = os.path.join(current_path, "data", "archive", id)
+        self.folder_path = os.path.join(current_path, "data", "archive", patient_id)
         if os.path.exists(self.folder_path):
             self.folder_model.setRootPath(self.folder_path) 
             self.listView_folders.setModel(self.folder_model)
@@ -764,5 +677,4 @@ class ArchivePage(QFrame):
         self.listView_files.clearSelection()
 
     def show_context_menu(self, position):
-        # Mostra il menu contestuale nella posizione del cursore
         self.context_menu.exec_(self.sender().mapToGlobal(position))

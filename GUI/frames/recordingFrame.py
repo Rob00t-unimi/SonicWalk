@@ -1,8 +1,8 @@
 import threading
 import time
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal, QSize
+from PyQt5.QtGui import QPixmap, QIcon
 import os
 import sys
 from datetime import datetime
@@ -12,10 +12,9 @@ import pygame
 
 sys.path.append("../")
 
-from components.recButton import RecButton
 from mtw_run import MtwThread
 
-class RecordingFrame(QFrame):
+class RecordingFrame(QWidget):
 
     thread_signal = pyqtSignal()
     thread_signal_start = pyqtSignal()
@@ -66,8 +65,6 @@ class RecordingFrame(QFrame):
         self.setBpm = setBpm
 
         self.light = light
-        self.blackIcons = "icons/black"
-        self.whiteIcons = "icons/white"
 
         self.playAbilited = True    # state of the play button
         self.execution = False      # state of the execution
@@ -95,7 +92,7 @@ class RecordingFrame(QFrame):
         self.layout_actions.setContentsMargins(25, 25, 25, 25)
 
         # create new frame and set layout
-        self.buttons_actions_frame = QFrame(self)
+        self.buttons_actions_frame = QWidget(self)
         self.buttons_layoutActions = QHBoxLayout(self.buttons_actions_frame)
 
         # Buttons
@@ -103,20 +100,26 @@ class RecordingFrame(QFrame):
         self.buttons_layoutActions.addStretch()
 
         # create custom recording buttons
-        self.play_button = RecButton(light=self.light, icons_paths=[self.blackIcons+"/play.svg", self.whiteIcons+"/play.svg"], tooltip="Start recording")
+        self.play_button = QPushButton()
+        self.play_button.setIconSize(QSize(25, 25))
+        self.play_button.setFixedSize(85, 85)
+        self.play_button.setIcon(QIcon("icons/white/play.svg"))
+        self.play_button.setProperty("class", "rec_button")
+        self.play_button.setToolTip("Start Recording")
         self.buttons_layoutActions.addWidget(self.play_button)
-        self.play_button.onClick(self.startExecution)
+        self.play_button.clicked.connect(self.startExecution)
 
         self.buttons_layoutActions.addStretch()
 
-        self.stop_button = RecButton(light=self.light, icons_paths=["icons/square.svg", "icons/square.svg"], tooltip="Stop recording")
+        self.stop_button = QPushButton()
+        self.stop_button.setIconSize(QSize(25, 25))
+        self.stop_button.setFixedSize(85, 85)
+        self.stop_button.setIcon(QIcon("icons/square.svg"))
+        self.stop_button.setProperty("class", "rec_button")
+        self.stop_button.setToolTip("Stop Recording")
         self.buttons_layoutActions.addWidget(self.stop_button)
-        self.stop_button.onClick(self.stopExecution)
+        self.stop_button.clicked.connect(self.stopExecution)
 
-        # # si vuole implementare salva manuale o si chiede sempre automaticamente?
-        # self.save_button = RecButton(light=self.light, icons_paths=[self.blackIcons+"/save.svg", self.whiteIcons+"/save.svg"], tooltip="Save the recording")
-        # self.buttons_layoutActions.addWidget(self.save_button)
-        # self.save_button.setEnabled(False)
 
         self.buttons_layoutActions.addStretch()
 
@@ -144,17 +147,6 @@ class RecordingFrame(QFrame):
         if self.record_thread is not None and self.record_thread.is_alive():
             self.record_thread.interrupt_recording(lambda: self.setSaved(None))
 
-    def toggleTheme(self):
-        """
-            Modifies:   self.light
-            Effects:    Toggles the theme of the recording frame between light and dark mode.
-        """
-        self.light = not self.light
-        self.time_label.setStyleSheet("color: black;" if self.light else "color: white;")
-        self.play_button.toggleTheme()
-        self.stop_button.toggleTheme()
-        # self.save_button.toggleTheme()
-
     def enablePlayButton(self):
         """
             Modifies:   self.playAbilited
@@ -163,6 +155,10 @@ class RecordingFrame(QFrame):
         if not self.playAbilited:
             self.playAbilited = True
             self.play_button.setEnabled(True)
+            self.play_button.setToolTip("Start Recording")
+            opacity_effect = QGraphicsOpacityEffect(self.play_button)
+            opacity_effect.setOpacity(1.0)
+            self.play_button.setGraphicsEffect(opacity_effect)
 
     def disablePlayButton(self):
         """
@@ -172,6 +168,10 @@ class RecordingFrame(QFrame):
         if self.playAbilited:
             self.playAbilited = False
             self.play_button.setEnabled(False)
+            self.play_button.setToolTip("Please select a patient before recording.")
+            opacity_effect = QGraphicsOpacityEffect(self.play_button)
+            opacity_effect.setOpacity(0.6)
+            self.play_button.setGraphicsEffect(opacity_effect)
 
     def timeUpdater(self):
         """
@@ -258,20 +258,20 @@ class RecordingFrame(QFrame):
             if result is not None:
 
                 if isinstance(result, Exception):
-                    # close connection message
+                    # close connection msg
                     self.connection_msg.reject()
                     self.setSaved(None)
-                    # have to return only some errors in a message
+                    
                     error_msg = QMessageBox()
-                    error_msg.setIcon(QMessageBox.Question)
+                    error_msg.setIcon(QMessageBox.Warning)  # Icona di avviso
                     error_msg.setWindowTitle("Error")
-                    error_msg.setText(str(result) +". Do you want to try again?")
+                    msg = (str(result)).replace("Aborting.", "") if "Aborting." in str(result) else str(result)
+                    error_msg.setText(msg + " Do you want to try again?")
                     error_msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
                     response = error_msg.exec_()
 
                     if response == QMessageBox.Yes:
                         self.startExecution()
-
                 else:
                     self.signals, self.Fs, self.bpm = result
                     if self.setBpm and self.bpm != False:
@@ -334,7 +334,7 @@ class RecordingFrame(QFrame):
     def stop_by_musicError(self):
         self.stopExecution()
         sample_error_msg = QMessageBox()
-        sample_error_msg.setIcon(QMessageBox.Information)
+        sample_error_msg.setIcon(QMessageBox.Critical)
         sample_error_msg.setWindowTitle("Error")
         sample_error_msg.setText("Failed to load music samples. Please ensure that the provided path is correct and that the files are in either WAV or MP3 format.")
         sample_error_msg.setStandardButtons(QMessageBox.Ok)

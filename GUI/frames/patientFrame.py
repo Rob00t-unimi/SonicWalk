@@ -4,7 +4,6 @@ import sys
 
 sys.path.append("../")
 
-from components.customButton import CustomButton
 from components.patientTable import PatientTable
 from frames.patientSelector import PatientSelector
 
@@ -54,7 +53,7 @@ class PatientFrame(QFrame):
         """
         # every time it creates a new patient selector instance, we can improve it creating the instance one time 
         # and call them whenever we need
-        patient_selector = PatientSelector(light = self.light)
+        patient_selector = PatientSelector()
         patient_selector.selectPatient()
         self.data = patient_selector.getSelectedPatientInfo()
 

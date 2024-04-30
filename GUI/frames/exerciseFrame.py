@@ -100,8 +100,7 @@ class ExerciseFrame(QFrame):
             if len(self.MusicNames)>0:
                 self.selectMusic(self.MusicNames[0])
 
-            self.slider_label.hide()
-            self.slider_frame.hide()
+            self.noMusic_button.click()
 
     def _setBpm(self):
         """

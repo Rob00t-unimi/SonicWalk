@@ -1,15 +1,21 @@
-/* QTableWidget {{
-    border-radius: 10px;
-}} */
+/* Frame */
 QFrame {{
     border-radius: 15px;
 }}
+
+/* Buttons */
 QPushButton {{
     border-radius: 10px;
 }}
-QPushButton:checked {{
+QPushButton:focus {{
     color: {QTMATERIAL_PRIMARYTEXTCOLOR};
 }}
+QPushButton:hover {{
+    background-color: {QTMATERIAL_PRIMARYLIGHTCOLOR};
+    color: {QTMATERIAL_SECONDARYTEXTCOLOR};
+}}
+
+/* Menu Buttons */
 .menu_button {{
     border-radius: 10px;
     color: {QTMATERIAL_SECONDARYTEXTCOLOR};
@@ -22,6 +28,8 @@ QPushButton:checked {{
 .menu_button:checked{{
     padding-left: 5px;
 }}
+
+/* Classes for buttons */
 .fill_button {{
     border-radius: 10px;
     background-color: {QTMATERIAL_PRIMARYCOLOR};
@@ -32,16 +40,31 @@ QPushButton:checked {{
     background-color: {QTMATERIAL_PRIMARYCOLOR};
     color: {QTMATERIAL_SECONDARYCOLOR}
 }}
-QPushButton:hover {{
-    background-color: {QTMATERIAL_PRIMARYLIGHTCOLOR};
-    color: {QTMATERIAL_PRIMARYTEXTCOLOR}
+.rec_button {{
+    border-radius: 40px;
+    background-color: {QTMATERIAL_SECONDARYCOLOR};
+    border: 1px solid gray;
+}}
+.rec_button:disabled {{
+    border-radius: 40px;
+    background-color: {QTMATERIAL_SECONDARYCOLOR};
+    border: 1px solid gray;
+}}
+.rec_button:hover {{
+    border-radius: 40px;
+    background-color: {QTMATERIAL_SECONDARYLIGHTCOLOR};
+    border: 1px solid gray;
 }}
 .danger:hover {{
     background-color: #ffeded;
 }}
+
+/* Label */
 QLabel {{
     font-size: 18px;
 }}
+
+/* Line Edit */
 QLineEdit {{
     border-radius: 15px;
     padding: 5px;
@@ -49,6 +72,8 @@ QLineEdit {{
     margin-top: 20px;
     margin-bottom: 20px;
 }}
+
+/* Combo box */
 QComboBox {{
     border-radius: 10px;
     font-size: 15px;
@@ -57,6 +82,8 @@ QComboBox {{
 QComboBox QAbstractItemView {{
     color: {QTMATERIAL_SECONDARYTEXTCOLOR};
 }}
+
+/* Scroll bar */
 QScrollBar:vertical {{
     width: 10px; 
     background-color: transparent;
@@ -68,6 +95,8 @@ QScrollBar::handle:vertical {{
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
     background-color: transparent; 
 }}
+
+/* classes */
 .archive_list {{
     border: none;
     border-radius: 10px;
@@ -76,6 +105,9 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
 }}
 .archive_list::item {{
     padding: 10px;
+}}
+.archive_list::item QWidget {{
+    color: {QTMATERIAL_PRIMARYTEXTCOLOR};
 }}
 .archive_list::item:hover {{
     background-color: {QTMATERIAL_PRIMARYLIGHTCOLOR};
@@ -86,11 +118,6 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
 .archive_list::item:selected {{
     padding: 20px;
     border-radius: 10px;
-}}
-.rec_button {{
-    border-radius: 40px;
-    background-color: {QTMATERIAL_SECONDARYLIGHTCOLOR};
-    border: 1px solid gray;
 }}
 .custom_menu {{
     border: none;

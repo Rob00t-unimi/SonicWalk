@@ -5,7 +5,6 @@ from PyQt5.QtWidgets import *
 import sys
 sys.path.append("../")
 
-from components.customButton import CustomButton
 from frames.musicFoldersFrame import MusicFolders
 from qt_material import apply_stylesheet, list_themes
 

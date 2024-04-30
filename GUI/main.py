@@ -49,7 +49,7 @@ class MainWindow(QMainWindow):
         try:
             self.theme_name = self._load_theme()
         except:
-            self.theme_name = "light_teal.xml"
+            self.theme_name = "light_teal_500.xml"
         self.light = True if "light" in self.theme_name else False
 
         self.setup_ui()

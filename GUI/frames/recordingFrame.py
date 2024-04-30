@@ -155,6 +155,10 @@ class RecordingFrame(QWidget):
         if not self.playAbilited:
             self.playAbilited = True
             self.play_button.setEnabled(True)
+            self.play_button.setToolTip("Start Recording")
+            opacity_effect = QGraphicsOpacityEffect(self.play_button)
+            opacity_effect.setOpacity(1.0)
+            self.play_button.setGraphicsEffect(opacity_effect)
 
     def disablePlayButton(self):
         """
@@ -164,6 +168,10 @@ class RecordingFrame(QWidget):
         if self.playAbilited:
             self.playAbilited = False
             self.play_button.setEnabled(False)
+            self.play_button.setToolTip("Please select a patient before recording.")
+            opacity_effect = QGraphicsOpacityEffect(self.play_button)
+            opacity_effect.setOpacity(0.6)
+            self.play_button.setGraphicsEffect(opacity_effect)
 
     def timeUpdater(self):
         """
@@ -250,20 +258,20 @@ class RecordingFrame(QWidget):
             if result is not None:
 
                 if isinstance(result, Exception):
-                    # close connection message
+                    # close connection msg
                     self.connection_msg.reject()
                     self.setSaved(None)
-                    # have to return only some errors in a message
+                    
                     error_msg = QMessageBox()
-                    error_msg.setIcon(QMessageBox.Question)
+                    error_msg.setIcon(QMessageBox.Warning)  # Icona di avviso
                     error_msg.setWindowTitle("Error")
-                    error_msg.setText(str(result) +". Do you want to try again?")
+                    msg = (str(result)).replace("Aborting.", "") if "Aborting." in str(result) else str(result)
+                    error_msg.setText(msg + " Do you want to try again?")
                     error_msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
                     response = error_msg.exec_()
 
                     if response == QMessageBox.Yes:
                         self.startExecution()
-
                 else:
                     self.signals, self.Fs, self.bpm = result
                     if self.setBpm and self.bpm != False:
@@ -326,7 +334,7 @@ class RecordingFrame(QWidget):
     def stop_by_musicError(self):
         self.stopExecution()
         sample_error_msg = QMessageBox()
-        sample_error_msg.setIcon(QMessageBox.Information)
+        sample_error_msg.setIcon(QMessageBox.Critical)
         sample_error_msg.setWindowTitle("Error")
         sample_error_msg.setText("Failed to load music samples. Please ensure that the provided path is correct and that the files are in either WAV or MP3 format.")
         sample_error_msg.setStandardButtons(QMessageBox.Ok)

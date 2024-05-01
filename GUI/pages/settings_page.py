@@ -10,12 +10,10 @@ from qt_material import apply_stylesheet, list_themes
 
 
 class SettingsPage(QWidget):
-    def __init__(self, app, invert_icons, light, current_theme):
+    def __init__(self, apply_theme, current_theme):
         super().__init__()
 
-        self.app = app
-        self.invert_icons = invert_icons
-        self.light = light
+        self.apply_theme = apply_theme
         self.current_theme = current_theme
         self.global_toggle_theme = None
 
@@ -107,20 +105,10 @@ class SettingsPage(QWidget):
         self.folder_path = os.path.join(os.getcwd(), "data")
 
     def select_style(self, theme):
-        flag = True if "light" in theme else False
-        apply_stylesheet(self.app, theme=theme, extra={'density_scale': '0'}, invert_secondary=flag, css_file = "custom_css.css")
-        if self.global_toggle_theme is not None: self.global_toggle_theme(True)
-        if self.light != flag:
-            self.invert_icons()
-            self.light = flag
-        try:
-            with open("data/settings.json", "r") as file:
-                settings = json.load(file)
-            settings["theme"] = theme
-            with open("data/settings.json", "w") as file:
-                json.dump(settings, file)
-        except FileNotFoundError:
-            print("Settings file not found. Theme not setted.")
+        try: 
+            self.apply_theme(theme=theme, write_theme=True)
+        except Exception as e:
+            print(str(e))
 
     def confirm_delete_repository(self):
         confirm_dialog = QMessageBox()

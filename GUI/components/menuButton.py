@@ -1,9 +1,8 @@
 from PyQt5.QtWidgets import QPushButton
-from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtCore import QSize
 
 class MenuButton(QPushButton):
-    def __init__(self, icons_paths, text, light = True):
+    def __init__(self, name, text):
 
         super().__init__()
 
@@ -13,7 +12,7 @@ class MenuButton(QPushButton):
         self.text = text
 
         # initialize button
-        self.setIcon(QIcon(icons_paths[0] if not light else icons_paths[1]))
+        self.setProperty('icon_name', name)
         self.setFixedSize(50, 50)
         self.setIconSize(QSize(25, 25))
 

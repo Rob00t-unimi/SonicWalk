@@ -1,6 +1,5 @@
 import time
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QIcon
 import webbrowser
 import sys
 import json
@@ -46,7 +45,7 @@ class SideMenu(QFrame):
         self.sideFrame_layout.setContentsMargins(5, 5, 5, 5)
 
         # Hamburger menu button
-        self.hamburgerMenuButton = MenuButton(icons_paths=[self.blackIconPath + "menu.svg", self.whiteIconPath + "menu.svg"], text="   Menu", light=self.light)
+        self.hamburgerMenuButton = MenuButton(name="menu", text="   Menu")
         self.hamburgerMenuButton.clicked.connect(self.hamburgerFunction)
         self.sideFrame_layout.addWidget(self.hamburgerMenuButton)
 
@@ -84,13 +83,13 @@ class SideMenu(QFrame):
         self.inner_frame1_layout.setSpacing(0)
 
         # Create buttons
-        self.analysisButton = MenuButton(icons_paths=[self.blackIconPath + "activity.svg", self.whiteIconPath + "activity.svg"], text="   Analysis", light=self.light)
+        self.analysisButton = MenuButton(name="activity", text="   Analysis")
         self.analysisButton.clicked.connect(lambda: self.selectPage("Analysis"))
-        self.archiveButton = MenuButton(icons_paths=[self.blackIconPath + "archive.svg", self.whiteIconPath + "archive.svg"], text="   Archive", light=self.light)
+        self.archiveButton = MenuButton(name="archive", text="   Archive")
         self.archiveButton.clicked.connect(lambda: self.selectPage("Archive"))
-        self.statisticsButton = MenuButton(icons_paths=[self.blackIconPath + "bar-chart-2.svg", self.whiteIconPath + "bar-chart-2.svg"], text="   Statistics", light=self.light)
+        self.statisticsButton = MenuButton(name="statistics", text="   Statistics")
         self.statisticsButton.clicked.connect(lambda: self.selectPage("Statistics"))
-        self.settingsButton = MenuButton(icons_paths=[self.blackIconPath + "settings.svg", self.whiteIconPath + "settings.svg"], text="   Settings", light=self.light)
+        self.settingsButton = MenuButton(name="settings", text="   Settings")
         self.settingsButton.clicked.connect(lambda: self.selectPage("Settings"))
 
         self.analysisButton.setCheckable(True)
@@ -121,9 +120,9 @@ class SideMenu(QFrame):
         self.inner_frame2_layout.setContentsMargins(0, 0, 0, 0)
 
         # Create Buttons
-        self.themeButton = MenuButton(icons_paths=[self.blackIconPath + "sun.svg", self.whiteIconPath + "moon.svg"], text="  Theme", light=self.light)
+        self.themeButton = MenuButton(name="sun", text="  Theme")
         self.themeButton.clicked.connect(self.toggleTheme)
-        self.infoButton = MenuButton(icons_paths=[self.blackIconPath + "info.svg", self.whiteIconPath + "info.svg"], text="   Info", light=self.light)
+        self.infoButton = MenuButton(name="info", text="   Info")
         self.infoButton.clicked.connect(self._openDocumentation)
 
         # Add buttons to frame
@@ -175,21 +174,12 @@ class SideMenu(QFrame):
             self.setActivePage(page)
         print(page)
 
-    def toggleTheme(self, notcallmain = False):
+    def toggleTheme(self):
         self.light = not self.light
-        if not notcallmain: self.toggleThemeMain()
-        self.themeButton.setIcon(QIcon(self.blackIconPath + "moon.svg" if self.light else self.whiteIconPath + "sun.svg"))
-        themes = list_themes()
         try:
-            with open("data/settings.json", "r") as file:
-                settings = json.load(file)
-            theme = settings["theme"]
-            if "light" in theme: theme = theme.replace("light", "dark")
-            elif "dark" in theme: theme = theme.replace("dark", "light")
-            if not theme in themes: self.themeButton.setEnabled(False)
-            else: self.themeButton.setEnabled(True)
-        except FileNotFoundError:
-            print("Settings file not found. Theme not setted.")
+            self.toggleThemeMain()
+        except Exception as e:
+            print(str(e))
 
     def _openDocumentation(self):
         """
@@ -200,26 +190,4 @@ class SideMenu(QFrame):
         except Exception as e:
             print("Error opening documentation file:", e)
 
-    def _save_theme(self):
-        """
-        Modify: JSON settings file
-        Effects: Saves theme settings in the JSON settings file
-        """
-        try:
-            # Load current settings from the JSON file
-            with open(self.settings_file, "r") as file:
-                current_settings = json.load(file)
-        except Exception as e:
-            print("Error loading settings:", e)
-            return
-
-        # Modify the current settings
-        current_settings["light_theme"] = self.light
-
-        try:
-            # Save the modified settings to the JSON file
-            with open(self.settings_file, "w") as file:
-                json.dump(current_settings, file)
-        except Exception as e:
-            print("Error saving settings:", e)
 

@@ -22,6 +22,7 @@
 
 
 import json
+import time
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from frames.sideMenu import SideMenu
@@ -29,15 +30,17 @@ from pages.analysis_page import AnalysisPage
 from pages.archive_page import ArchivePage
 from pages.settings_page import SettingsPage
 from pages.statistics_page import StatisticsPage
+from iconsManager import IconsManager
 import sys
+import threading
 
 from qt_material import apply_stylesheet, list_themes
+
+icons_manager = IconsManager()
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
-        self.light = True
 
         self.setWindowTitle("Sonic-Walk")
         self.resize(1100, 720)
@@ -48,16 +51,26 @@ class MainWindow(QMainWindow):
         # Load theme settings from the JSON file
         try:
             self.theme_name = self._load_theme()
+            if self.theme_name not in list_themes(): self.theme_name = "light_teal_500.xml"
         except:
             self.theme_name = "light_teal_500.xml"
-        self.light = True if "light" in self.theme_name else False
+
+        if "dark_" in self.theme_name: self.light = False
+        else: self.light = True
+
+        self.icons_color = True # black
 
         self.setup_ui()
 
         self.pageHandler = "Analysis"
         self.apply_theme()
 
-    def apply_theme(self):
+        # if not self.check_icons_loaded(): 
+        #     print("not loaded icons")
+        #     self.apply_theme()
+
+
+    def apply_theme(self, theme = None, write_theme = False):
         extra = {
             # Button colors
             'danger': '#dc3545',
@@ -66,29 +79,55 @@ class MainWindow(QMainWindow):
             # Density
             'density_scale': '0',
         }
-        apply_stylesheet(app, theme=self.theme_name, extra=extra, invert_secondary=self.light, css_file = "custom_css.css")
+        if theme is None: apply_stylesheet(app, theme=self.theme_name, extra=extra, invert_secondary=self.light, css_file = "custom_css.css")
+        else: 
+            self.light = True if "dark_" not in theme else False
+            apply_stylesheet(app, theme=theme, extra=extra, invert_secondary=self.light, css_file = "custom_css.css")
 
-        # invert all icons colors 
-        self.invert_all_icons()
+        if write_theme and theme is not None:
+            self.theme_name = theme
+            self._write_theme()
 
-    def invert_all_icons(self):
-        # Cicla su tutti i widget nella finestra principale
-        for widget in self.findChildren(QPushButton) + self.findChildren(QAction):
-            icon = widget.icon()
-            if not icon.isNull():
-                pixmap = icon.pixmap(icon.actualSize(widget.size()))
-                image = pixmap.toImage()
-                inverted_image = self.invert_image_colors(image)
-                inverted_pixmap = QPixmap.fromImage(inverted_image)
-                inverted_icon = QIcon(inverted_pixmap)
-                widget.setIcon(inverted_icon)
+        themes = list_themes()
+        if theme is None: theme = self.theme_name
+        if "light_" in theme: theme = theme.replace("light_", "dark_")
+        elif "dark_" in theme: theme = theme.replace("dark_", "light_")
+        if theme not in themes: self.side_menu.themeButton.setEnabled(False)
+        else: self.side_menu.themeButton.setEnabled(True)
 
-    def invert_image_colors(self, image):
-        # Inverte i colori dell'immagine
-        inverted_image = image.rgbSwapped()
-        inverted_image.invertPixels()
-        return inverted_image
+        self.archivePage.light = self.light
+        self.set_icons()
 
+    def set_icons(self):
+        if self.light: icons_manager.set_black()
+        else: icons_manager.set_white()
+        for widget in self.findChildren(QWidget):
+            name = widget.property("icon_name")
+            if isinstance(name, str):
+                print(name)
+                if name == "sun":
+                    if self.light:
+                        widget.setProperty("icon_name", "moon")
+                        widget.setIcon(icons_manager.getIcon("moon"))
+                    else: widget.setIcon(icons_manager.getIcon("sun"))
+                elif name == "moon":
+                    if not self.light:
+                        widget.setProperty("icon_name", "sun")
+                        widget.setIcon(icons_manager.getIcon("sun"))
+                    else: widget.setIcon(icons_manager.getIcon("moon"))
+                else:
+                    widget.setIcon(icons_manager.getIcon(name))
+
+
+    # def check_icons_loaded(self):
+    #     for widget in self.findChildren(QPushButton) + self.findChildren(QAction):
+    #         name = widget.property("icon_name")
+    #         if isinstance(name, str):
+    #             icon = widget.icon()
+    #             if icon.isNull():
+    #                 return False
+    #     return True
+            
     def setup_ui(self):
 
         self.initial_widget = QWidget()
@@ -100,7 +139,6 @@ class MainWindow(QMainWindow):
         
         # Instantiate SideMenu
         self.side_menu = SideMenu(setActivePage=self.pageHandler, toggleTheme=self.toggleTheme, light= self.light)
-        self.settingsPage.global_toggle_theme = self.side_menu.toggleTheme
 
         # Set menu and content widget in initial layout
         self.initialLayout.addWidget(self.side_menu)
@@ -116,8 +154,8 @@ class MainWindow(QMainWindow):
 
         # Create instances of pages
         self.analysisPage = AnalysisPage(light=self.light)
-        self.archivePage = ArchivePage(light=self.light)
-        self.settingsPage = SettingsPage(app, self.invert_all_icons, self.light, self.theme_name)
+        self.archivePage = ArchivePage(light = self.light, icons_manager = icons_manager)
+        self.settingsPage = SettingsPage(self.apply_theme, self.theme_name)
         self.statisticsPage = StatisticsPage()
 
         self.contentWidget.setLayout(layout)
@@ -155,11 +193,20 @@ class MainWindow(QMainWindow):
         Effects: Switch the theme.
                  It is passed to the sideMenu object.
         """
-        if "light" in self.theme_name:
-            self.theme_name = self.theme_name.replace("light", "dark")
-        elif "dark" in self.theme_name:
-            self.theme_name = self.theme_name.replace("dark", "light")
-        self.apply_theme()
+
+        if self.light and "light_" in self.theme_name: new_theme_name = self.theme_name.replace("light_", "dark_")
+        elif not self.light and "dark_" in self.theme_name: new_theme_name = self.theme_name.replace("dark_", "light_")
+        else: raise Exception("Impossible to switch theme")
+
+        if new_theme_name in list_themes(): 
+            self.theme_name = new_theme_name
+            self.light = not self.light
+            self.apply_theme()
+            self._write_theme()
+
+        else: raise Exception("Theme not found")
+        
+    def _write_theme(self):
         try:
             with open(self.settings_file, "r") as file:
                 settings = json.load(file)
@@ -174,23 +221,18 @@ class MainWindow(QMainWindow):
         """
             Effects:    Loads theme settings from the JSON settings file and sets self.light (True for light, False for dark)
         """
-        try:
-            with open(self.settings_file, "r") as file:
-                settings = json.load(file)
-                return settings.get("theme", True)  # If "light_theme" is not present, default to True
-        except FileNotFoundError:
-            print("Settings file not found. Using default theme (light).")
-            return True
-        except Exception as e:
-            print("Error loading settings:", e)
-            return True  # Use default theme (light) in case of any errors
-        
+        with open(self.settings_file, "r") as file:
+            settings = json.load(file)
+            if settings["theme"] is not None and settings["theme"] != "":
+                return settings["theme"]
+            raise ValueError("Not theme present")
+    
     def closeEvent(self, event):
         # close the recording frame safely if running
         frame_to_close = self.findChild(QWidget, "recording_frame")
         frame_to_close.close()
         super().closeEvent(event)
-
+        
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

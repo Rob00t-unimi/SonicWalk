@@ -3,7 +3,6 @@ from PyQt5.QtWidgets import QFrame
 import sys
 import time
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtCore import QTimer, pyqtSignal, QObject
 from PyQt5.QtGui import QPixmap
@@ -240,7 +239,7 @@ class AnalysisPage(QFrame):
 
         # actions frame
         self.play_button = QPushButton()
-        self.play_button.setIcon(QIcon(self.blackIconPath + "play.svg"))
+        self.play_button.setProperty("icon_name", "play")
         self.play_button.clicked.connect(self.startExecution)
         self.play_button.setFixedSize(85, 85)
         self.play_button.setIconSize(QSize(25, 25)) 
@@ -248,7 +247,7 @@ class AnalysisPage(QFrame):
         self.play_button.setToolTip("Start Recording")
 
         self.stop_button = QPushButton()
-        self.stop_button.setIcon(QIcon("icons/square.svg"))
+        self.stop_button.setProperty("icon_name", "stop")
         self.stop_button.clicked.connect(self.stopExecution)
         self.stop_button.setFixedSize(85, 85)
         self.stop_button.setIconSize(QSize(25, 25)) 
@@ -256,7 +255,7 @@ class AnalysisPage(QFrame):
         self.stop_button.setToolTip("Stop Recording")
 
         self.save_button = QPushButton()
-        self.save_button.setIcon(QIcon(self.blackIconPath + "save.svg"))
+        self.save_button.setProperty("icon", "save")
         self.save_button.clicked.connect(self.saveRecording)
         self.save_button.setFixedSize(85, 85)
         self.save_button.setIconSize(QSize(25, 25)) 

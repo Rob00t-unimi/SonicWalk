@@ -2,7 +2,6 @@ import json
 import os
 import sys
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
 sys.path.append("../")
 
@@ -94,15 +93,15 @@ class MusicFolders(QWidget):
                 num_samples, file_format = self.get_music_info(path)
                 samplesLabel = QTableWidgetItem(f"{num_samples}")
                 formatLabel = QTableWidgetItem(f"{file_format}")
-                
+
                 removeButton = QPushButton()
-                removeButton.setIcon(QIcon("icons/black/trash.svg" if self.light else "icons/white/trash.svg"))
                 removeButton.setProperty('class', 'danger')
+                removeButton.setProperty("icon_name", "trash")
                 removeButton.clicked.connect(lambda _, n=name, p=path: self.deleteMusicFolder(n, p))
                 removeButton.setToolTip("Remove Folder")
 
                 openButton = QPushButton()
-                openButton.setIcon(QIcon("icons/black/external-link.svg" if self.light else "icons/white/external-link.svg"))
+                openButton.setProperty("icon_name", "link")
                 openButton.clicked.connect(lambda _, p=path: self.openFolder(p))
                 openButton.setToolTip("Open Folder")
 

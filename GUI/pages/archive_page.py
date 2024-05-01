@@ -14,10 +14,11 @@ import sys
 sys.path.append("../")
 
 class ArchivePage(QWidget):
-    def __init__(self, light = True, parent=None):
+    def __init__(self, light = True, icons_manager = None, parent=None):
         super().__init__(parent)
 
         self.light = light
+        self.icons_manager = icons_manager
 
         # principal layout
         layout = QHBoxLayout()
@@ -36,7 +37,7 @@ class ArchivePage(QWidget):
 
         # create research box
         research_box = QFrame()
-        research_box.setFixedHeight(175)
+        research_box.setFixedHeight(240)
         left_layout.addWidget(research_box)
         left_layout.setAlignment(Qt.AlignTop)
         research_box.setContentsMargins(0, 20, 0, 0)
@@ -65,8 +66,7 @@ class ArchivePage(QWidget):
 
         # filters
         toggle_filter_button = QPushButton()
-        fold = "black" if self.light else "white"
-        toggle_filter_button.setIcon(QIcon(f"icons/{fold}/minus-circle.svg"))
+        toggle_filter_button.setProperty("icon_name", "minus_circle")
         toggle_filter_button.setFixedHeight(35)
         toggle_filter_button.setFixedWidth(35)
         toggle_filter_button.setStyleSheet("""border: None;""")
@@ -75,11 +75,13 @@ class ArchivePage(QWidget):
         def toggleFilterBox():
             if research_box.height() == 175:
                 research_box.setFixedHeight(240)
-                toggle_filter_button.setIcon(QIcon(f"icons/{fold}/minus-circle.svg"))
+                toggle_filter_button.setProperty("icon_name", "minus_circle")
+                toggle_filter_button.setIcon(icons_manager.getIcon("minus_circle"))
                 filter_box.setVisible(True)
             else:
                 research_box.setFixedHeight(175)
-                toggle_filter_button.setIcon(QIcon(f"icons/{fold}/plus-circle.svg"))
+                toggle_filter_button.setProperty("icon_name", "plus_circle")
+                toggle_filter_button.setIcon(icons_manager.getIcon("plus_circle"))
                 filter_box.setVisible(False)
 
         # Collega il pulsante alla funzione di gestione
@@ -133,8 +135,6 @@ class ArchivePage(QWidget):
 
         filter_box.setLayout(filter_layout)
         research_box_layout.addWidget(filter_box, alignment=Qt.AlignLeft)
-        filter_box.setVisible(False)
-        toggleFilterBox()
 
         # Leggiamo il dataset JSON
         self.patients_list = QListWidget()

@@ -2,7 +2,7 @@ import threading
 import time
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal, QSize
-from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtGui import QPixmap
 import os
 import sys
 from datetime import datetime
@@ -103,7 +103,7 @@ class RecordingFrame(QWidget):
         self.play_button = QPushButton()
         self.play_button.setIconSize(QSize(25, 25))
         self.play_button.setFixedSize(85, 85)
-        self.play_button.setIcon(QIcon("icons/white/play.svg"))
+        self.play_button.setProperty("icon_name", "play")
         self.play_button.setProperty("class", "rec_button")
         self.play_button.setToolTip("Start Recording")
         self.buttons_layoutActions.addWidget(self.play_button)
@@ -112,9 +112,9 @@ class RecordingFrame(QWidget):
         self.buttons_layoutActions.addStretch()
 
         self.stop_button = QPushButton()
+        self.stop_button.setProperty("icon_name", "stop")
         self.stop_button.setIconSize(QSize(25, 25))
         self.stop_button.setFixedSize(85, 85)
-        self.stop_button.setIcon(QIcon("icons/square.svg"))
         self.stop_button.setProperty("class", "rec_button")
         self.stop_button.setToolTip("Stop Recording")
         self.buttons_layoutActions.addWidget(self.stop_button)

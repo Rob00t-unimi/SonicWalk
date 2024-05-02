@@ -10,12 +10,13 @@ from qt_material import apply_stylesheet, list_themes
 
 
 class SettingsPage(QWidget):
-    def __init__(self, apply_theme, current_theme, icons_manager = None):
+    def __init__(self, apply_theme, current_theme, reload_archive, icons_manager = None):
         super().__init__()
 
         self.apply_theme = apply_theme
         self.current_theme = current_theme
         self.global_toggle_theme = None
+        self.reload_archive = reload_archive
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -106,6 +107,7 @@ class SettingsPage(QWidget):
 
     def select_style(self, theme):
         try: 
+            self.current_theme = theme
             self.apply_theme(theme=theme, write_theme=True)
         except Exception as e:
             print(str(e))
@@ -132,8 +134,10 @@ class SettingsPage(QWidget):
                 with open(json_path, 'w') as json_file:
                     json_file.write('[]')  # Write an empty JSON object
 
+                self.reload_archive()
             except Exception as e:
                 QMessageBox.warning(self, "Deletion Error", f"An error occurred while deleting the repository: {e}")
+            
         else:
             QMessageBox.warning(self, "Repository Not Found", "Repository not found.")
             

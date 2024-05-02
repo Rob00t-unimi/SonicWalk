@@ -58,6 +58,9 @@ QPushButton:hover {{
 .danger:hover {{
     background-color: #ffeded;
 }}
+.danger:focus {{
+    background-color: #ffeded;
+}}
 
 /* Label */
 QLabel {{
@@ -107,7 +110,7 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
     padding: 10px;
 }}
 .archive_list::item QWidget {{
-    color: {QTMATERIAL_PRIMARYTEXTCOLOR};
+    color: {QTMATERIAL_SECONDARYTEXTCOLOR};
 }}
 .archive_list::item:hover {{
     background-color: {QTMATERIAL_PRIMARYLIGHTCOLOR};

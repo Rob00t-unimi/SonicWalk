@@ -124,10 +124,8 @@ class RecordingFrame(QWidget):
         self.buttons_layoutActions.addStretch()
 
 
-
         # Create timer label
         self.time_label = QLabel("00:00:00")
-        self.time_label.setStyleSheet("color: black;" if self.light else "color: white;")
         font = self.time_label.font()
         font.setPointSize(15)
         self.time_label.setFont(font)
@@ -193,7 +191,6 @@ class RecordingFrame(QWidget):
                 self.time_label.setText("{:02}:{:02}.{:02}".format(int(minutes), int(seconds), centiseconds))
         else:
             self.time_label.setText("00:00.00")
-            self.time_label.setStyleSheet("color: black;" if self.light else "color: white;")
             self.startTime = None
 
     def startExecution(self):

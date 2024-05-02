@@ -40,6 +40,11 @@ class PatientSelector(QFrame):
         self.dialog.setFixedSize(600, 494)
         self.dialog.setWindowTitle("Select Patient")
 
+        self.no_results_label = QLabel("No results found", self.dialog)
+        self.no_results_label.setAlignment(Qt.AlignCenter)
+        self.no_results_label.setMinimumSize(200, 40)
+        self.no_results_label.move(200, 250)
+
         # read json dataset
         with open('data/dataset.json', 'r') as file:
             patient_data = json.load(file)
@@ -124,6 +129,12 @@ class PatientSelector(QFrame):
         with open('data/dataset.json', 'r') as file:
             patient_data = json.load(file)
 
+        if not patient_data:
+            self.no_results_label.raise_()
+            self.no_results_label.show()
+            return
+        self.no_results_label.hide()
+
         self.selected_items = [False] * len(patient_data)
         for patient in patient_data:
 
@@ -206,6 +217,7 @@ class PatientSelector(QFrame):
             else:
                 return False
 
+        no_results = True
         for patient in patient_data:
             if (
                 (not self.filters["Hospitals"] or patient['Hospital'] == self.filters["Hospitals"]) and
@@ -218,6 +230,12 @@ class PatientSelector(QFrame):
                     data = item.data(Qt.UserRole)
                     if patient['ID'] == data["ID"] and (search_text == "" or search_text.lower() in data["ID"].lower() or search_text.lower() in data["CF"].lower() or search_text.lower() in data["Name"].lower() or search_text.lower() in data["Surname"].lower()):
                         item.setHidden(False)
+                        no_results = False
+        if no_results:
+            self.no_results_label.raise_()
+            self.no_results_label.show()
+        else:
+            self.no_results_label.hide()
 
     def updatefilters(self, type, text):
         if type == text: 

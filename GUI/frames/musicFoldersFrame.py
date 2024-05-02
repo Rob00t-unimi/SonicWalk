@@ -21,9 +21,11 @@ class NameDialog(QDialog):
         self.setLayout(layout)
 
 class MusicFolders(QWidget):
-    def __init__(self):
+    def __init__(self, icons_manager=None):
         super().__init__()
 
+        self.icons_manager = icons_manager
+        self.firstTime = True
         self.light = True 
         try:
             with open("data/settings.json", "r") as file:
@@ -97,11 +99,13 @@ class MusicFolders(QWidget):
                 removeButton = QPushButton()
                 removeButton.setProperty('class', 'danger')
                 removeButton.setProperty("icon_name", "trash")
+                if not self.firstTime: removeButton.setIcon(self.icons_manager.getIcon("trash"))
                 removeButton.clicked.connect(lambda _, n=name, p=path: self.deleteMusicFolder(n, p))
                 removeButton.setToolTip("Remove Folder")
 
                 openButton = QPushButton()
                 openButton.setProperty("icon_name", "link")
+                if not self.firstTime: openButton.setIcon(self.icons_manager.getIcon("link"))
                 openButton.clicked.connect(lambda _, p=path: self.openFolder(p))
                 openButton.setToolTip("Open Folder")
 
@@ -119,6 +123,8 @@ class MusicFolders(QWidget):
                 self.tableWidget.setItem(i, 2, samplesLabel)
                 self.tableWidget.setItem(i, 3, formatLabel)
                 self.tableWidget.setCellWidget(i, 4, buttonsWidget)
+
+            if self.firstTime: self.firstTime = False
 
     def openFolder(self, path):
         path = os.path.join(os.getcwd(), path)

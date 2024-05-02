@@ -2,20 +2,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def plot_signals_from_npy(filename):
-    # Carica i dati dal file .npy
+    # Load data from the .npy file
     data = np.load(filename, allow_pickle=True).item()
 
-    # Estrae i segnali e la frequenza di campionamento
+    # Extract signals and sampling frequency
     signals = data['signals']
     Fs = data['Fs']
 
-    # Calcola la durata del segnale in base alla lunghezza dei segnali e la frequenza di campionamento
+    # Calculate signal duration based on signal lengths and sampling frequency
     duration = signals.shape[1] / Fs
 
-    # Crea un array di tempo per il plot
+    # Create a time array for plotting
     time = np.linspace(0, duration, signals.shape[1])
 
-    # Plot dei segnali
+    # Plot the signals
     plt.figure(figsize=(10, 6))
     plt.plot(time, signals[0], label='Signal 1')
     plt.plot(time, signals[1], label='Signal 2')
@@ -26,6 +26,6 @@ def plot_signals_from_npy(filename):
     plt.grid(True)
     plt.show()
 
-# Esempio di utilizzo
-filename = 'YOUR_FILENAME'  # Specifica il percorso del tuo file .npy
+# Input the path of the .npy file from the user
+filename = input("Enter the path of the .npy file: ")
 plot_signals_from_npy(filename)

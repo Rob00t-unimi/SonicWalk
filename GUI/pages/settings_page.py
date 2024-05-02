@@ -10,7 +10,7 @@ from qt_material import apply_stylesheet, list_themes
 
 
 class SettingsPage(QWidget):
-    def __init__(self, apply_theme, current_theme):
+    def __init__(self, apply_theme, current_theme, icons_manager = None):
         super().__init__()
 
         self.apply_theme = apply_theme
@@ -27,7 +27,7 @@ class SettingsPage(QWidget):
         left_box.setLayout(left_layout)
         layout.addWidget(left_box)
         
-        self.MusicFoldersFrame = MusicFolders()
+        self.MusicFoldersFrame = MusicFolders(icons_manager)
         left_layout.addWidget(self.MusicFoldersFrame)
 
         left_box.setMinimumWidth(650)

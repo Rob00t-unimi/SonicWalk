@@ -150,7 +150,7 @@ class MainWindow(QMainWindow):
         # Create instances of pages
         self.analysisPage = AnalysisPage(light=self.light)
         self.archivePage = ArchivePage(light = self.light, icons_manager = icons_manager)
-        self.settingsPage = SettingsPage(self.apply_theme, self.theme_name)
+        self.settingsPage = SettingsPage(self.apply_theme, self.theme_name, icons_manager)
         self.statisticsPage = StatisticsPage()
 
         self.contentWidget.setLayout(layout)

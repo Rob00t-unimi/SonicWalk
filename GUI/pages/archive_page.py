@@ -178,7 +178,7 @@ class ArchivePage(QWidget):
         self.fig, self.ax = plt.subplots()
         self.ax.grid(True, color="#FFE6E6")
         self.fig.patch.set_facecolor('none')
-        self.fig.tight_layout()
+        # self.fig.tight_layout()
 
         # create a canvas for the plot
         self.canvas = FigureCanvas(self.fig)

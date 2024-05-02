@@ -65,10 +65,6 @@ class MainWindow(QMainWindow):
         self.pageHandler = "Analysis"
         self.apply_theme()
 
-        # if not self.check_icons_loaded(): 
-        #     print("not loaded icons")
-        #     self.apply_theme()
-
 
     def apply_theme(self, theme = None, write_theme = False):
         extra = {
@@ -101,32 +97,31 @@ class MainWindow(QMainWindow):
     def set_icons(self):
         if self.light: icons_manager.set_black()
         else: icons_manager.set_white()
-        for widget in self.findChildren(QWidget):
+        print("finding children...")
+        widgets = self.findWidgets("icon_name")
+        for widget in widgets:
             name = widget.property("icon_name")
-            if isinstance(name, str):
-                print(name)
-                if name == "sun":
-                    if self.light:
-                        widget.setProperty("icon_name", "moon")
-                        widget.setIcon(icons_manager.getIcon("moon"))
-                    else: widget.setIcon(icons_manager.getIcon("sun"))
-                elif name == "moon":
-                    if not self.light:
-                        widget.setProperty("icon_name", "sun")
-                        widget.setIcon(icons_manager.getIcon("sun"))
-                    else: widget.setIcon(icons_manager.getIcon("moon"))
-                else:
-                    widget.setIcon(icons_manager.getIcon(name))
+            print(name)
+            if name == "sun":
+                if self.light:
+                    widget.setProperty("icon_name", "moon")
+                    widget.setIcon(icons_manager.getIcon("moon"))
+                else: widget.setIcon(icons_manager.getIcon("sun"))
+            elif name == "moon":
+                if not self.light:
+                    widget.setProperty("icon_name", "sun")
+                    widget.setIcon(icons_manager.getIcon("sun"))
+                else: widget.setIcon(icons_manager.getIcon("moon"))
+            else:
+                widget.setIcon(icons_manager.getIcon(name))
 
-
-    # def check_icons_loaded(self):
-    #     for widget in self.findChildren(QPushButton) + self.findChildren(QAction):
-    #         name = widget.property("icon_name")
-    #         if isinstance(name, str):
-    #             icon = widget.icon()
-    #             if icon.isNull():
-    #                 return False
-    #     return True
+    def findWidgets(self, property):
+        widgets = []
+        for widget in QApplication.allWidgets():
+            name = widget.property(property)
+            if name is not None:
+                widgets.append(widget)
+        return widgets
             
     def setup_ui(self):
 

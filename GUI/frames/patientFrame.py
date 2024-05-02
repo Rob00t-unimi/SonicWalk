@@ -5,7 +5,8 @@ import sys
 sys.path.append("../")
 
 from components.patientTable import PatientTable
-from frames.patientSelector import PatientSelector
+from windows.patientSelector import PatientSelector
+from windows.patientAdder import PatientAdder
 
 class PatientFrame(QFrame):
     def __init__(self, light = True, enablePlayButton = None, disablePlayButton = None):
@@ -38,11 +39,29 @@ class PatientFrame(QFrame):
         # spacer
         layout_patient.setSpacing(20)
 
+        # buttons box
+        
+        button_box = QWidget()
+        button_box_layout = QHBoxLayout(button_box)
+        layout_patient.addWidget(button_box)
+
         # button
         self.selectPatientButton = QPushButton("Select Patient")
         self.selectPatientButton.setProperty("class", "fill_button_inverted")
-        layout_patient.addWidget(self.selectPatientButton, alignment=Qt.AlignHCenter)
+        button_box_layout.addWidget(self.selectPatientButton)
         self.selectPatientButton.clicked.connect(self.selectPatient)
+
+        self.addPatientButton = QPushButton("Add New Patient")
+        self.addPatientButton.setProperty("class", "fill_button_inverted")
+        button_box_layout.addWidget(self.addPatientButton)
+        self.addPatientButton.clicked.connect(self.addPatient)
+
+    def addPatient(self):
+        patient_adder = PatientAdder()
+        self.data = patient_adder.getSelectedPatientInfo()
+
+        self.updateInfo()
+
 
     def selectPatient(self):
         """
@@ -57,6 +76,9 @@ class PatientFrame(QFrame):
         patient_selector.selectPatient()
         self.data = patient_selector.getSelectedPatientInfo()
 
+        self.updateInfo()
+
+    def updateInfo(self):
         # update table
         self.table.setTableData(self.data)
 

@@ -265,179 +265,135 @@ class ArchivePage(QWidget):
         self.listView_files.customContextMenuRequested.connect(self.show_file_context_menu)
 
         # right box ---------------------------------------------------------------------------------------------------
-        right_box = QWidget()
-        right_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        right_box.setMaximumWidth(375)
+        self.right_box = QWidget()
+        self.right_box.setMaximumWidth(400)
+        self.right_box.setMinimumWidth(0)
         right_layout = QVBoxLayout()
-        right_layout.setContentsMargins(0, 0, 0, 0)
-        right_box.setLayout(right_layout)
-        layout.addWidget(right_box)
+        self.right_box.setLayout(right_layout)
+        layout.addWidget(self.right_box)
 
-        # create an add patient button
-        add_patient_button = QPushButton("Add new patient")
-        add_patient_button.setProperty("class", "fill_button_inverted")
-        right_layout.addWidget(add_patient_button, alignment=Qt.AlignTop | Qt.AlignHCenter)
-        add_patient_button.clicked.connect(self.add_patient_modal)
+        patient_box = QFrame()
+        patient_layout = QVBoxLayout()
+        patient_box.setLayout(patient_layout)
+        right_layout.addWidget(patient_box)
 
-    def add_patient_modal(self):
+        patient_box_title = QLabel("Patient Informations")
+        patient_box_title.setContentsMargins(0, 20, 0, 20)
+        patient_layout.addWidget(patient_box_title, alignment=Qt.AlignTop | Qt.AlignHCenter)
+        patient_box_title.setStyleSheet("""font-size: 20px""")  
 
-        # Create a modal window
-        modal = QDialog()
-        modal.setWindowTitle("Add New Patient")
-        modal.setFixedWidth(650)
-        layout = QVBoxLayout(modal)
+        scroll_area = QScrollArea()
+        scroll_area.setContentsMargins(0, 0, 0, 0)
+        scroll_area.setWidgetResizable(True)  # Permette alla QScrollArea di adattarsi alla dimensione del widget interno
+        scroll_area_widget = QWidget()  # Widget interno per la QScrollArea
+        scroll_area_layout = QVBoxLayout(scroll_area_widget)  # Layout verticale per il widget interno
 
-        # Add hospital details section
-        hospital_section = QGroupBox("Hospital Details")
-        hospital_layout = QFormLayout()
-        hospital_section.setLayout(hospital_layout)
+        # table 1
+        table1 = QTableWidget()
+        table1.setRowCount(5)
+        table1.setColumnCount(1)
+        table1.verticalHeader().setMinimumWidth(150)
+        table1.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        vertical_headers_table1 = ["Name", "Surname", "Date of Birth", "CF", "Gender"]
+        table1.setVerticalHeaderLabels(vertical_headers_table1)
+        table1.horizontalHeader().setVisible(False)
+        table1.setFixedHeight(table1.rowCount() * table1.rowHeight(0) + 2)
+        table1.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_area_layout.addWidget(table1)
 
-        hospital_fields = [
-            ("Hospital:", QLineEdit()),  # ospedale
-            ("Group:", QComboBox())       # ospedale
-        ]
+        # spacer
+        spacer1 = QLabel("Medical Informations")
+        spacer1.setContentsMargins(0, 20, 0, 20)
+        scroll_area_layout.addWidget(spacer1)
 
-        # Populate comboboxes with options
-        group_combobox = hospital_fields[1][1]
-        group_combobox.addItems(["Parkinson", "ALS", "Healthy", "Stroke", "Other"])
+        # table 2
+        table2 = QTableWidget()
+        table2.setRowCount(2)
+        table2.setColumnCount(1)
+        table2.verticalHeader().setMinimumWidth(150)
+        table2.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        vertical_headers_table2 = ["Group", "Hospital"]
+        table2.setVerticalHeaderLabels(vertical_headers_table2)
+        table2.horizontalHeader().setVisible(False)
+        table2.setFixedHeight(table2.rowCount() * table2.rowHeight(0) + 2)
+        table2.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_area_layout.addWidget(table2)
 
-        for label, widget in hospital_fields:
-            row = QHBoxLayout()
-            label_widget = QLabel(label)
-            label_widget.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # Allineamento verticale per la label
-            row.addWidget(label_widget)
-            row.addWidget(widget)
-            hospital_layout.addRow(row)
+        # spacer
+        spacer2 = QLabel("Biometric Measurements")
+        spacer2.setContentsMargins(0, 20, 0, 20)
+        scroll_area_layout.addWidget(spacer2)
 
-        layout.addWidget(hospital_section)
+        # table 3
+        table3 = QTableWidget()
+        table3.setRowCount(4)
+        table3.setColumnCount(1)
+        table3.verticalHeader().setMinimumWidth(195)
+        table3.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        vertical_headers_table3 = ["Height (cm)", "Weight (kg)", "Right Leg Length (cm)", "Left Leg Length (cm)"]
+        table3.setVerticalHeaderLabels(vertical_headers_table3)
+        table3.horizontalHeader().setVisible(False)
+        table3.setFixedHeight(table3.rowCount() * table3.rowHeight(0) + 2)
+        table3.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_area_layout.addWidget(table3)
 
-        # Add patient information section
-        personal_section = QGroupBox("Patient Information")
-        personal_section.setFixedHeight(265)
-        personal_layout = QVBoxLayout()
-        personal_section.setLayout(personal_layout)
+        scroll_area.setWidget(scroll_area_widget)
+        patient_layout.addWidget(scroll_area)
 
-        personal_table = QTableWidget()
-        personal_table.setColumnCount(1)
-        personal_fields = ["Name:", "Surname:", "Date of Birth:", "CF:", "Gender:"]
+        patient_actions_box = QWidget()
+        patient_actions_layout = QHBoxLayout() 
+        patient_actions_box.setLayout(patient_actions_layout)
+        patient_layout.addWidget(patient_actions_box)
 
-        personal_table.horizontalHeader().setVisible(False)  # Hide default horizontal header
+        modify_patient_btn = QPushButton("Modify patient info")
+        modify_patient_btn.setProperty("class", "fill_button_inverted")
+        delete_patient_btn = QPushButton("Delete patient")
+        delete_patient_btn.setProperty("class", "danger")
+        patient_actions_layout.addWidget(modify_patient_btn)
+        patient_actions_layout.addWidget(delete_patient_btn)
 
-        for i, label in enumerate(personal_fields):
-            personal_table.insertRow(i)
-            personal_table.setVerticalHeaderItem(i, QTableWidgetItem(label))
-            if i == 2:
-                date_edit = QDateEdit() 
-                date_edit.setDisplayFormat("yyyy-MM-dd")
-                date_edit.setCalendarPopup(True)
-                personal_table.setCellWidget(i, 0, date_edit)
-            elif i != len(personal_fields) - 1:
-                line_edit = QLineEdit()
-                line_edit.setFixedHeight(21)
-                line_edit.setAlignment(Qt.AlignVCenter)
-                personal_table.setCellWidget(i, 0, line_edit)
-            else:
-                gender_combo_box = QComboBox()
-                gender_combo_box.addItems(["M", "F"])
-                personal_table.setCellWidget(i, 0, gender_combo_box)
-        
-        personal_table.horizontalHeader().setStretchLastSection(True)
-        personal_table.verticalHeader().setMinimumWidth(150)
-        personal_layout.addWidget(personal_table)
-        layout.addWidget(personal_section)
+        comment_box = QFrame()
+        comment_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        comment_box.setMaximumHeight(250)
+        comment_layout = QVBoxLayout()
+        comment_box.setLayout(comment_layout)
+        comment_layout.setAlignment(Qt.AlignTop)
+        comment_title = QLabel("Exercise Comment:")
+        comment_layout.addWidget(comment_title)
+        line = QFrame()
+        line.setFrameShape(QFrame.HLine)
+        line.setFrameShadow(QFrame.Sunken)
+        comment_layout.addWidget(line)
 
-        # Add measurements section
-        measurements_section = QGroupBox("Measurements")
-        measurements_section.setFixedHeight(230)
-        measurements_layout = QVBoxLayout()
-        measurements_section.setLayout(measurements_layout)
+        # Creazione di una QScrollArea
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)  # Permette alla QScrollArea di adattarsi alla dimensione del widget interno
+        comment_text_label = QLabel("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam ac velit quis enim facilisis lobortis. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Duis id risus sed elit feugiat feugiat vel ut risus. Morbi quis risus id nulla fermentum vestibulum. Vivamus convallis libero ac est tincidunt, a mattis magna consequat. Sed at libero sapien. Nullam feugiat odio eget felis interdum, sed interdum dolor consequat. Aliquam bibendum massa libero, non malesuada justo fringilla nec. Donec tincidunt erat nec sollicitudin facilisis. Integer nec odio eros. Integer gravida auctor dui, a pellentesque elit rutrum in. In nec sollicitudin libero. In et tellus eleifend, efficitur odio ac, cursus eros.")
+        comment_text_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        comment_text_label.setWordWrap(True)
+        scroll_area.setWidget(comment_text_label)
 
-        measurements_table = QTableWidget()
-        measurements_table.setColumnCount(1)
-        measurement_fields = ["Height (cm):", "Weight (kg):", "Right Leg Length (cm):", "Left Leg Length (cm):"]
+        comment_layout.addWidget(scroll_area)
+        right_layout.addWidget(comment_box)
+                
 
-        measurements_table.horizontalHeader().setVisible(False)  # Hide default horizontal header
+        # # create an add patient button
+        # add_patient_button = QPushButton("Add new patient")
+        # add_patient_button.setProperty("class", "fill_button_inverted")
+        # right_layout.addWidget(add_patient_button, alignment=Qt.AlignTop | Qt.AlignHCenter)
+        # add_patient_button.clicked.connect(self.add_patient_modal)
 
-        for i, label in enumerate(measurement_fields):
-            measurements_table.insertRow(i)
-            measurements_table.setVerticalHeaderItem(i, QTableWidgetItem(label))
-            measurements_table.setCellWidget(i, 0, QSpinBox())  
-            measurements_table.cellWidget(i,0).setMaximum(300)
+        self.resizeEvent = self.resize_event
+        self.right_box.hide()
+    
+    def toggle_right_box_visibility(self):
+        # 1057 standard width
+        # 420 width needed for the right_box
+        if (self.width() - 1057) >= 420: self.right_box.show()
+        else: self.right_box.hide()
 
-        measurements_table.horizontalHeader().setStretchLastSection(True)
-        measurements_table.verticalHeader().setMinimumWidth(200)
-        measurements_layout.addWidget(measurements_table)
-        layout.addWidget(measurements_section)
-
-        # Add buttons
-        buttons_layout = QHBoxLayout()
-        add_button = QPushButton("Add Patient")
-        add_button.clicked.connect(lambda: self.add_patient({
-            "Name": personal_table.cellWidget(0, 0).text(),
-            "Surname": personal_table.cellWidget(1, 0).text(),
-            "Date_of_Birth": personal_table.cellWidget(2, 0).date().toString("yyyy-MM-dd"),
-            "CF": personal_table.cellWidget(3, 0).text(),
-            "Gender": personal_table.cellWidget(4, 0).currentText(),
-            "Hospital": hospital_fields[0][1].text(),
-            "Group": hospital_fields[1][1].currentText(),
-            "Height": str(measurements_table.cellWidget(0, 0).value()) + " cm",
-            "Weight": str(measurements_table.cellWidget(1, 0).value()) + " kg",
-            "Right_Leg_Length": str(measurements_table.cellWidget(2, 0).value()) + " cm",
-            "Left_Leg_Length": str(measurements_table.cellWidget(3, 0).value()) + " cm",
-        }, modal.close))
-
-        cancel_button = QPushButton("Close")
-        cancel_button.clicked.connect(modal.close)
-
-        buttons_layout.addWidget(add_button)
-        buttons_layout.addWidget(cancel_button)
-        layout.addLayout(buttons_layout)
-
-        modal.exec_()
-
-    def add_patient(self, patient_data, close_modal = None):
-
-        if patient_data["Name"]=="" or patient_data["Surname"]=="" or patient_data["Name"] is None or patient_data["Surname"] is None:
-            QMessageBox.warning(self, "Error", "Please fill in all required fields (Name, Surname).")
-            return
-
-        # Generate ID for the new patient
-        json_path = os.path.join(os.getcwd(), "data", "dataset.json")
-        try:
-            with open(json_path, 'r') as file:
-                data = json.load(file)
-        except FileNotFoundError:
-            data = []
-        except json.JSONDecodeError:
-            QMessageBox.critical(self, "Error", "Error decoding patient database file.")
-            return
-
-        existing_ids = set(patient["ID"] for patient in data)
-        new_id = 1
-        while str(new_id).zfill(5) in existing_ids:
-            new_id += 1
-        new_id_str = str(new_id).zfill(5)
-
-        patient_data["ID"] = new_id_str
-
-        # Add the new patient to the existing JSON data
-        data.append(patient_data)
-
-        try:
-            with open(json_path, 'w') as file:
-                json.dump(data, file)
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"An error occurred while saving patient data: {str(e)}")
-            return
-        
-        if close_modal is not None: close_modal()
-
-        # Update the patient list in the UI
-        self.patients_list.clear()
-        self.load_patients_from_json()
-        self.updatesearchresults()
-
-        QMessageBox.information(self, "Success", f"Patient {patient_data['Name']} {patient_data['Surname']} added successfully.")
+    def resize_event(self, event):
+        self.toggle_right_box_visibility()
 
     def delete_patient(self, patient_id):
         json_path = os.path.join(os.getcwd(), "data", "dataset.json")
@@ -678,3 +634,163 @@ class ArchivePage(QWidget):
 
     def show_context_menu(self, position):
         self.context_menu.exec_(self.sender().mapToGlobal(position))
+
+    # def add_patient_modal(self):
+
+    #     # Create a modal window
+    #     modal = QDialog()
+    #     modal.setWindowTitle("Add New Patient")
+    #     modal.setFixedWidth(650)
+    #     layout = QVBoxLayout(modal)
+
+    #     # Add hospital details section
+    #     hospital_section = QGroupBox("Hospital Details")
+    #     hospital_layout = QFormLayout()
+    #     hospital_section.setLayout(hospital_layout)
+
+    #     hospital_fields = [
+    #         ("Hospital:", QLineEdit()),  # ospedale
+    #         ("Group:", QComboBox())       # ospedale
+    #     ]
+
+    #     # Populate comboboxes with options
+    #     group_combobox = hospital_fields[1][1]
+    #     group_combobox.addItems(["Parkinson", "ALS", "Healthy", "Stroke", "Other"])
+
+    #     for label, widget in hospital_fields:
+    #         row = QHBoxLayout()
+    #         label_widget = QLabel(label)
+    #         label_widget.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # Allineamento verticale per la label
+    #         row.addWidget(label_widget)
+    #         row.addWidget(widget)
+    #         hospital_layout.addRow(row)
+
+    #     layout.addWidget(hospital_section)
+
+    #     # Add patient information section
+    #     personal_section = QGroupBox("Patient Information")
+    #     personal_section.setFixedHeight(265)
+    #     personal_layout = QVBoxLayout()
+    #     personal_section.setLayout(personal_layout)
+
+    #     personal_table = QTableWidget()
+    #     personal_table.setColumnCount(1)
+    #     personal_fields = ["Name:", "Surname:", "Date of Birth:", "CF:", "Gender:"]
+
+    #     personal_table.horizontalHeader().setVisible(False)  # Hide default horizontal header
+
+    #     for i, label in enumerate(personal_fields):
+    #         personal_table.insertRow(i)
+    #         personal_table.setVerticalHeaderItem(i, QTableWidgetItem(label))
+    #         if i == 2:
+    #             date_edit = QDateEdit() 
+    #             date_edit.setDisplayFormat("yyyy-MM-dd")
+    #             date_edit.setCalendarPopup(True)
+    #             personal_table.setCellWidget(i, 0, date_edit)
+    #         elif i != len(personal_fields) - 1:
+    #             line_edit = QLineEdit()
+    #             line_edit.setFixedHeight(21)
+    #             line_edit.setAlignment(Qt.AlignVCenter)
+    #             personal_table.setCellWidget(i, 0, line_edit)
+    #         else:
+    #             gender_combo_box = QComboBox()
+    #             gender_combo_box.addItems(["M", "F"])
+    #             personal_table.setCellWidget(i, 0, gender_combo_box)
+        
+    #     personal_table.horizontalHeader().setStretchLastSection(True)
+    #     personal_table.verticalHeader().setMinimumWidth(150)
+    #     personal_layout.addWidget(personal_table)
+    #     layout.addWidget(personal_section)
+
+    #     # Add measurements section
+    #     measurements_section = QGroupBox("Measurements")
+    #     measurements_section.setFixedHeight(230)
+    #     measurements_layout = QVBoxLayout()
+    #     measurements_section.setLayout(measurements_layout)
+
+    #     measurements_table = QTableWidget()
+    #     measurements_table.setColumnCount(1)
+    #     measurement_fields = ["Height (cm):", "Weight (kg):", "Right Leg Length (cm):", "Left Leg Length (cm):"]
+
+    #     measurements_table.horizontalHeader().setVisible(False)  # Hide default horizontal header
+
+    #     for i, label in enumerate(measurement_fields):
+    #         measurements_table.insertRow(i)
+    #         measurements_table.setVerticalHeaderItem(i, QTableWidgetItem(label))
+    #         measurements_table.setCellWidget(i, 0, QSpinBox())  
+    #         measurements_table.cellWidget(i,0).setMaximum(300)
+
+    #     measurements_table.horizontalHeader().setStretchLastSection(True)
+    #     measurements_table.verticalHeader().setMinimumWidth(200)
+    #     measurements_layout.addWidget(measurements_table)
+    #     layout.addWidget(measurements_section)
+
+    #     # Add buttons
+    #     buttons_layout = QHBoxLayout()
+    #     add_button = QPushButton("Add Patient")
+    #     add_button.clicked.connect(lambda: self.add_patient({
+    #         "Name": personal_table.cellWidget(0, 0).text(),
+    #         "Surname": personal_table.cellWidget(1, 0).text(),
+    #         "Date_of_Birth": personal_table.cellWidget(2, 0).date().toString("yyyy-MM-dd"),
+    #         "CF": personal_table.cellWidget(3, 0).text(),
+    #         "Gender": personal_table.cellWidget(4, 0).currentText(),
+    #         "Hospital": hospital_fields[0][1].text(),
+    #         "Group": hospital_fields[1][1].currentText(),
+    #         "Height": str(measurements_table.cellWidget(0, 0).value()) + " cm",
+    #         "Weight": str(measurements_table.cellWidget(1, 0).value()) + " kg",
+    #         "Right_Leg_Length": str(measurements_table.cellWidget(2, 0).value()) + " cm",
+    #         "Left_Leg_Length": str(measurements_table.cellWidget(3, 0).value()) + " cm",
+    #     }, modal.close))
+
+    #     cancel_button = QPushButton("Close")
+    #     cancel_button.clicked.connect(modal.close)
+
+    #     buttons_layout.addWidget(add_button)
+    #     buttons_layout.addWidget(cancel_button)
+    #     layout.addLayout(buttons_layout)
+
+    #     modal.exec_()
+
+    # def add_patient(self, patient_data, close_modal = None):
+
+    #     if patient_data["Name"]=="" or patient_data["Surname"]=="" or patient_data["Name"] is None or patient_data["Surname"] is None:
+    #         QMessageBox.warning(self, "Error", "Please fill in all required fields (Name, Surname).")
+    #         return
+
+    #     # Generate ID for the new patient
+    #     json_path = os.path.join(os.getcwd(), "data", "dataset.json")
+    #     try:
+    #         with open(json_path, 'r') as file:
+    #             data = json.load(file)
+    #     except FileNotFoundError:
+    #         data = []
+    #     except json.JSONDecodeError:
+    #         QMessageBox.critical(self, "Error", "Error decoding patient database file.")
+    #         return
+
+    #     existing_ids = set(patient["ID"] for patient in data)
+    #     new_id = 1
+    #     while str(new_id).zfill(5) in existing_ids:
+    #         new_id += 1
+    #     new_id_str = str(new_id).zfill(5)
+
+    #     patient_data["ID"] = new_id_str
+
+    #     # Add the new patient to the existing JSON data
+    #     data.append(patient_data)
+
+    #     try:
+    #         with open(json_path, 'w') as file:
+    #             json.dump(data, file)
+    #     except Exception as e:
+    #         QMessageBox.critical(self, "Error", f"An error occurred while saving patient data: {str(e)}")
+    #         return
+        
+    #     if close_modal is not None: close_modal()
+
+    #     # Update the patient list in the UI
+    #     self.patients_list.clear()
+    #     self.load_patients_from_json()
+    #     self.updatesearchresults()
+
+    #     QMessageBox.information(self, "Success", f"Patient {patient_data['Name']} {patient_data['Surname']} added successfully.")

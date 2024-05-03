@@ -284,6 +284,7 @@ class RecordingFrame(QWidget):
     def emit_startSignal(self):
         self.thread_signal_start.emit()
 
+
     def setStart(self):
         """
             Modifies:   self.startTime
@@ -391,10 +392,40 @@ class RecordingFrame(QWidget):
         # if user says yes, save the recording
         if response == QMessageBox.Yes:
 
-            dialog = QInputDialog()
-            session_number, ok = dialog.getInt(None, "Session Number", "Enter the session number for today's date:", 1)
+            dialog = QDialog()
+            dialog.setWindowTitle("Exercise Information")
 
-            if not ok: 
+            layout = QVBoxLayout()
+
+            # SpinBox for session number
+            session_label = QLabel("Session Number of today's date:")
+            session_spinbox = QSpinBox()
+            session_spinbox.setMinimum(1)
+            session_spinbox.setValue(1)
+
+            layout.addWidget(session_label)
+            layout.addWidget(session_spinbox)
+
+            # LineEdit for optional comment
+            comment_label = QLabel("Exercise Comment (optional):")
+            comment_textedit = QTextEdit()
+
+            layout.addWidget(comment_label)
+            layout.addWidget(comment_textedit)
+
+            # Button box
+            button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+            button_box.accepted.connect(dialog.accept)
+            button_box.rejected.connect(dialog.reject)
+
+            layout.addWidget(button_box)
+            dialog.setLayout(layout)
+
+            if dialog.exec_() == QDialog.Accepted:
+                session_number = session_spinbox.value()
+                comment = comment_textedit.toPlainText()
+                print("comment_text: ", comment)
+            else: 
                 self.setSaved(None)
                 return
 
@@ -440,7 +471,7 @@ class RecordingFrame(QWidget):
                 filename = os.path.join(session_dir, f"{exName}_{musicMode}_{patient_id}_session_{session_number_str}_{today_date}_{current_time}.npy")
 
                 # save datas into the file npy
-                np.save(filename, {"signals": self.signals, "Fs": self.Fs})
+                np.save(filename, {"signals": self.signals, "Fs": self.Fs, "comment": comment})
 
                 self.setSaved(self.signals)
 
@@ -470,6 +501,8 @@ class RecordingFrame(QWidget):
                 error_msg.exec_()
 
         else: self.setSaved(None)
+
+
 
 
 

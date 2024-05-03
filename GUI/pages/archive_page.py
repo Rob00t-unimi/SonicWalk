@@ -305,6 +305,7 @@ class ArchivePage(QWidget):
         self.table1.horizontalHeader().setVisible(False)
         self.table1.setFixedHeight(self.table1.rowCount() * self.table1.rowHeight(0) + 2)
         self.table1.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.table1.setEditTriggers(QAbstractItemView.NoEditTriggers)
         scroll_area_layout.addWidget(self.table1)
 
         # spacer
@@ -323,6 +324,7 @@ class ArchivePage(QWidget):
         self.table2.horizontalHeader().setVisible(False)
         self.table2.setFixedHeight(self.table2.rowCount() * self.table2.rowHeight(0) + 2)
         self.table2.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.table2.setEditTriggers(QAbstractItemView.NoEditTriggers)
         scroll_area_layout.addWidget(self.table2)
 
         # spacer
@@ -341,6 +343,7 @@ class ArchivePage(QWidget):
         self.table3.horizontalHeader().setVisible(False)
         self.table3.setFixedHeight(self.table3.rowCount() * self.table3.rowHeight(0) + 2)
         self.table3.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.table3.setEditTriggers(QAbstractItemView.NoEditTriggers)
         scroll_area_layout.addWidget(self.table3)
 
         scroll_area.setWidget(scroll_area_widget)
@@ -377,10 +380,12 @@ class ArchivePage(QWidget):
         # Creazione di una QScrollArea
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        comment_text_label = QLabel("")
-        comment_text_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        comment_text_label.setWordWrap(True)
-        scroll_area.setWidget(comment_text_label)
+        self.comment_text_label = QLabel("")
+        self.comment_text_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self.comment_text_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.comment_text_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.comment_text_label.setWordWrap(True)
+        scroll_area.setWidget(self.comment_text_label)
 
         comment_layout.addWidget(scroll_area)
         right_layout.addWidget(comment_box)
@@ -402,9 +407,9 @@ class ArchivePage(QWidget):
         patient_modifier = PatientModifier(self.current_patient)
         self.current_patient = patient_modifier.get_patient_data()
         self.set_patient_tables(self.current_patient)
-        self.patients_list.clear()
-        self.load_patients_from_json()
+        self.reload_patient_list()
         self.updatesearchresults()
+        
 
     def set_patient_tables(self, patient_data):
         info = ["Name", "Surname", "Date_of_Birth", "CF", "Gender"]
@@ -484,15 +489,17 @@ class ArchivePage(QWidget):
         patient_folder = os.path.join(os.getcwd(), "data", "archive", patient_id.upper())
         try:
             shutil.rmtree(patient_folder)
+            self.reset_patient_tables()
+            self.reset()
+            self.current_patient_id = None
+            self.current_patient = None
+            self.listView_folders.setModel(None)
+            self.listView_folders.clearSelection()
+            QMessageBox.information(self, "Deleting success", "Patient deleted successfully.")
         except FileNotFoundError:
             pass
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred while deleting the patient folder: {str(e)}")
-
-        self.reset_patient_tables()
-        self.current_patient_id = None
-        self.current_patient = None
-        QMessageBox.information(self, "Deleting success", "Patient deleted successfully.")
 
     def show_folder_context_menu(self, position):
         index = self.listView_folders.indexAt(position)
@@ -519,6 +526,9 @@ class ArchivePage(QWidget):
                         QMessageBox.warning(self, 'Error', 
                                             f"Error while deleting folder '{folder_path}': {e}",
                                             QMessageBox.Ok, QMessageBox.Ok)
+                        
+                if folder_path in self.file_model.filePath(index):
+                    self.reset()
 
     def delete_selected_file(self):
         selected_indexes = self.listView_files.selectedIndexes()
@@ -535,6 +545,7 @@ class ArchivePage(QWidget):
                         QMessageBox.warning(self, 'Error', 
                                             f"Error while deleting file '{file_path}': {e}",
                                             QMessageBox.Ok, QMessageBox.Ok)
+                self.reset()    
 
                     
     def on_folder_loaded(self):
@@ -552,6 +563,9 @@ class ArchivePage(QWidget):
             loaded_data = np.load(file_path, allow_pickle=True)
             signals = loaded_data.item().get("signals")
             Fs = loaded_data.item().get("Fs")
+            if loaded_data.item().get("comment") is not None:
+                comment = loaded_data.item().get("comment") 
+                self.comment_text_label.setText(comment)
             time = np.arange(len(signals[0])) / Fs
             self.ax.clear()
             colors = ["b", "c"]
@@ -570,6 +584,10 @@ class ArchivePage(QWidget):
 
         except Exception as e:
             QMessageBox.warning(None, "Errore", f"Impossibile caricare il file: {str(e)}")
+
+    def reload_patient_list(self):
+        self.patients_list.clear()
+        self.load_patients_from_json()      # PROBLEMA! ######################################
 
     def load_patients_from_json(self):
         with open('data/dataset.json', 'r') as file:
@@ -704,6 +722,7 @@ class ArchivePage(QWidget):
         self.canvas.draw()
         self.listView_files.setModel(None)
         self.listView_files.clearSelection()
+        self.comment_text_label.setText("")
 
     def show_context_menu(self, position):
         self.context_menu.exec_(self.sender().mapToGlobal(position))
@@ -717,3 +736,4 @@ class ArchivePage(QWidget):
         self.reset()
         self.current_patient_id = None
         self.current_patient = None
+        self.comment_text_label.setText("")

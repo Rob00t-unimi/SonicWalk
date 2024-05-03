@@ -100,6 +100,9 @@ class AnalysisPage(QWidget):
         # grid_layout.setContentsMargins(0, 0, 0, 0)
         # self.setContentsMargins(0, 0, 0, 0)
 
+    def set_update_patient_list(self, func):
+        self.patient_frame.reload_archive_patient_list = func
+
     def changeEnabledAll(self):
         """
             Modifies:   Toggles the enabled state of buttons and selects.
@@ -148,7 +151,7 @@ class AnalysisPage(QWidget):
         """
         # Iterate over all widgets within the frame and enable the stop recording button
         for widget in self.actions_frame.findChildren(QWidget):
-            if isinstance(widget, QPushButton) and widget.toolTip() == "Stop recording":
+            if isinstance(widget, QPushButton) and widget.property("icon_name") == "stop":
                 widget.setEnabled(True)
                 break  
 

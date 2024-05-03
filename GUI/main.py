@@ -150,6 +150,7 @@ class MainWindow(QMainWindow):
         # Create instances of pages
         self.analysisPage = AnalysisPage(light=self.light)
         self.archivePage = ArchivePage(light = self.light, icons_manager = icons_manager)
+        self.analysisPage.set_update_patient_list(self.archivePage.reload_patient_list)
         self.settingsPage = SettingsPage(self.apply_theme, self.theme_name, self.reload_archive, icons_manager)
         self.statisticsPage = StatisticsPage()
 

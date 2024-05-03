@@ -22,6 +22,8 @@ class PatientFrame(QFrame):
         """
         super().__init__()
 
+        self.reload_archive_patient_list = None
+
         # initialize attributes
         self.enablePlayButton = enablePlayButton
         self.disablePlayButton = disablePlayButton
@@ -61,6 +63,7 @@ class PatientFrame(QFrame):
         self.data = patient_adder.getSelectedPatientInfo()
 
         self.updateInfo()
+        if self.reload_archive_patient_list is not None: self.reload_archive_patient_list()
 
 
     def selectPatient(self):

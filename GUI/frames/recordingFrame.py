@@ -126,9 +126,7 @@ class RecordingFrame(QWidget):
 
         # Create timer label
         self.time_label = QLabel("00:00:00")
-        font = self.time_label.font()
-        font.setPointSize(15)
-        self.time_label.setFont(font)
+        self.time_label.setProperty("class", "")
         self.time_label.setAlignment(Qt.AlignCenter)
         self.time_label.setContentsMargins(25, 25, 25, 25)
         self.layout_actions.addWidget(self.time_label)
@@ -184,13 +182,23 @@ class RecordingFrame(QWidget):
                 centiseconds = int((current_time - int(current_time)) * 100)
                 self.time_label.setText("{:02}:{:02}.{:02}".format(int(minutes), int(seconds), centiseconds))
                 if max(0, self.exerciseTime - current_time) <= 10:
-                    self.time_label.setStyleSheet("color: red")
+                    self.time_label.hide()
+                    self.time_label = QLabel("{:02}:{:02}.{:02}".format(int(minutes), int(seconds), centiseconds))
+                    self.time_label.setProperty("class", "red_label")
+                    self.time_label.setAlignment(Qt.AlignCenter)
+                    self.time_label.setContentsMargins(25, 25, 25, 25)
+                    self.layout_actions.addWidget(self.time_label)
             else:
                 minutes, seconds = divmod(self.exerciseTime, 60)
                 centiseconds = int((self.exerciseTime - int(self.exerciseTime)) * 100)
                 self.time_label.setText("{:02}:{:02}.{:02}".format(int(minutes), int(seconds), centiseconds))
         else:
-            self.time_label.setText("00:00.00")
+            self.time_label.hide()
+            self.time_label = QLabel("00:00:00")
+            self.time_label.setProperty("class", "")
+            self.time_label.setAlignment(Qt.AlignCenter)
+            self.time_label.setContentsMargins(25, 25, 25, 25)
+            self.layout_actions.addWidget(self.time_label)
             self.startTime = None
 
     def startExecution(self):

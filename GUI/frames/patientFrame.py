@@ -61,9 +61,9 @@ class PatientFrame(QFrame):
     def addPatient(self):
         patient_adder = PatientAdder()
         self.data = patient_adder.getSelectedPatientInfo()
-
+        if self.data[2][1] != "" and self.data[2][1] is not None:   # id not void -- > patient added
+            if self.reload_archive_patient_list is not None: self.reload_archive_patient_list()
         self.updateInfo()
-        if self.reload_archive_patient_list is not None: self.reload_archive_patient_list()
 
 
     def selectPatient(self):

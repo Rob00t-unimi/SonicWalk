@@ -280,11 +280,11 @@ class MtwAwinda(object):
 
         except RuntimeError as error:
             print(error)
-            raise
+            raise error
             # sys.exit(1)
         except Exception as error:
             print(error)
-            raise
+            raise error
             # sys.exit(1)
         else:
             print("Successful init.")
@@ -318,11 +318,11 @@ class MtwAwinda(object):
         except RuntimeError as error:
             print(error)
             # sys.exit(1)
-            raise
+            raise error
         except Exception as error:
             print(error)
             # sys.exit(1)
-            raise
+            raise error
 
     def __cleanBuffer(self):
         self.__eulerData = np.zeros((2, self.__maxNumberofCoords), dtype=np.float64)
@@ -365,11 +365,11 @@ class MtwAwinda(object):
         except RuntimeError as error:
             print(error)
             # sys.exit(1)
-            raise
+            raise error
         except Exception as error:
             print(error)
             # sys.exit(1)
-            raise
+            raise error
         else:
             print("...Orientation reset successfully scheduled")
 
@@ -439,8 +439,8 @@ class MtwAwinda(object):
             analyzer_process0.start()
             analyzer_process1.start()
             #delete local version of samples 
-            del samples
-            gc.collect()
+            # del samples
+            # gc.collect()
         
         time.sleep(1) #wait one second before starting orientation reset and to allow processes to properly start
         self.__resetOrientation()
@@ -551,11 +551,11 @@ class MtwAwinda(object):
         except RuntimeError as error:
             print(error)
             # sys.exit(1)
-            raise
+            raise error
         except Exception as error:
             print(error)
             # sys.exit(1)
-            raise
+            raise error
         else:
             print("Successful clean")
 

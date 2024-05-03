@@ -127,3 +127,8 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
     border-radius: 0px;
     background-color: {QTMATERIAL_SECONDARYCOLOR};
 }}
+.red_label {{
+    color: red;
+    font-size: 20px
+}}
+

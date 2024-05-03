@@ -36,16 +36,16 @@ class ArchivePage(QWidget):
         left_box.setFixedWidth(400)
 
         # create left layout
-        left_layout = QVBoxLayout()
-        # left_layout.setContentsMargins(5, 0, 5, 0)
-        left_box.setLayout(left_layout)
+        self.left_layout = QVBoxLayout()
+        # self.left_layout.setContentsMargins(5, 0, 5, 0)
+        left_box.setLayout(self.left_layout)
         layout.addWidget(left_box)
 
         # create research box
         research_box = QFrame()
         research_box.setFixedHeight(240)
-        left_layout.addWidget(research_box)
-        left_layout.setAlignment(Qt.AlignTop)
+        self.left_layout.addWidget(research_box)
+        self.left_layout.setAlignment(Qt.AlignTop)
         research_box.setContentsMargins(0, 20, 0, 0)
 
         # create research box layout
@@ -145,7 +145,7 @@ class ArchivePage(QWidget):
         # Leggiamo il dataset JSON
         self.patients_list = QListWidget()
         self.patients_list.setProperty("class", "archive_list")
-        left_layout.addWidget(self.patients_list)
+        self.left_layout.addWidget(self.patients_list)
         self.load_patients_from_json()
 
         # create Central box ------------------------------------------------------------------------------------
@@ -586,7 +586,12 @@ class ArchivePage(QWidget):
             QMessageBox.warning(None, "Errore", f"Impossibile caricare il file: {str(e)}")
 
     def reload_patient_list(self):
-        self.patients_list.clear()
+        # self.patients_list.clear()
+        tmp = self.patients_list
+        tmp.deleteLater()
+        self.patients_list = QListWidget()
+        self.patients_list.setProperty("class", "archive_list")
+        self.left_layout.addWidget(self.patients_list)
         self.load_patients_from_json()      # PROBLEMA! ######################################
 
     def load_patients_from_json(self):

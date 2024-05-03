@@ -599,6 +599,7 @@ class ArchivePage(QWidget):
             return
         self.no_results_label.hide()
 
+        patient_data = sorted(patient_data, key=lambda x: (x['Name'], x['Surname']))
         self.selected_items = [False] * len(patient_data)
         for patient in patient_data:
 

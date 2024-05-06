@@ -1,16 +1,26 @@
 
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt, QDir
+from PyQt5.QtCore import Qt
 import os
 import json
-
 import sys
 sys.path.append("../")
 
 class PatientAdder(QFrame):
+    """
+    Dialog window to add new Patient to the dataset.JSON
+    """
     def __init__(self):
+        """
+        MODIFIES: 
+            - self
+
+        EFFECTS:  
+            - initialize the object and open the modal dialog window
+        """
         super().__init__()
 
+        # patient basic informations structure
         self.patient_info_data = [
             ("Name:", ""),
             ("Surname:", ""),
@@ -18,10 +28,17 @@ class PatientAdder(QFrame):
             ("Group:", ""),
             ("Hospital:", "")
         ]
+        # run the modal
         self.add_patient_modal()
         
     def add_patient_modal(self):
+        """
+        MODIFIES:   
+            - self
 
+        EFFECTS:    
+            - opens the dialog window with all input fields for the new Patient
+        """
         # Create a modal window
         modal = QDialog()
         modal.setWindowTitle("Add New Patient")
@@ -34,8 +51,8 @@ class PatientAdder(QFrame):
         hospital_section.setLayout(hospital_layout)
 
         hospital_fields = [
-            ("Hospital:", QLineEdit()),  # ospedale
-            ("Group:", QComboBox())       # ospedale
+            ("Hospital:", QLineEdit()),
+            ("Group:", QComboBox())
         ]
 
         # Populate comboboxes with options
@@ -45,7 +62,7 @@ class PatientAdder(QFrame):
         for label, widget in hospital_fields:
             row = QHBoxLayout()
             label_widget = QLabel(label)
-            label_widget.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # Allineamento verticale per la label
+            label_widget.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             row.addWidget(label_widget)
             row.addWidget(widget)
             hospital_layout.addRow(row)
@@ -88,7 +105,7 @@ class PatientAdder(QFrame):
         layout.addWidget(personal_section)
 
         # Add measurements section
-        measurements_section = QGroupBox("Measurements")
+        measurements_section = QGroupBox("Biometrical Measurements")
         measurements_section.setFixedHeight(230)
         measurements_layout = QVBoxLayout()
         measurements_section.setLayout(measurements_layout)
@@ -113,7 +130,9 @@ class PatientAdder(QFrame):
         # Add buttons
         buttons_layout = QHBoxLayout()
         add_button = QPushButton("Add Patient")
-        add_button.clicked.connect(lambda: self.add_patient({
+        add_button.clicked.connect(
+            # compose the patient_data map
+            lambda: self.add_patient({
             "Name": personal_table.cellWidget(0, 0).text(),
             "Surname": personal_table.cellWidget(1, 0).text(),
             "Date_of_Birth": personal_table.cellWidget(2, 0).date().toString("yyyy-MM-dd"),
@@ -125,7 +144,8 @@ class PatientAdder(QFrame):
             "Weight": str(measurements_table.cellWidget(1, 0).value()) + " kg",
             "Right_Leg_Length": str(measurements_table.cellWidget(2, 0).value()) + " cm",
             "Left_Leg_Length": str(measurements_table.cellWidget(3, 0).value()) + " cm",
-        }, modal.close))
+            }, modal.close)
+        )
 
         cancel_button = QPushButton("Close")
         cancel_button.clicked.connect(modal.close)
@@ -137,7 +157,20 @@ class PatientAdder(QFrame):
         modal.exec_()
 
     def add_patient(self, patient_data, close_modal = None):
+        """
+        REQUIRES:   
+            - patient_data (dictionary): must contain valid informations about the patient
+            - close_modal (callable): function to close the modal (default None)
+        
+        MODIFIES:   
+            - self
+        
+        EFFECTS:    
+            - It sets the informations of the new Patient into the dataset.JSON and closes the modal
+            - otherwise shows error in a QMessageBox
+        """
 
+        # check if name and surname are setted
         if patient_data["Name"]=="" or patient_data["Surname"]=="" or patient_data["Name"] is None or patient_data["Surname"] is None:
             QMessageBox.warning(self, "Error", "Please fill in all required fields (Name, Surname).")
             return
@@ -163,7 +196,6 @@ class PatientAdder(QFrame):
 
         # Add the new patient to the existing JSON data
         data.append(patient_data)
-
         try:
             with open(json_path, 'w') as file:
                 json.dump(data, file)
@@ -177,6 +209,16 @@ class PatientAdder(QFrame):
         QMessageBox.information(self, "Success", f"Patient {patient_data['Name']} {patient_data['Surname']} added successfully.")
 
     def loadPatientData(self, patient):
+        """
+        REQUIRES: 
+            - patient (dictionary): must contain valid informations about the patient
+
+        MODIFIES:
+            - self.patient_info_data
+
+        EFFECTS:  
+            - sets the self.patient_info_data list with datas of the new patient
+        """
         self.patient_info_data = [
             ("Name:", patient["Name"]),
             ("Surname:", patient["Surname"]),
@@ -187,6 +229,7 @@ class PatientAdder(QFrame):
 
     def getSelectedPatientInfo(self):
         """
-        Effects:    Returns self.patient_info_data: a list containing patient information
+        EFFECTS:    
+            - Returns self.patient_info_data: a list containing patient information
         """
         return self.patient_info_data

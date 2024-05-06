@@ -3,20 +3,23 @@ from PyQt5 import QtGui
 
 
 class PatientTable(QTableWidget):
-    def __init__(self, reducedTable=False, parent=None):
+    """
+    Custom patient table.
+    """
+    def __init__(self, reducedTable=False):
         """
-        Requires:
-            - reducedTable: a boolean value indicating the type of table (normal or short)
-            - light: a boolean value indicating light or dark theme
-        Modifies:
-            - Initializes self attributes
-        Effects: 
-            Initializes a custom PyQt5 Table.
-            Inherits methods from PyQt's QTableWidget.
-        """
-        super().__init__(parent)
+        Requires:   
+            - reducedTable (bool): indicates the type of table (normal or short)
 
-        # initialize attributes
+        Modifies:   
+            - self
+
+        Effects:    
+            - Initializes a custom PyQt5 Table.
+            - Inherits methods from PyQt's QTableWidget.
+        """
+        super().__init__()
+
         self.reducedTable = reducedTable
 
         # Initialize patient info data based on table type
@@ -44,15 +47,16 @@ class PatientTable(QTableWidget):
                 ("Date_of_Birth:", "")
             ]
 
-        # initialize the object
         self._setupTable()
-
-        # set datas and the style
         self.setTableData(self.patient_info_data)
 
     def _setupTable(self):
         """
-            Effects:    Set up table properties and style.
+            MODIFIES:   
+                - self
+
+            EFFECTS:    
+                - Set up table properties and style.
         """
         self.setColumnCount(1)
         self.setRowCount(len(self.patient_info_data))
@@ -69,8 +73,14 @@ class PatientTable(QTableWidget):
     
     def setTableData(self, data):
         """
-            Requires:   data: a list of tuples, each containing label and corresponding data.
-            Effects:    Fills the table with passed data.
+            REQUIRES:   
+                - data: a list of tuples, each containing label and corresponding data.
+
+            MODIFIES:   
+                - self
+
+            EFFECTS:    
+                - Fills the table with passed data.
         """
         for row, (label_text, data_text) in enumerate(data):
             data_widget = QLabel(data_text)

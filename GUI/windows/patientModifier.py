@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt, QDir, QDate
+from PyQt5.QtCore import Qt, QDate
 import os
 import json
 
@@ -7,13 +7,33 @@ import sys
 sys.path.append("../")
 
 class PatientModifier(QFrame):
+    """
+    Dialog window to modify the informations of the selected Patient to the dataset.JSON
+    """
     def __init__(self, patient_data):
+        """
+        REQUIRES: 
+            - patient_data must be valid map of patient datas
+
+        MODIFIES: 
+            - self
+
+        EFFECTS:  
+            - initialize the object and open the modal dialog window
+        """
         super().__init__()
 
         self.patient_info_data = patient_data
         self.modify_patient_modal()
         
     def modify_patient_modal(self):
+        """
+        MODIFIES:   
+            - self
+
+        EFFECTS:    
+            - opens the dialog window with all input fields for the selected Patient
+        """
         # Create a modal window
         modal = QDialog()
         modal.setWindowTitle("Modify Patient")
@@ -140,6 +160,19 @@ class PatientModifier(QFrame):
         modal.exec_()
 
     def modify_patient(self, patient_data, close_modal=None):
+        """
+        REQUIRES:   
+            - patient_data (dictionary): must contain valid informations about the patient
+            - close_modal (callable): function to close the modal (default None)
+
+        MODIFIES:   
+            - self
+
+        EFFECTS:    
+            - It sets the informations of the new Patient into the dataset.JSON 
+            - it updates self.patient_info_data with some patient info and closes the modal
+            - otherwise shows error in a QMessageBox
+        """
         if patient_data["Name"] == "" or patient_data["Surname"] == "" or patient_data["Name"] is None or patient_data["Surname"] is None:
             QMessageBox.warning(self, "Error", "Please fill in all required fields (Name, Surname).")
             return
@@ -154,10 +187,10 @@ class PatientModifier(QFrame):
             QMessageBox.critical(self, "Error", "Error decoding patient database file.")
             return
 
-        # Cerca il paziente esistente nel dataset
+        # Search the patient in the dataset
         for existing_patient in data:
             if existing_patient["ID"] == patient_data["ID"]:
-                # Modifica i dati del paziente esistente
+                # Modify the patient datas
                 existing_patient.update(patient_data)
                 break
 
@@ -176,4 +209,8 @@ class PatientModifier(QFrame):
         QMessageBox.information(self, "Success", f"Patient {patient_data['Name']} {patient_data['Surname']} modified successfully.")
 
     def get_patient_data(self):
+        """
+        EFFECTS:    
+            - Returns self.patient_info_data: a list containing patient information
+        """
         return self.patient_info_data

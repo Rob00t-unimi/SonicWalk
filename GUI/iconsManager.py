@@ -1,7 +1,17 @@
 from PyQt5.QtGui import QIcon
 
 class IconsManager:
+    """
+    Manages the loading and switching of icons for the application interface.
+    """
     def __init__(self):
+        """
+        MODIFIES: 
+            - self
+
+        EFFECTS:   
+            - initialize the object with icons paths
+        """
 
         self.color = "black"
 
@@ -25,14 +35,27 @@ class IconsManager:
         self.stop_name = "square.svg"
 
         self.stop_link = "icons/"+ self.stop_name
-
         # self.set_black()
 
     def switch_icons_color(self):
+        """
+        MODIFIES: 
+            - self
+
+        EFFECTS:  
+            - Switches the color of the icons attributes between black and white internally in this class.
+        """
         if self.color == "black": self.set_white()
         else: self.set_black()
 
     def set_white(self):
+        """
+        MODIFIES: 
+            - self
+
+        EFFECTS:  
+            - Loads all icons from the white icon directory.
+        """
         self.color = "white"
         self.trash = QIcon(self.whitepath+self.trash_name)
         self.link = QIcon(self.whitepath+self.link_name)
@@ -51,6 +74,13 @@ class IconsManager:
         self.stop = QIcon(self.stop_link)
 
     def set_black(self):
+        """
+        MODIFIES: 
+            - self
+
+        EFFECTS:  
+            - Loads all icons from the black icon directory.
+        """
         self.color = "black"
         self.trash = QIcon(self.blackpath+self.trash_name)
         self.link = QIcon(self.blackpath+self.link_name)
@@ -69,6 +99,13 @@ class IconsManager:
         self.stop = QIcon(self.stop_link)
 
     def getIcon(self, name):
+        """
+        REQUIRES: 
+            - name (str): The name of the icon.
+
+        EFFECTS: 
+            - Returns QIcon object corresponding to the specified icon name.
+        """
         return getattr(self, name)
 
 

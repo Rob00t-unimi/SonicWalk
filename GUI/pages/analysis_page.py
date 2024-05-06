@@ -15,31 +15,22 @@ from sonicwalk.sharedVariables import SharedData
 import time
 from PyQt5.QtCore import QThread
 
-
-
-# quando si chiude il programma, se sta regstrando assicurarsi prima di terminare in modo sicuro la registrazione
-# aggiungere funzione che permette di terminare
-# aggiungere il plotter 
-    # il plotter può essere aggiunto istanziandolo in mtwRecord e prendendo quell'istanza oppure
-    # istanziandolo qui nella gui e recuperando i dati condivisi di mtwRecord
-# il beep all'inizio della registrazione occupa la risorsa e genera errore quindi è temporaneamente commentato
 # bisogna gestire e recuperare l'eccezione nel caso non sia inserito il dongle
 
-
-
 class AnalysisPage(QWidget):
-
+    """
+    Page for registering, managing, and analyzing rehabilitative exercises for patients.
+    """
     def __init__(self, light = True):
         """
-        Requires:
+        REQUIRES:
             - light: Boolean indicating whether the theme is light or dark.
-        Modifies:
-            - Initializes UI components including patient frame, exercise frame, recording frame, and plotter frame.
-            - Handles theme toggling.
-            - Toggles the enabled or disabled state of buttons and selects in response to user interaction with play button.
-        Effects:
-            - Sets up the user interface for the analysis page.
-            - Manages the interaction and behavior of UI components.
+
+        MODIFIES:
+            - self
+
+        EFFECTS:
+            - Sets up the user interface for the analysis page. Including patient frame, exercise frame, recording frame, and plotter frame.
         """
         super().__init__()
 
@@ -54,13 +45,14 @@ class AnalysisPage(QWidget):
 
     def setup_ui(self):
         """
-            Modifies:   self
-            Effects:    Sets up the user interface for the analysis page.
+        MODIFIES:   
+            - self
+        EFFECTS:    
+            - Sets up the user interface for the analysis page. Including patient frame, exercise frame, recording frame, and plotter frame.
         """
 
         # set layout
         grid_layout = QGridLayout(self)
-        # grid_layout.setContentsMargins(0, 0, 0, 0)
 
         # create sub frames
         self.selection_frame = ExerciseFrame(light=self.light)
@@ -70,7 +62,6 @@ class AnalysisPage(QWidget):
         self.plotter_frame = QWidget()
         self.layout_plotter = QVBoxLayout(self.plotter_frame)
         self.layout_plotter.setContentsMargins(0, 0, 0, 0)
-
 
         self.create_static_plotter() # initialize a void plotter
         self.layout_plotter.addWidget(self.canvas)   # add the plotter into the gui
@@ -82,10 +73,10 @@ class AnalysisPage(QWidget):
         grid_layout.addWidget(self.actions_frame, 1, 1)
 
         # grid proportions
-        grid_layout.addWidget(self.patient_frame, 0, 0, 1, 1)  # Alto a sinistra, altezza 1/3, larghezza 1/3
-        grid_layout.addWidget(self.selection_frame, 1, 0, 2, 1)  # Basso a sinistra, altezza 1/3, larghezza 1/3
-        grid_layout.addWidget(self.plotter_frame, 0, 1, 2, 3)  # Alto a destra, altezza 2/3, larghezza 2/3
-        grid_layout.addWidget(self.actions_frame, 2, 1, 1, 3)  # Basso a destra, altezza 1/3, larghezza 2/3
+        grid_layout.addWidget(self.patient_frame, 0, 0, 1, 1)  # Top left, height 1/3, width 1/3
+        grid_layout.addWidget(self.selection_frame, 1, 0, 2, 1)  # Bottom left, height 1/3, width 1/3
+        grid_layout.addWidget(self.plotter_frame, 0, 1, 2, 3)  # Top right, height 2/3, width 2/3
+        grid_layout.addWidget(self.actions_frame, 2, 1, 1, 3)  # Bottom right, height 1/3, width 2/3
 
         self.patient_frame.setMinimumWidth(200)
         self.plotter_frame.setMinimumWidth(200)
@@ -96,17 +87,26 @@ class AnalysisPage(QWidget):
         grid_layout.setRowStretch(0, 1)
         grid_layout.setRowStretch(1, 1)
 
-        # margins
-        # grid_layout.setContentsMargins(0, 0, 0, 0)
-        # self.setContentsMargins(0, 0, 0, 0)
-
     def set_update_patient_list(self, func):
+        """
+        REQUIRES: 
+            - func (callable): function to reload the archive patient list
+            
+        MOFIFIES: 
+            - self
+
+        EFFECTS:
+            - pass the function to the patient frame object
+        """
         self.patient_frame.reload_archive_patient_list = func
 
     def changeEnabledAll(self):
         """
-            Modifies:   Toggles the enabled state of buttons and selects.
-            Effects:    Enables or disables all buttons and selects based on the current state.
+        MOFIFIES:   
+            - Toggles the enabled state of buttons and selects.
+
+        EFFECTS:    
+            - Enables or disables all buttons (except for stop button), selects and slider based on the current state.
         """
         self.allEnabled = not self.allEnabled
         self._disableButtonsInFrame(self)   # change enabled state of buttons
@@ -120,9 +120,11 @@ class AnalysisPage(QWidget):
 
     def _disableButtonsInFrame(self, frame):
         """
-            Requires:   frame: The frame containing buttons.
-            Modifies:   Disables buttons within the specified frame.
-            Effects:    Disables all buttons recursively within the frame.
+        REQUIRES:   
+            - frame (QWidget): The frame containing buttons.
+
+        EFFECTS:    
+            - Disables all buttons recursively within the frame.
         """
         # Iterate over all widgets within the frame, enabling or disabling buttons
         for widget in frame.findChildren(QWidget):
@@ -133,9 +135,11 @@ class AnalysisPage(QWidget):
 
     def _disableSelectsInFrame(self, frame):
         """
-            Requires:   frame: The frame containing combo boxes.
-            Modifies:   Disables combo boxes within the specified frame.
-            Effects:    Disables all combo boxes recursively within the frame.
+        REQUIRES:   
+            - frame (QWidget): The frame containing combo boxes.
+
+        EFFECTS:    
+            - Disables all combo boxes recursively within the frame.
         """
         # Iterate over all widgets within the frame, enabling or disabling selects
         for widget in frame.findChildren(QWidget):
@@ -146,8 +150,8 @@ class AnalysisPage(QWidget):
     
     def _enableStopRecordingButton(self):
         """
-            Modifies:   Enables the stop recording button within the actions frame.
-            Effects:    Enables the stop recording button when called.
+        EFFECTS:    
+            - Enables the stop recording button within the actions frame.
         """
         # Iterate over all widgets within the frame and enable the stop recording button
         for widget in self.actions_frame.findChildren(QWidget):
@@ -156,6 +160,13 @@ class AnalysisPage(QWidget):
                 break  
 
     def plotter_start(self):
+        """
+        MODIFIES: 
+            - self
+
+        EFFECTS:    
+            - Initializes, Shows and Starts the plotter thread class for dynamic plotter.
+        """
         print("plotter starting...")
         if hasattr(self, 'plot_thread') and self.plot_thread.isRunning():
             self.plot_thread.terminate()
@@ -165,6 +176,13 @@ class AnalysisPage(QWidget):
         self.plot_thread.start()
 
     def create_static_plotter(self):
+        """
+        MODIFIES: 
+            - self
+
+        EFFECTS:    
+            - Initializes and shows the static plotter.
+        """
         self.fig, self.ax = plt.subplots()
         self.ax.plot([], [], label='Data 0')
         self.ax.plot([], [], label='Data 1')
@@ -177,6 +195,14 @@ class AnalysisPage(QWidget):
         self.canvas = FigureCanvas(self.fig)
     
     def update_plot(self, data0, data1):
+        """
+        REQUIRES: 
+            - data0 (np.ndarray): Array containing data of signal 0.
+            - data1 (np.ndarray): Array containing data of signal 1.
+
+        EFFECTS:    
+            - Updates the dynamic plotter with new data.
+        """
         # Aggiorna il plotter con i nuovi dati
         self.ax.clear()
         self.ax.plot(data0, 'b')
@@ -190,6 +216,13 @@ class AnalysisPage(QWidget):
         self.canvas.draw()
 
     def setSaved(self, data):
+        """
+        REQUIRES: 
+            - data (tuple or None): Tuple containing data for plots or None.
+
+        EFFECTS:    
+            - Sets the data in the plotter and updates it.
+        """
         if hasattr(self, 'plot_thread'):
             self.plot_thread.force_stop()
         self.ax.clear()
@@ -205,6 +238,13 @@ class AnalysisPage(QWidget):
         self.canvas.draw()
         
     def reset_shared_data(self):
+        """
+        MODIFIES: 
+            - self SharedData object
+
+        EFFECTS:    
+            - Resets shared data (all 0).
+        """
         self.shared_data.index0.value = 0
         self.shared_data.index1.value = 0
         for i in range(len(self.shared_data.data0)):
@@ -213,10 +253,28 @@ class AnalysisPage(QWidget):
             self.shared_data.data1[i] = 0
 
 class PlotterThread(QThread):
+
+    """
+    Dynamic plotter thread object.
+    """
+    
     dataUpdated = pyqtSignal(np.ndarray, np.ndarray)
     termination = pyqtSignal()
 
     def __init__(self, data0, data1, index0, index1):
+        """
+        REQUIRES: 
+            - data0 (list): List containing data for plot 0.
+            - data1 (list): List containing data for plot 1.
+            - index0 (int): Index for data0.
+            - index1 (int): Index for data1.
+
+        MODIFIES:
+            - self
+
+        EFFECTS:
+            - Initializes the PlotterThread.
+        """
         super().__init__()
         print("init plotter...")
         self.data0 = data0
@@ -226,6 +284,11 @@ class PlotterThread(QThread):
         self.stop = False
 
     def run(self):
+        """
+        EFFECTS:    
+            - Runs the PlotterThread.
+            - terminates when find 1000 in data0
+        """
         print("plotter running...")
         while True:
             if self.data0[self.index0.value] == 1000:
@@ -239,6 +302,13 @@ class PlotterThread(QThread):
             time.sleep(0.07)
 
     def force_stop(self):
+        """
+        MODIFIES:
+            self
+            
+        EFFECTS:    
+            - Forces the PlotterThread to stop.
+        """
         if self.isRunning():
             self.data0[self.index0.value] = 1000
             self.stop = True

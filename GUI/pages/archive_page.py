@@ -4,7 +4,6 @@ import os
 import shutil
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt, QDir
-from PyQt5.QtGui import QFont, QIcon
 import matplotlib.pyplot  as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
@@ -15,8 +14,22 @@ sys.path.append("../")
 from windows.patientModifier import PatientModifier
 
 class ArchivePage(QWidget):
-    def __init__(self, light = True, icons_manager = None, parent=None):
-        super().__init__(parent)
+    """
+    Page for managing the archive. It Allows to visualize, modify, and delete patients informations and recorded signals.
+    """
+    def __init__(self, light = True, icons_manager = None):
+        """
+        REQUIRES: 
+            - light (bool): indicating whether the theme is light or dark.
+            - icons_manager (IconsManager): icons manager instance
+
+        MODIFIES: 
+            - self
+        
+        EFFECTS: 
+            Initializes and show the Archive page interface
+        """
+        super().__init__()
 
         self.light = light
         self.icons_manager = icons_manager
@@ -37,7 +50,6 @@ class ArchivePage(QWidget):
 
         # create left layout
         self.left_layout = QVBoxLayout()
-        # self.left_layout.setContentsMargins(5, 0, 5, 0)
         left_box.setLayout(self.left_layout)
         layout.addWidget(left_box)
 
@@ -79,6 +91,9 @@ class ArchivePage(QWidget):
         search_and_toggle_layout.addWidget(toggle_filter_button)
 
         def toggleFilterBox():
+            """
+            switch minus circle and plus circle, switch box dimensions, switch visibility of elements
+            """
             if research_box.height() == 175:
                 research_box.setFixedHeight(240)
                 toggle_filter_button.setProperty("icon_name", "minus_circle")
@@ -90,7 +105,6 @@ class ArchivePage(QWidget):
                 toggle_filter_button.setIcon(icons_manager.getIcon("plus_circle"))
                 filter_box.setVisible(False)
 
-        # Collega il pulsante alla funzione di gestione
         toggle_filter_button.clicked.connect(toggleFilterBox)
 
         research_box_layout.addLayout(search_and_toggle_layout)
@@ -142,7 +156,7 @@ class ArchivePage(QWidget):
         filter_box.setLayout(filter_layout)
         research_box_layout.addWidget(filter_box, alignment=Qt.AlignLeft)
 
-        # Leggiamo il dataset JSON
+        # Read dataset.JSON
         self.patients_list = QListWidget()
         self.patients_list.setProperty("class", "archive_list")
         self.left_layout.addWidget(self.patients_list)
@@ -154,7 +168,6 @@ class ArchivePage(QWidget):
 
         # create Central layout
         central_layout = QVBoxLayout()
-        # central_layout.setContentsMargins(0, 0, 0, 0)
         central_box.setLayout(central_layout)
         layout.addWidget(central_box)
 
@@ -192,40 +205,33 @@ class ArchivePage(QWidget):
         # add the canvas to the layout
         self.central_top_layout.addWidget(self.canvas)
 
-
-        # Creazione delle liste e dei loro modelli
+        # Create lists
         self.listView_folders = QListView()
         self.listView_files = QListView()
 
-        # Creazione delle etichette per i titoli
+        # labels
         label_folders = QLabel("Folders")
         label_files = QLabel("Files")
 
-        # Aggiunta di un padding sinistro alle etichette
         label_folders.setStyleSheet("padding-left: 5px;")
         label_files.setStyleSheet("padding-left: 5px;")
 
-        # Creazione dei layout per ciascuna coppia di lista e titolo
         layout_folders = QVBoxLayout()
         layout_files = QVBoxLayout()
 
-        # Aggiunta della lista e del titolo al layout
         layout_folders.addWidget(label_folders)
         layout_folders.addWidget(self.listView_folders)
         layout_files.addWidget(label_files)
         layout_files.addWidget(self.listView_files)
 
-        # Creazione dei widget di gruppo per ciascuna coppia di lista e titolo
         group_box_folders = QWidget()
         group_box_folders.setLayout(layout_folders)
         group_box_files = QWidget()
         group_box_files.setLayout(layout_files)
 
-        # Rimozione del padding dai QGroupBox
         layout_folders.setContentsMargins(0, 0, 0, 0)
         layout_files.setContentsMargins(0, 0, 0, 0)
 
-        # Aggiunta dei widget di gruppo al layout principale
         central_bottom_layout.addWidget(group_box_folders)
         central_bottom_layout.addWidget(group_box_files)
 
@@ -240,7 +246,7 @@ class ArchivePage(QWidget):
 
         self.listView_folders.clicked.connect(self.folder_clicked)
 
-        # Modello per i file
+        # File model
         self.file_model = QFileSystemModel()
         self.file_model.setFilter(QDir.Files | QDir.NoDotAndDotDot)
         self.file_model.setNameFilters(["*.npy"])
@@ -249,27 +255,24 @@ class ArchivePage(QWidget):
 
         self.navigation_toolbar = None
 
-        # Creazione del menu contestuale per le cartelle
+        # Folders context menu
         self.folder_context_menu = QMenu(self)
         delete_folder_action = self.folder_context_menu.addAction("Delete")
         delete_folder_action.triggered.connect(self.delete_selected_folder)
 
-        # Collegamento del menu contestuale alla lista delle cartelle
+        # connect context menu to the folders list
         self.listView_folders.setContextMenuPolicy(Qt.CustomContextMenu)
         self.listView_folders.customContextMenuRequested.connect(self.show_folder_context_menu)
 
-        # Creazione del menu contestuale per i file
+        # Files context menu
         self.file_context_menu = QMenu(self)
         delete_file_action = self.file_context_menu.addAction("Delete")
         delete_file_action.triggered.connect(self.delete_selected_file)
 
-        # Collegamento del menu contestuale alla lista dei file
+        # connect context menu to the files list
         self.listView_files.setContextMenuPolicy(Qt.CustomContextMenu)
         self.listView_files.customContextMenuRequested.connect(self.show_file_context_menu)
-        # Collegamento del menu contestuale alla lista dei file
-        self.listView_files.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.listView_files.customContextMenuRequested.connect(self.show_file_context_menu)
-
+        
         # right box ---------------------------------------------------------------------------------------------------
         self.right_box = QWidget()
         self.right_box.setMaximumWidth(400)
@@ -290,9 +293,9 @@ class ArchivePage(QWidget):
 
         scroll_area = QScrollArea()
         scroll_area.setContentsMargins(0, 0, 0, 0)
-        scroll_area.setWidgetResizable(True)  # Permette alla QScrollArea di adattarsi alla dimensione del widget interno
-        scroll_area_widget = QWidget()  # Widget interno per la QScrollArea
-        scroll_area_layout = QVBoxLayout(scroll_area_widget)  # Layout verticale per il widget interno
+        scroll_area.setWidgetResizable(True)  
+        scroll_area_widget = QWidget()
+        scroll_area_layout = QVBoxLayout(scroll_area_widget)
 
         # table 1
         self.table1 = QTableWidget()
@@ -377,7 +380,7 @@ class ArchivePage(QWidget):
         line.setFrameShadow(QFrame.Sunken)
         comment_layout.addWidget(line)
 
-        # Creazione di una QScrollArea
+        # QScrollArea
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         self.comment_text_label = QLabel("")
@@ -398,9 +401,19 @@ class ArchivePage(QWidget):
 
 
 
-# FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# METHODS -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
     def modify_patient(self):
+        """
+        MODIFIES: 
+            - self
+            - dataset.json
+        
+        EFFECTS: 
+            - if a patient is selected open a modal to modify patients informations
+            - updates patient informations into dataset.json
+            - updates tables, list and search results into the GUI
+        """
         if self.current_patient is None:
             QMessageBox.warning(self, "Error", "No patient selected.")
             return
@@ -409,9 +422,18 @@ class ArchivePage(QWidget):
         self.set_patient_tables(self.current_patient)
         self.reload_patient_list()
         self.updatesearchresults()
-        
 
     def set_patient_tables(self, patient_data):
+        """
+        REQUIRES: 
+            - patient_data (dictionary): valid patient data dictionary
+        
+        MODIFIES:
+            - self
+
+        EFFECTS: 
+            - fills the tables with patient iformations
+        """
         info = ["Name", "Surname", "Date_of_Birth", "CF", "Gender"]
         for i in range(5):
             item = QTableWidgetItem(patient_data[info[i]])
@@ -426,24 +448,53 @@ class ArchivePage(QWidget):
             self.table3.setItem(i, 0, item) 
 
     def reset_patient_tables(self):
+        """
+        MODIFIES:
+            - self
+
+        EFFECTS: 
+            - fills the tables with void str
+        """
         for i in range(5):
-            self.table1.setItem(i, 0, QTableWidgetItem(""))  # Imposta il contenuto della cella a una stringa vuota
+            self.table1.setItem(i, 0, QTableWidgetItem(""))
         for i in range(2):
             self.table2.setItem(i, 0, QTableWidgetItem(""))
         for i in range(4):
             self.table3.setItem(i, 0, QTableWidgetItem(""))
 
     def toggle_right_box_visibility(self):
+        """
+        MODIFIES: 
+            - self
+
+        EFFECTS:
+            - Toggles the visibility of the right box in the archive page based on the window width.
+            - If the window width exceeds a specific threshold, the right box is shown; otherwise, it is hidden.
+        """
         # 1057 standard width
         # 420 width needed for the right_box
         if (self.width() - 1057) >= 420: self.right_box.show()
         else: self.right_box.hide()
 
     def resize_event(self, event):
+        """
+        MODIFIES:
+            - self
+        
+        EFFECTS: 
+            - Adjusts the visibility of UI elements in response to a window resize event.
+        """
         self.toggle_right_box_visibility()
 
     def delete_patient(self):
-
+        """
+        MODIFIES: 
+            - self
+        
+        EFFECTS: 
+            - Deletes the selected patient and their data from the database and archive folder.
+            - Otherwise show the errors in a QMessageBox
+        """
         patient_id = self.current_patient_id
 
         if patient_id is None: 
@@ -502,16 +553,54 @@ class ArchivePage(QWidget):
             QMessageBox.critical(self, "Error", f"An error occurred while deleting the patient folder: {str(e)}")
 
     def show_folder_context_menu(self, position):
+        """
+        MODIFIES: 
+            - self
+        
+        EFFECTS: 
+            - It shows the context menu for deleting a folder
+        """
         index = self.listView_folders.indexAt(position)
         if index.isValid():
             self.folder_context_menu.exec_(self.listView_folders.mapToGlobal(position))
 
     def show_file_context_menu(self, position):
+        """
+        MODIFIES: 
+            - self
+        
+        EFFECTS: 
+            - It shows the context menu for deleting a file
+        """
         index = self.listView_files.indexAt(position)
         if index.isValid():
             self.file_context_menu.exec_(self.listView_files.mapToGlobal(position))
 
+    def show_context_menu(self, position):
+        """
+        REQUIRES:
+            - position (QPoint): valid position in the window
+
+        MODIFIES: 
+            - self
+        
+        EFFECTS: 
+            - It shows a context menu at specified position
+        """
+        self.context_menu.exec_(self.sender().mapToGlobal(position))
+
     def delete_selected_folder(self):
+        """
+        MODIFIES: 
+            - self
+            - archive folder
+        
+        EFFECTS: 
+            - Deletes the selected folder and its contents from the archive folder.
+            - Updates the folders and files models
+            - Reset the plot
+            - Reset the exercise comment
+        """
         selected_indexes = self.listView_folders.selectedIndexes()
         if selected_indexes:
             reply = QMessageBox.warning(self, 'Deleting Folder', 
@@ -531,6 +620,17 @@ class ArchivePage(QWidget):
                     self.reset()
 
     def delete_selected_file(self):
+        """
+        MODIFIES: 
+            - self
+            - archive folder
+        
+        EFFECTS: 
+            - Deletes the selected file npy
+            - Updates the file model
+            - Reset the plot
+            - Reset the exercise comment
+        """
         selected_indexes = self.listView_files.selectedIndexes()
         if selected_indexes:
             reply = QMessageBox.warning(self, 'Deleting File', 
@@ -546,18 +646,43 @@ class ArchivePage(QWidget):
                                             f"Error while deleting file '{file_path}': {e}",
                                             QMessageBox.Ok, QMessageBox.Ok)
                 self.reset()    
-
-                    
+       
     def on_folder_loaded(self):
+        """
+        MODIFIES: 
+            - self
+
+        EFFECTS:
+            - sets the folder model into the listview
+        """
         self.listView_folders.setRootIndex(self.folder_model.index(self.folder_path))
 
     def folder_clicked(self, index):
+        """
+        MODIFIES: 
+            - self
+
+        EFFECTS:
+            - sets the selected files model into the listview
+        """
         self.listView_files.setModel(self.file_model)
         folder_path = self.folder_model.fileInfo(index).absoluteFilePath()
         self.file_model.setRootPath(folder_path)
         self.listView_files.setRootIndex(self.file_model.index(folder_path))
 
     def load_selected_file(self, index):
+        """
+        REQUIRES: 
+            - index (int): valid index of a files listview
+
+        MODIFIES: 
+            - self 
+
+        EFFECTS:
+            - loads the selected file
+            - processes and plots the signals of the loaded file 
+            - shows the matplotlib navigation toolbar
+        """
         file_path = self.file_model.fileInfo(index).absoluteFilePath()
         try:
             loaded_data = np.load(file_path, allow_pickle=True)
@@ -585,27 +710,28 @@ class ArchivePage(QWidget):
         except Exception as e:
             QMessageBox.warning(None, "Errore", f"Impossibile caricare il file: {str(e)}")
 
-    def reload_patient_list(self):
-        # self.patients_list.clear()
-        tmp = self.patients_list
-        tmp.deleteLater()
-        self.patients_list = QListWidget()
-        self.patients_list.setProperty("class", "archive_list")
-        self.left_layout.addWidget(self.patients_list)
-        self.load_patients_from_json()      # PROBLEMA! ######################################
 
     def load_patients_from_json(self):
+        """
+        MODIFIES: 
+            - self
+
+        EFFECTS:  
+            - loads the patients from dataset.JSON and sets up the list of patients
+        """
         with open('data/dataset.json', 'r') as file:
             patient_data = json.load(file)
 
+        # if there are no patients show the label "no results found"
         if not patient_data:
-            self.no_results_label.raise_()
+            self.no_results_label.raise_()  # on top
             self.no_results_label.show()
             return
         self.no_results_label.hide()
 
-        patient_data = sorted(patient_data, key=lambda x: (x['Name'], x['Surname']))
+        patient_data = sorted(patient_data, key=lambda x: (x['Name'], x['Surname']))    # sort data in alphabetic order by name and surname
         self.selected_items = [False] * len(patient_data)
+        # sets up the list
         for patient in patient_data:
 
             patientview = QWidget()
@@ -633,8 +759,35 @@ class ArchivePage(QWidget):
 
         self.patients_list.itemClicked.connect(self.clicked_patient)
 
+    def reload_patient_list(self):
+        """
+        MODIFIES:
+            - self
+        
+        EFFECTS: 
+            - replace the patient list with a new updated list
+            - delete the old list
+        """
+        # self.patients_list.clear()
+        tmp = self.patients_list
+        tmp.deleteLater()
+        self.patients_list = QListWidget()
+        self.patients_list.setProperty("class", "archive_list")
+        self.left_layout.addWidget(self.patients_list)
+        self.load_patients_from_json()
 
     def clicked_patient(self, item):
+        """
+        REQUIRES: 
+            - item (QListWidgetItem): valid item from patient list
+
+        MODIFIES:
+            - self
+
+        EFFECTS:
+            - If the clicked patient item is not already selected, selects it, updates the patient's data and the folders model.
+            - else the clicked patient item is already selected, deselects it and resets the patient's data.
+        """
         index = self.patients_list.row(item)
 
         if not self.selected_items[index]:
@@ -653,16 +806,58 @@ class ArchivePage(QWidget):
             if i == index: self.selected_items[i] = not self.selected_items[i]
             else: self.selected_items[i] = False
 
+    def select_patient_folder(self, item):
+        """
+        REQUIRES: 
+            - item (QListWidgetItem): valid item from patient list
+
+        MODIFIES:
+            - self
+
+        EFFECTS:
+            - if avaiable updates the selectes folders model.
+            - else reset the folders model
+            - reset the folders listview
+            - reset the files listview
+            - reset the plotter
+            - reset the comment
+        """
+        patient = item.data(Qt.UserRole)
+        patient_id = (patient['ID']).upper()
+        self.current_patient_id = patient_id
+        current_path = os.getcwd()
+        self.folder_path = os.path.join(current_path, "data", "archive", patient_id)
+        if os.path.exists(self.folder_path):
+            self.folder_model.setRootPath(self.folder_path) 
+            self.listView_folders.setModel(self.folder_model)
+            self.listView_folders.setRootIndex(self.folder_model.index(self.folder_path))
+        else: self.listView_folders.setModel(None)
+        self.listView_folders.clearSelection()
+        self.reset()
+
     def updatesearchresults(self):
+        """
+        MODIFIES: 
+            - self
+
+        EFFECTS:  
+            - Updates the list of patients based on the entered search text and selected filters.
+        """
         search_text = self.current_search_text.lower()
+        # load json
         with open('data/dataset.json', 'r') as file:
             patient_data = json.load(file)
 
+        # hide all items
         for i in range(self.patients_list.count()):
             item = self.patients_list.item(i)
             item.setHidden(True)
 
+        # sets up the age ranges
         def age_in_range(date_of_birth_str, age_range):
+            """
+            calculates ages of patients and returns patients in the selected age range
+            """
             date_of_birth = datetime.strptime(date_of_birth_str, "%Y-%m-%d").date()
             today = date.today()
             age = today.year - date_of_birth.year - ((today.month, today.day) < (date_of_birth.month, date_of_birth.day))
@@ -679,6 +874,7 @@ class ArchivePage(QWidget):
             else:
                 return False
 
+        # filtering
         no_results = True
         for patient in patient_data:
             if (
@@ -693,35 +889,41 @@ class ArchivePage(QWidget):
                     if patient['ID'] == data["ID"] and (search_text == "" or search_text.lower() in data["ID"].lower() or search_text.lower() in data["CF"].lower() or search_text.lower() in data["Name"].lower() or search_text.lower() in data["Surname"].lower()):
                         item.setHidden(False)
                         no_results = False
+
+        # if there are no patients show the label "no results found"
         if no_results:
-            self.no_results_label.raise_()
+            self.no_results_label.raise_()   # on top
             self.no_results_label.show()
         else:
             self.no_results_label.hide()
 
     def updatefilters(self, type, text):
+        """
+        REQUIRES:
+            - type (str or None): must be a string from Hospitals, Groups, Genders, Ages or None
+
+        MODIFIES: 
+            - self
+
+        EFFETCS:  
+            - updates the selected filters and updates the search results by calling self.updatesearchresults
+        """
         if type == text: 
             self.filters[type] = None
         else:
             self.filters[type] = text
         self.updatesearchresults()
 
-    def select_patient_folder(self, item):
-
-        patient = item.data(Qt.UserRole)
-        patient_id = (patient['ID']).upper()
-        self.current_patient_id = patient_id
-        current_path = os.getcwd()
-        self.folder_path = os.path.join(current_path, "data", "archive", patient_id)
-        if os.path.exists(self.folder_path):
-            self.folder_model.setRootPath(self.folder_path) 
-            self.listView_folders.setModel(self.folder_model)
-            self.listView_folders.setRootIndex(self.folder_model.index(self.folder_path))
-        else: self.listView_folders.setModel(None)
-        self.listView_folders.clearSelection()
-        self.reset()
-
     def reset(self):
+        """
+        MODIFIES:
+            - self
+
+        EFFECTS:
+            - reset the files listview
+            - reset the plotter
+            - reset the comment
+        """
         if self.navigation_toolbar is not None: self.navigation_toolbar.setVisible(False)
         self.ax.clear()
         self.ax.grid(True, color="#FFE6E6")
@@ -730,10 +932,21 @@ class ArchivePage(QWidget):
         self.listView_files.clearSelection()
         self.comment_text_label.setText("")
 
-    def show_context_menu(self, position):
-        self.context_menu.exec_(self.sender().mapToGlobal(position))
-
     def clean_all(self):
+        """
+        MODIFIES: 
+            - self
+        
+        EFFECTS:
+            - updates more graphic elements.
+            - reset patient list
+            - reset tables
+            - reset files listview
+            - reset folders listview
+            - reset plotter
+            - reset comment
+            - reset current patient and current patient id
+        """
         self.patients_list.clear()
         self.load_patients_from_json()
         self.reset_patient_tables()
@@ -742,4 +955,3 @@ class ArchivePage(QWidget):
         self.reset()
         self.current_patient_id = None
         self.current_patient = None
-        self.comment_text_label.setText("")

@@ -1,9 +1,6 @@
-import time
 from PyQt5.QtWidgets import *
 import webbrowser
 import sys
-import json
-from qt_material import apply_stylesheet, list_themes
 
 sys.path.append("../")
 
@@ -11,16 +8,20 @@ from components.menuButton import MenuButton
 
 
 class SideMenu(QFrame):
+    """
+    Custom expandable side menu frame. 
+    """
     def __init__(self, setActivePage=None, toggleTheme = None, light = True):
         """
-        Requires:
-            - setActivePage: Callback function for setting the active page called upon clicking an activity button
-            - toggleTheme: a callback function for setting the theme
-            - light: a boolean indicating light or dark theme
-        Modifies:
-            - Initializes self attributes and layout
-            - Sets up the buttons and frames for the side menu
-        Effects:
+        REQUIRES:
+            - setActivePage (callable): a callback function for setting the active page called upon clicking an activity button
+            - toggleTheme (callable): a callback function for setting the theme
+            - light (bool): indicates light or dark theme
+
+        MODIFIES:
+            - self
+
+        EFFECTS:
             - Initializes a custom side menu frame.
         """
         super().__init__()
@@ -71,9 +72,12 @@ class SideMenu(QFrame):
 
     def _setupMainButtonsFrame(self):
         """
-            Modifies:   self
-            Effects:    Sets up the frame for the activity buttons.
-                        It create the inner frame and the buttons
+        Modifies:   
+            - self
+
+        Effects:    
+            - Sets up the frame for the activity buttons.
+            - creates the inner frame and the buttons
         """
         # Create frame
         self.inner_frame1 = QFrame()
@@ -100,7 +104,7 @@ class SideMenu(QFrame):
         # Add buttons to frame
         self.inner_frame1_layout.addWidget(self.analysisButton)
         self.inner_frame1_layout.addWidget(self.archiveButton)
-        self.inner_frame1_layout.addWidget(self.statisticsButton)
+        # self.inner_frame1_layout.addWidget(self.statisticsButton)        # to implement this page
         self.inner_frame1_layout.addWidget(self.settingsButton)
 
         # Add inner frame 1 to main frame
@@ -109,9 +113,12 @@ class SideMenu(QFrame):
 
     def _setupBottomFrame(self):
         """
-            Modifies:   self
-            Effects:    Sets up the frame for the bottom buttons
-                        It create the inner frame and the buttons
+        Modifies:   
+            - self
+
+        Effects:    
+            - Sets up the frame for the bottom buttons
+            - Creates the inner frame and the buttons
         """
         # Create frame
         self.inner_frame2 = QFrame()
@@ -134,8 +141,11 @@ class SideMenu(QFrame):
 
     def hamburgerFunction(self):
         """
-            Modifies:   self
-            Effects:    Expands/Collapses the menu and the buttons in it
+        Modifies:   
+            - self
+
+        Effects:   
+            - Expands/Collapses the menu and the buttons in it
         """
         self.menu_expanded = not self.menu_expanded
         self.setFixedWidth(170 if self.menu_expanded else 60)
@@ -155,10 +165,15 @@ class SideMenu(QFrame):
             
     def selectPage(self, page):
         """
-        Requires:   page: a string from "Analysis, Settings, Archive, Statistics"
-        Modifies:   self
-        Effects:    Deselects buttons based on the selected page.
-                    Sets the active page.
+        Requires:   
+            - page (str): a string from "Analysis, Settings, Archive, Statistics"
+
+        Modifies:   
+            - self
+
+        Effects:    
+            - Deselects buttons based on the selected page.
+            - Sets the active page.
         """
         self.analysisButton.setChecked(False)
         self.archiveButton.setChecked(False)
@@ -175,6 +190,15 @@ class SideMenu(QFrame):
         print(page)
 
     def toggleTheme(self):
+        """
+        MODIFIES:
+            - self.light
+            - GUI theme
+
+        EFFECTS:
+            - modifies the GUI theme (light/dark)
+            - invert self.light
+        """
         self.light = not self.light
         try:
             self.toggleThemeMain()
@@ -183,7 +207,8 @@ class SideMenu(QFrame):
 
     def _openDocumentation(self):
         """
-            Effects:    Opens the HTML documentation in a web browser
+        Effects:    
+            - Opens the HTML documentation in a web browser
         """
         try:
             webbrowser.open('documentation.html')

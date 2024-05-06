@@ -1,23 +1,26 @@
 import json
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt 
 import sys
 
 sys.path.append("../")
 
 class ExerciseFrame(QFrame):
+    """
+    Custom frame for the exercise selection
+    """
     def __init__(self, light = True):
-
-            super().__init__()
             """
-            Requires:
+            REQUIRES:
                 - light: a boolean indicating light or dark theme
-            Modifies:
-                - Initializes self attributes, customSelect, customButtons and labels
-            Effects:
+                
+            MODIFIES:
+                - self
+
+            EFFECTS:
                 - Initializes a custom frame for exercise selection.
             """
+            super().__init__()
 
             # initialize attributes
             self.selectedMusic = None 
@@ -39,7 +42,7 @@ class ExerciseFrame(QFrame):
             self.layout_selection.setContentsMargins(30, 30, 30, 30)
             self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Ignored) 
 
-            # exercise custom selection
+            # exercise selection
             label_selected_exercise = QLabel("Selected Exercise:")
             self.layout_selection.addWidget(label_selected_exercise)
             self.exercise_selector = QComboBox()
@@ -47,7 +50,7 @@ class ExerciseFrame(QFrame):
             self.exercise_selector.currentTextChanged.connect(self.selectExercise)
             self.layout_selection.addWidget(self.exercise_selector)
 
-            # music custom selection
+            # music selection
             self.label_selected_music = QLabel("Selected Music:")
             self.layout_selection.addWidget(self.label_selected_music)
             self.musicOptions = self._findMusicOptions()
@@ -104,8 +107,11 @@ class ExerciseFrame(QFrame):
 
     def _setBpm(self):
         """
-            Modifies:   self.bpm
-            Effects:    updates bpm value and label
+            MODIFIES:   
+                - self.bpm
+
+            EFFECTS:    
+                - updates bpm value and label
         """
         # update bpm value
         self.bpm = self.bpm_slider.value()
@@ -113,8 +119,11 @@ class ExerciseFrame(QFrame):
 
     def setBpm(self, bpm):
         """
-            Modifies:   self.bpm
-            Effects:    sets selected bpm
+            MODIFIES:   
+                - self.bpm
+
+            EFFECTS:    
+                - sets selected bpm
         """
         if bpm == False: return
         self.bpm = bpm
@@ -124,8 +133,12 @@ class ExerciseFrame(QFrame):
 
     def _findMusicOptions(self):
         """
-            Modifies:   self.MusicPaths, self.MusicNames
-            Effects:    load music paths and names from settings.json
+            MODIFIES:   
+                - self.MusicPaths
+                - self.MusicNames
+
+            EFFECTS:    
+                - load music paths and names from settings.json
         """
         try:
             with open('data/settings.json', 'r') as f:
@@ -141,9 +154,14 @@ class ExerciseFrame(QFrame):
 
     def selectMusic(self, text):
         """
-            Requires:   text: a string representing the selected music option
-            Modifies:   self.selectedMusic
-            Effects:    Sets the selected music path based on the chosen option.
+            REQUIRES:   
+                - text (str): the selected music option
+
+            MODIFIES:   
+                - self.selectedMusic
+
+            EFFECTS:    
+                - Sets the selected music path based on the chosen option.
         """
         number = None
         for i in range(len(self.MusicNames)):
@@ -159,8 +177,11 @@ class ExerciseFrame(QFrame):
 
     def selectExercise(self, text):
         """
-            Requires:   text: a string representing the selected exercise option from (Walk, March in place (Hight Knees), March in place (Butt Kicks), Swing, Double Step)
-            Effects:    Sets the selected exercise number based on the chosen option.
+            REQUIRES:   
+                - text (str): the selected exercise option from (Walk, March in place (Hight Knees), March in place (Butt Kicks), Swing, Double Step)
+           
+            EFFECTS:    
+                - Sets the selected exercise number based on the chosen option.
         """
         print(text)
         if text == "Walk": self.selectedExercise = 0 
@@ -171,8 +192,16 @@ class ExerciseFrame(QFrame):
 
     def _buttonClick(self, number):
         """"
-            Requires:   number must be a number from 0 to 2 that represents the modality selected
-                        button must be valid button
+            REQUIRES:   
+                - number (int): a number from 0 to 2 that represents the modality selected
+                - button (QPushButton)
+
+            MODIFIES:
+                - self
+
+            EFFECTS:
+                - Updates the selected music modality based on the provided number.
+                - Updates the button states and visibility of related UI elements accordingly.
         """
         self.noMusic_button.setChecked(False)
         self.music_button.setChecked(False)
@@ -201,25 +230,29 @@ class ExerciseFrame(QFrame):
 
     def getMusicModality(self):
         """
-            Effects:    Rerurns selected music modality
+        EFFECTS:    
+            - Rerurns selected music modality
         """
         return self.musicModality
     
     def getMusicPath(self):
         """
-            Effects:    Rerurns selected music path
+        EFFECTS:    
+            - Rerurns selected music path
         """
         return self.selectedMusic
     
     def getExerciseNumber(self):
         """
-            Effects:    Rerurns selected exercise number
+        EFFECTS:    
+            - Rerurns selected exercise number
         """
         return self.selectedExercise
     
     def getBpm(self):
         """
-            Effects:    Rerurns selected bpm
+        EFFECTS:    
+            - Rerurns selected bpm
         """
         return self.bpm
     
@@ -230,10 +263,13 @@ class ExerciseFrame(QFrame):
         # if is a re-rendering of the ExerciseFrame executes the paintEvent of the parent class and if the options is changed 
         # it sostitutes the music_selector 
         """
-        Modifies:   self.musicOptions:    Updates the list of music options if it has changed.
-                    self.music_selector:  Replaces the existing CustomSelect widget with a new one if music options have changed.
-        Effects:    If there's a change in music options, replaces the existing music selector widget with an updated one.
-                    Executes the paintEvent of the parent class.
+        MODIFIES:   
+            - self.musicOptions
+            - self.music_selector
+
+        EFFECTS:    
+            - If there's a change in music options, replaces the existing music selector widget with an updated one.
+            - Executes the paintEvent of the parent class.
         """
         if not self.firstRendering:
             tmp = self.musicOptions

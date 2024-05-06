@@ -1,13 +1,12 @@
 import threading
 import time
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal, QSize
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QSize
 from PyQt5.QtGui import QPixmap
 import os
 import sys
 from datetime import datetime
 import numpy as np
-import simpleaudio as sa    # simpleaudio has problems with the python threading GIL 
 import pygame
 
 sys.path.append("../")
@@ -15,26 +14,34 @@ sys.path.append("../")
 from mtw_run import MtwThread
 
 class RecordingFrame(QWidget):
-
+    """
+    This class represents the frame responsible for handling recording functionalities.
+    """
     thread_signal = pyqtSignal()
     thread_signal_start = pyqtSignal()
 
     def __init__(self, light = True, getMusicModality = None, getMusicPath = None, getExerciseNumber = None, getPatient = None, getBpm = None, setBpm = None, changeEnabledAll = None, shared_data = None, plotter_start = None, setSaved = None):#, mtw_run_finished = None):
         """
-        This class represents the frame responsible for handling recording functionalities.
 
         Requires:
-            - light: A boolean indicating the theme of the frame.
-            - getMusicModality: A function to retrieve the selected music modality.
-            - getMusicPath: A function to retrieve the path of the selected music.
-            - getExerciseNumber: A function to retrieve the selected exercise number.
-            - changeEnabledAll: A function to call when we would change the enabled state of external components.
+            - light (bool): indicating the theme light or dark. (default: True)
+            - getMusicModality (callable): A function to retrieve the selected music modality. (default: None)
+            - getMusicPath (callable): A function to retrieve the path of the selected music. (default: None)
+            - getExerciseNumber (callable): A function to retrieve the selected exercise number. (default: None)
+            - changeEnabledAll (callable): A function to call when we would change the enabled state of external components. (default: None)
+            - getPatient (callable): A function to retrieve the selected patient information (default: None)
+            - getBpm (callable): A function to retrieve the setted BPM  (default: None)
+            - setBpm (callable): A function to set the calculated BPM (default: None)
+            - changeEnabledAll (callable): A function to disable/enable all in analysis frame (default: None)
+            - shared_data (object): an instance of SharedData Object (default: None)
+            - plotter_start (callable): function to start the dynamic plotter (default: None)
+            - setSaved (callable): function to set the final static plot (default: None)
 
         Modifies:
             - self
 
         Effects:
-            - Manages recording functionalities such as starting, stopping, and saving recordings.
+            - Initialize the Frame
         """
         super().__init__()
 
@@ -47,7 +54,7 @@ class RecordingFrame(QWidget):
         self.shared_data = shared_data
         self.plotter_start = plotter_start
         self.setSaved = setSaved
-        self.exerciseTime = 45 #90
+        self.exerciseTime = 90 #90
         self.selectedMusic = None
         self.selectedExercise = None
         self.modality = None
@@ -96,7 +103,6 @@ class RecordingFrame(QWidget):
         self.buttons_layoutActions = QHBoxLayout(self.buttons_actions_frame)
 
         # Buttons
-
         self.buttons_layoutActions.addStretch()
 
         # create custom recording buttons
@@ -120,9 +126,7 @@ class RecordingFrame(QWidget):
         self.buttons_layoutActions.addWidget(self.stop_button)
         self.stop_button.clicked.connect(self.stopExecution)
 
-
         self.buttons_layoutActions.addStretch()
-
 
         # Create timer label
         self.time_label = QLabel("00:00:00")
@@ -139,14 +143,24 @@ class RecordingFrame(QWidget):
         self.disablePlayButton()
 
     def closeEvent(self, event):
-        print("bye bye")
+        """
+        MODIFIES:
+            - self
+
+        EFFECTS:
+            - on close event, if the recording thread is running, stops the recording safely 
+        """
         if self.record_thread is not None and self.record_thread.is_alive():
             self.record_thread.interrupt_recording(lambda: self.setSaved(None))
 
     def enablePlayButton(self):
         """
-            Modifies:   self.playAbilited
-            Effects:    Enables the play button.
+        MODIFIES:   
+            - self.playAbilited
+            - self
+
+        EFFECTS:    
+            - Enables the play button.
         """
         if not self.playAbilited:
             self.playAbilited = True
@@ -158,8 +172,12 @@ class RecordingFrame(QWidget):
 
     def disablePlayButton(self):
         """
-            Modifies:   self.playAbilited
-            Effects:    Disables the play button.
+        MODIFIES:   
+            - self.playAbilited
+            - self
+
+        EFFECTS:    
+            - Disables the play button.
         """
         if self.playAbilited:
             self.playAbilited = False
@@ -171,9 +189,12 @@ class RecordingFrame(QWidget):
 
     def timeUpdater(self):
         """
-            Modifies:   self.time_label
-                        self.startTime
-            Effects:    Updates the timer label during the recording.
+        MODIFIES:   
+            - self.time_label
+            - self.startTime
+
+        EFFECTS:    
+            - Updates the timer label during the recording.
         """
         if self.execution:
             current_time = time.time() - self.startTime
@@ -203,12 +224,15 @@ class RecordingFrame(QWidget):
 
     def startExecution(self):
         """
-            Modifies:   self.execution
-                        self.startTime
-                        self.play_button
-                        self.stop_button
-                        self.save_button
-            Effects:    Starts the recording.
+        MODIFIES:   
+            - self.execution
+            - self.startTime
+            - self.play_button
+            - self.stop_button
+            - self.save_button
+
+        EFFECTS:    
+            - Starts the recording thread
         """
         # get mtwRecord params
         self.modality = self.getMusicModality()
@@ -244,11 +268,18 @@ class RecordingFrame(QWidget):
 
     def check_mtw_run_status(self):
         """
-            Modifies:   self.execution
-                        self.startTime
-                        self
-            Effects:    Checks the status of the mtw_run thread.
-                        if is not alive executes saveRecording
+        MODIFIES:   
+            - self.execution
+            - self.startTime
+            - self.signals
+            - self.Fs
+            - self.bpm
+            - self
+
+        EFFECTS:    
+            - Checks the execution status of the MtwThread.
+            - if is not alive and there's not errors sets the results and executes saveRecording
+            - if there's errors show QMessageBox to retry
         """
         if not self.record_thread.is_alive():
             print("closed thread")
@@ -268,7 +299,7 @@ class RecordingFrame(QWidget):
                     self.setSaved(None)
                     
                     error_msg = QMessageBox()
-                    error_msg.setIcon(QMessageBox.Warning)  # Icona di avviso
+                    error_msg.setIcon(QMessageBox.Warning)
                     error_msg.setWindowTitle("Error")
                     msg = (str(result)).replace("Aborting.", "") if "Aborting." in str(result) else str(result)
                     error_msg.setText(msg + " Do you want to try again?")
@@ -278,6 +309,9 @@ class RecordingFrame(QWidget):
                     if response == QMessageBox.Yes:
                         self.startExecution()
                 else:
+                    # beepPath = "../sonicwalk/audio_samples/beep.wav"
+                    # beep = pygame.mixer.Sound(beepPath)
+                    # beep.play()
                     self.signals, self.Fs, self.bpm = result
                     if self.setBpm and self.bpm != False:
                         print("bpm: " + str(self.bpm))
@@ -290,22 +324,28 @@ class RecordingFrame(QWidget):
                 self.setSaved(None) # clean plotter
 
     def emit_startSignal(self):
+        """
+        EFFECTS: 
+            - emit a start pyqt5 threading signal
+        """
         self.thread_signal_start.emit()
 
 
     def setStart(self):
         """
-            Modifies:   self.startTime
-                        self.execution
-            Effects:    Sets the start time of the recording.
-                        It closes the connection message.
-                        If music modality is setted on Music it starts to play the music in a different thread.
+        MODIFIES:   
+            - self.startTime
+            - self.execution
+
+        EFFECTS:
+            - Sets the start time of the recording.
+            - It closes the connection message.
+            - If music modality is setted on Music it starts to play the music in a different thread.
         """
 
         self.startTime = time.time()
         self.execution = True
-
-        print("msg closing..")
+        # print("msg closing..")
         self.connection_msg.reject()
 
         self.plotter_start()
@@ -338,6 +378,10 @@ class RecordingFrame(QWidget):
                 self.thread_signal.emit()
 
     def stop_by_musicError(self):
+        """
+        EFFECTS:
+            - it shows a message indicating the error to load music samples
+        """
         self.stopExecution()
         sample_error_msg = QMessageBox()
         sample_error_msg.setIcon(QMessageBox.Critical)
@@ -347,6 +391,13 @@ class RecordingFrame(QWidget):
         sample_error_msg.exec_()
 
     def _play_music(self):
+        """
+        MODIFIES:
+            - self.playingMusic 
+
+        EFFECTS:
+            - it plays samples with setted bpm
+        """
         bpm = self.getBpm()
         beats_per_second = bpm / 60.0
         beat_duration = 1.0 / beats_per_second
@@ -362,28 +413,34 @@ class RecordingFrame(QWidget):
 
     def stopExecution(self):
         """
-            Modifies:   self.execution
-                        self.startTime
-            Effects:    Stops the recording.
+        MODIFIES:   
+            - self.execution
+            - self.startTime
+            - self.playingMusic
+
+        EFFECTS:    
+            - Stops the recording safely.
+            - enable all buttons in Analysis page
         """
         if self.execution:
-            # per implementarla bisogna rivedere la logica del codice di sonicwalk
             self.check_mtw_run_timer.stop()
             self.execution = False
             self.startTime = None
             self.playingMusic = False
             self.changeEnabledAll()
-            ## interruzione della registrazione (sicura), deve rimettere i sensori nella modalità corretta
-            self.record_thread.interrupt_recording(lambda: self.setSaved(None))
+            self.record_thread.interrupt_recording(lambda: self.setSaved(None)) # safety stop recording
 
     
     def saveRecording(self):
         """
-        Modifies:   Creates and saves a numpy file with the recording data (signal and Fs) in the folder of specified patient.
+        MODIFIES:   
+            - Creates and saves a numpy file with the recording data (signal and Fs) in the folder of specified patient.
 
-        Effects:    Prompts the user to confirm before saving the recording.
-                    Saves the recording data in a numpy file with a unique filename in the patient folder.
-                    Displays a success message upon successful saving.
+        EFFECTS:    
+            - Prompts the user to confirm before saving the recording.
+            - Show a dialog to choose the session number on current date and optional exercise comment
+            - Saves the recording data in a npy file with a unique filename in the session folder (in the selected patient folder).
+            - Displays a success message upon successful saving.
         """
 
         # Prompts the user to confirm before saving the recording
@@ -471,7 +528,7 @@ class RecordingFrame(QWidget):
                 today_date = datetime.today().strftime('%Y-%m-%d')
                 parent_dir = os.path.dirname(os.path.abspath(__file__))
                 directory_path = os.path.join(parent_dir.replace("frames",""), f"data/archive/{patient_id}")
-                os.makedirs(directory_path, exist_ok=True)  # Crea la directory se non esiste
+                os.makedirs(directory_path, exist_ok=True)  # create directory if it doesn't exist
                 session_number_str = str(session_number).zfill(2)
                 session_dir = os.path.join(directory_path, f"{today_date}_session_{session_number_str}")
                 os.makedirs(session_dir, exist_ok=True)
@@ -509,9 +566,3 @@ class RecordingFrame(QWidget):
                 error_msg.exec_()
 
         else: self.setSaved(None)
-
-
-
-
-
-        

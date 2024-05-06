@@ -5,23 +5,21 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt
 sys.path.append("../")
 
-class NameDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Choose a Name")
-        
-        self.nameLineEdit = QLineEdit()
-        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-        
-        layout = QVBoxLayout()
-        layout.addWidget(self.nameLineEdit)
-        layout.addWidget(self.buttonBox)
-        self.setLayout(layout)
-
 class MusicFolders(QWidget):
+    """
+    Widget for visualization, selection and deleting of music folders.
+    """
     def __init__(self, icons_manager=None):
+        """
+        REQUIRES:
+            - icons_manager (IconsManager): instance of IconsManager
+
+        MODIFIES: 
+            - self
+
+        EFFECTS:
+            - initialize the widget
+        """
         super().__init__()
 
         self.icons_manager = icons_manager
@@ -82,6 +80,13 @@ class MusicFolders(QWidget):
 
 
     def populateMusicFrame(self):
+        """
+        MODIFIES:
+            - self
+        
+        EFFECTS:
+            - populates the table of music folders
+        """
         self.tableWidget.setRowCount(0)  # Clear existing rows
         if not self.MusicNames and not self.MusicPaths:
             noMusicLabel = QLabel("No Music Folders Found")
@@ -127,6 +132,13 @@ class MusicFolders(QWidget):
             if self.firstTime: self.firstTime = False
 
     def openFolder(self, path):
+        """
+        REQUIRES: 
+            - path (str): valid path of the folder to open
+
+        EFFECTS: 
+            - by the os opens the selected folder
+        """
         path = os.path.join(os.getcwd(), path)
         print("Opening folder:", path)
         try:
@@ -145,6 +157,13 @@ class MusicFolders(QWidget):
             print(f"Error Opening Folder: {e}")
 
     def get_music_info(self, folder_path):
+        """
+        REQUIRES:
+            - folder_path (str): valid folder path
+        
+        EFFECTS:
+            - returns number of music samples files and the extensions of files
+        """
         total_samples = 0
         file_format = ""
 
@@ -169,6 +188,19 @@ class MusicFolders(QWidget):
 
 
     def deleteMusicFolder(self, name, path):
+        """
+        REQUIRES:
+            - name (str): a name of the folder to delete
+            - path (str): valid folder path
+
+        MODIFIES:
+            - self
+
+        EFFECTS:
+            - QMessageBox to deleting the selected music folder
+            - deletes the music folder
+            - updates the table
+        """
         confirmation = QMessageBox()
         confirmation.setIcon(QMessageBox.Warning)
         confirmation.setText(f'Are you sure you want to remove "{name}" folder?')
@@ -208,6 +240,14 @@ class MusicFolders(QWidget):
                 print("Error: settings.json file not found.")
 
     def loadMusicFolders(self):
+        """
+        MODIFIES:
+            - self.MusicPaths
+            - self.MusicNames
+
+        EFFECTS:
+            - loads the music folders names and paths from settings.json
+        """
         try:
             with open(self.settingsPath, 'r') as f:
                 settings = json.load(f)
@@ -219,7 +259,17 @@ class MusicFolders(QWidget):
             print("Error: settings.json file not found.")
 
     def addMusic(self):
-        music_folder = QFileDialog.getExistingDirectory(self, "Seleziona cartella musica")
+        """
+        MODIFIES: 
+            - self
+            - settings.json
+
+        EFFECTS:
+            - Opens a dialog for the user to select a music folder path.
+            - Allows the user to specify a name for the music folder.
+            - Updates the table with the selected music folder information.
+        """
+        music_folder = QFileDialog.getExistingDirectory(self, "Select Music Folder")
 
         if music_folder:
             name_dialog = NameDialog(self)
@@ -240,3 +290,21 @@ class MusicFolders(QWidget):
                     self.MusicPaths.append(music_folder)
                     self.MusicNames.append(music_name)
                     self.populateMusicFrame()
+
+class NameDialog(QDialog):
+    """
+    Dialog to choose a name for the selected music path
+    """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Choose a Name")
+        
+        self.nameLineEdit = QLineEdit()
+        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+        
+        layout = QVBoxLayout()
+        layout.addWidget(self.nameLineEdit)
+        layout.addWidget(self.buttonBox)
+        self.setLayout(layout)

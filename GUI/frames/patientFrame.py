@@ -1,5 +1,4 @@
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt
 import sys
 
 sys.path.append("../")
@@ -9,16 +8,21 @@ from windows.patientSelector import PatientSelector
 from windows.patientAdder import PatientAdder
 
 class PatientFrame(QFrame):
+    """
+    Custom frame for patient visualization, selection and adding.
+    """
     def __init__(self, light = True, enablePlayButton = None, disablePlayButton = None):
         """
-        Requires:
-            - light: a boolean indicating light or dark theme
-            - enablePlayButton: a callback function that will be called to enable play button
-            - disablePlayButton: a callback function that will be called to disable play button
-        Modifies:
-            - Initializes self attributes, table, and select patient button
-        Effects:
-            - Initializes a custom frame for patient selection.
+        REQUIRES:
+            - light (bool): a boolean indicating light or dark theme
+            - enablePlayButton (callable): a callback function that will be called to enable play button
+            - disablePlayButton (callable): a callback function that will be called to disable play button
+
+        MODIFIES:
+            - self
+
+        EFFECTS:
+            - Initializes a custom frame for patient.
         """
         super().__init__()
 
@@ -42,7 +46,6 @@ class PatientFrame(QFrame):
         layout_patient.setSpacing(20)
 
         # buttons box
-        
         button_box = QWidget()
         button_box_layout = QHBoxLayout(button_box)
         layout_patient.addWidget(button_box)
@@ -59,19 +62,30 @@ class PatientFrame(QFrame):
         self.addPatientButton.clicked.connect(self.addPatient)
 
     def addPatient(self):
+        """
+        MODIFIES:   
+            - self.table
+
+        EFFECTS:    
+            - Opens the modal window for adding new patient.
+            - Populates the patient table when a patient is selected.
+            - It is enabled the play button (for recording)
+        """
         patient_adder = PatientAdder()
         self.data = patient_adder.getSelectedPatientInfo()
         if self.data[2][1] != "" and self.data[2][1] is not None:   # id not void -- > patient added
             if self.reload_archive_patient_list is not None: self.reload_archive_patient_list()
         self.updateInfo()
 
-
     def selectPatient(self):
         """
-        Modifies:   self.table
-        Effects:    Opens the modal window for patient selection.
-                    Populates the patient table when a patient is selected.
-                    It is called enablePlayButton
+        MODIFIES:   
+            - self.table
+
+        EFFECTS:    
+            - Opens the modal window for patient selection.
+            - Populates the patient table when a patient is selected.
+            - It is enabled the play button (for recording)
         """
         # every time it creates a new patient selector instance, we can improve it creating the instance one time 
         # and call them whenever we need
@@ -82,12 +96,18 @@ class PatientFrame(QFrame):
         self.updateInfo()
 
     def updateInfo(self):
+        """
+        MODIFIES:
+            - self
+
+        EFFECTS:
+            - Populates the patient table
+            - It is enabled the play button (for recording)
+        """
         # update table
         self.table.setTableData(self.data)
-
         # enable play button
         self.enablePlayButton()
-
         # if data is empty, disable play button
         dataEmpty = True
         for _, dat in self.data:
@@ -98,6 +118,7 @@ class PatientFrame(QFrame):
 
     def getPatient(self):
         """
-            Effects:    Rerurns selected patient Data
+        EFFECTS:    
+            - Rerurns selected patient Data
         """
         return self.data

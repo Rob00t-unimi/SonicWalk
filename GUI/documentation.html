@@ -1,12 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SonicWalk</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SonicWalk</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .navbar {
+            background-color: #333;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            top: 0;
+        }
+
+        .navbar a {
+            float: left;
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 20px;
+            text-decoration: none;
+        }
+
+        .navbar a:hover {
+            background-color: #ddd;
+            color: black;
+        }
+
+        .navbar a.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        #pdfContainer {
+            height: 83vh;
+        }
+
+        #home, #guide, #analysis, #credits {
+            padding-top: 8vh;
+            padding-left: 2vh;
+        }
+
+        #home {
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
 
-<h1>SonicWalk</h1>
+<div class="navbar">
+  <a class="active" href="#home">Home</a>
+  <a href="#guide">Guide to using the app</a>
+  <a href="#analysis">Analysis Documentation</a>
+  <a href="#credits">Credits</a>
+</div>
+
+<h1 id="home">SonicWalk</h1>
+
+<h2 id="guide">Guide to using the app</h2>
+<!-- Contenuto della guida all'utilizzo dell'app -->
+
+<h2 id="analysis">Analysis Documentation</h2>
+<div id="pdfContainer"></div>
+
+<h2 id="credits">Credits</h2>
+<!-- Contenuto dei credits dell'applicazione -->
+
+<script>
+    var pdf_path = "../report/Step_detection_and_sonification_from_gyroscope_sensor_data.pdf";
+
+    var iframe = document.createElement('iframe');
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.src = pdf_path;
+
+    document.getElementById('pdfContainer').appendChild(iframe);
+</script>
 
 </body>
+</html>

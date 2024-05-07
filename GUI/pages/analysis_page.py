@@ -3,9 +3,9 @@ from PyQt5.QtCore import pyqtSignal
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import numpy as np
-from frames.patientFrame import PatientFrame
-from frames.exerciseFrame import ExerciseFrame
-from frames.recordingFrame import RecordingFrame
+from GUI.frames.patientFrame import PatientFrame
+from GUI.frames.exerciseFrame import ExerciseFrame
+from GUI.frames.recordingFrame import RecordingFrame
 import sys
 import os
 sys.path.append("../")

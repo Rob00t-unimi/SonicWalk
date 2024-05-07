@@ -59,10 +59,17 @@ import multiprocessing as mp
 import numpy as np
 # import simpleaudio as sa
 from multiprocessing.sharedctypes import RawValue, RawArray
-from sharedVariables import SharedCircularIndex
+from threading import Lock
+# # for py installer only: 
+# from sonicwalk.plotter import Plotter
+# from sonicwalk.analyzer import Analyzer
+# from sonicwalk.sharedVariables import SharedCircularIndex
+# from sonicwalk.sharedVariables import LegDetected
+# from sonicwalk.sharedVariables import ProcessWaiting
+# from sonicwalk.sharedVariables import SharedData
 from plotter import Plotter
 from analyzer import Analyzer
-from threading import Lock
+from sharedVariables import SharedCircularIndex
 from sharedVariables import LegDetected
 from sharedVariables import ProcessWaiting
 from sharedVariables import SharedData

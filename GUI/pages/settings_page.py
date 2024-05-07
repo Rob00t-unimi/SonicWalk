@@ -1,7 +1,7 @@
 import os
 import shutil
 from PyQt5.QtWidgets import *
-from frames.musicFoldersFrame import MusicFolders
+from GUI.frames.musicFoldersFrame import MusicFolders
 from qt_material import list_themes
 
 
@@ -28,6 +28,10 @@ class SettingsPage(QWidget):
         folder_name = os.path.basename(os.getcwd())
         self.settings_path = 'data/settings.json' if folder_name == "GUI" else 'GUI/data/settings.json'
         self.dataset_path = 'data/dataset.json' if folder_name == "GUI" else 'GUI/data/dataset.json'
+
+        # for py installer only:
+        # self.settings_path = '_internal/data/settings.json'
+        # self.dataset_path = '_internal/data/dataset.json'
 
         self.apply_theme = apply_theme
         self.current_theme = current_theme
@@ -119,6 +123,8 @@ class SettingsPage(QWidget):
         right_layout.addStretch()
 
         self.folder_path = os.path.join(os.getcwd(), "data") if folder_name == "GUI" else os.path.join(os.getcwd(), "GUI/data")
+        # for py installer only:
+        # self.folder_path = os.path.join(os.getcwd(), "_internal","data")
 
     def select_style(self, theme):
         """

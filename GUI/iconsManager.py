@@ -21,6 +21,10 @@ class IconsManager:
         self.blackpath = "icons/black/" if folder_name == "GUI" else "GUI/icons/black/"
         self.whitepath = "icons/white/" if folder_name == "GUI" else "GUI/icons/white/"
 
+        # # for py installer only: 
+        # self.blackpath = '_internal/icons/black/'
+        # self.whitepath = '_internal/icons/white/'
+
         self.trash_name = "trash.svg"
         self.link_name = "external-link.svg"
         self.minus_cirle_name = "minus-circle.svg"
@@ -38,6 +42,10 @@ class IconsManager:
         self.stop_name = "square.svg"
 
         self.stop_link = "icons/"+ self.stop_name if folder_name == "GUI" else "GUI/icons/" + self.stop_name
+        # for py installer only:
+        # self.stop_link = "_internal/icons/" + self.stop_name
+
+
         # self.set_black()
 
     def switch_icons_color(self):

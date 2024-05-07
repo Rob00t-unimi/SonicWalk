@@ -1,13 +1,14 @@
 import json
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-from frames.sideMenu import SideMenu
-from pages.analysis_page import AnalysisPage
-from pages.archive_page import ArchivePage
-from pages.settings_page import SettingsPage
-from pages.statistics_page import StatisticsPage
-from iconsManager import IconsManager
 import sys
+# sys.path.append("GUI")
+from GUI.frames.sideMenu import SideMenu
+from GUI.pages.analysis_page import AnalysisPage
+from GUI.pages.archive_page import ArchivePage
+from GUI.pages.settings_page import SettingsPage
+from GUI.pages.statistics_page import StatisticsPage
+from GUI.iconsManager import IconsManager
 import os
 from qt_material import apply_stylesheet, list_themes
 
@@ -18,7 +19,7 @@ class MainWindow(QMainWindow):
     Main window of a PyQt5 hospital application that manages the analysis, recording, and visualization of rehabilitative exercises using MTW Awinda sensors.
     It handles a dataset of patients with their respective exercise recordings.
     """
-    def __init__(self):
+    def __init__(self, app):
         """
         MODIFIES: 
             - self
@@ -28,12 +29,18 @@ class MainWindow(QMainWindow):
         """
         super().__init__()
 
+        self.app = app
+
         self.setWindowTitle("Sonic-Walk")
         self.resize(1100, 720)
 
         self.folder_name = os.path.basename(os.getcwd())
         self.settings_path = 'data/settings.json' if self.folder_name == "GUI" else 'GUI/data/settings.json'
         self.dataset_path = 'data/dataset.json' if self.folder_name == "GUI" else 'GUI/data/dataset.json'
+
+        # for py installer only:
+        # self.settings_path = '_internal/data/settings.json'
+        # self.dataset_path = '_internal/data/dataset.json'
 
         # Load theme from the JSON file
         try:
@@ -82,10 +89,12 @@ class MainWindow(QMainWindow):
             'density_scale': '0',
         }
         css_path = "custom_css.css" if self.folder_name == "GUI" else "GUI/custom_css.css"
-        if theme is None: apply_stylesheet(app, theme=self.theme_name, extra=extra, invert_secondary=self.light, css_file = css_path)
+        # for py installer only:
+        # css_path = "_internal/custom_css.css"
+        if theme is None: apply_stylesheet(self.app, theme=self.theme_name, extra=extra, invert_secondary=self.light, css_file = css_path)
         else: 
             self.light = True if "dark_" not in theme else False
-            apply_stylesheet(app, theme=theme, extra=extra, invert_secondary=self.light, css_file = css_path)
+            apply_stylesheet(self.app, theme=theme, extra=extra, invert_secondary=self.light, css_file = css_path)
 
         if write_theme and theme is not None:
             self.theme_name = theme
@@ -288,8 +297,11 @@ class MainWindow(QMainWindow):
         super().closeEvent(event)
         
 
-if __name__ == "__main__":
+def run_main():
     app = QApplication(sys.argv)
-    window = MainWindow()
+    window = MainWindow(app)
     window.show()
     sys.exit(app.exec_())
+
+# if __name__ == "__main__":
+#     run_main()

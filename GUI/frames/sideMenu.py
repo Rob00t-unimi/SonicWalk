@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import *
 import webbrowser
-import sys
-from components.menuButton import MenuButton
+import os
+from GUI.components.menuButton import MenuButton
 
 class SideMenu(QFrame):
     """
@@ -22,7 +22,7 @@ class SideMenu(QFrame):
         """
         super().__init__()
 
-        # folder_name = os.path.basename(os.getcwd())
+        self.folder_name = os.path.basename(os.getcwd())
         # self.settings_path = 'data/settings.json' if folder_name == "GUI" else 'GUI/data/settings.json'
         # self.dataset_path = 'data/dataset.json' if folder_name == "GUI" else 'GUI/data/dataset.json'
         
@@ -209,8 +209,11 @@ class SideMenu(QFrame):
         Effects:    
             - Opens the HTML documentation in a web browser
         """
+        doc_path = 'documentation.html' if self.folder_name == "GUI" else "GUI/documentation.html"
+        # for py installer only:
+        # doc_path = "_internal/documentation.html"
         try:
-            webbrowser.open('documentation.html')
+            webbrowser.open(os.path.join(os.getcwd(), doc_path))
         except Exception as e:
             print("Error opening documentation file:", e)
 

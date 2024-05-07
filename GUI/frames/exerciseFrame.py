@@ -25,6 +25,10 @@ class ExerciseFrame(QFrame):
             self.settings_path = 'data/settings.json' if folder_name == "GUI" else 'GUI/data/settings.json'
             self.dataset_path = 'data/dataset.json' if folder_name == "GUI" else 'GUI/data/dataset.json'
 
+            # for py installer only:
+            # self.settings_path = '_internal/data/settings.json'
+            # self.dataset_path = '_internal/data/dataset.json'
+
             # initialize attributes
             self.selectedMusic = None 
             self.MusicPaths = None

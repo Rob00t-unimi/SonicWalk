@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import *
-from components.patientTable import PatientTable
-from windows.patientSelector import PatientSelector
-from windows.patientAdder import PatientAdder
+from GUI.components.patientTable import PatientTable
+from GUI.windows.patientSelector import PatientSelector
+from GUI.windows.patientAdder import PatientAdder
 
 class PatientFrame(QFrame):
     """

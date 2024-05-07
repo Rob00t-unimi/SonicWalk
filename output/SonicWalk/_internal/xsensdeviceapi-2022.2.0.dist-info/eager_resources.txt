@@ -1,0 +1,10 @@
+_xsensdeviceapi_py39_64.pyd
+xsensdeviceapi_py39_64.py
+xsensdeviceapi64.dll
+xstypes64.dll
+xkf3i_filter64.dll
+xkf3hm_filter64.dll
+xkf700_filter64.dll
+xkfcore_filter64.dll
+libiomp5md.dll
+license.txt

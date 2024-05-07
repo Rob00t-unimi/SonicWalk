@@ -1,0 +1,17 @@
+Metadata-Version: 2.1
+Name: xsensdeviceapi
+Version: 2022.2.0
+Summary: Xsens Device API
+Home-page: www.xsens.com
+Author: Xsens
+Author-email: support@xsens.com
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Programming Language :: Python :: 3.9
+Requires-Python: >=3.9,<3.10
+Requires-Dist: numpy (>=1.11.1)
+
+UNKNOWN
+
+

@@ -8,7 +8,7 @@ import matplotlib.pyplot  as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import numpy as np
-from windows.patientModifier import PatientModifier
+from GUI.windows.patientModifier import PatientModifier
 
 class ArchivePage(QWidget):
     """
@@ -31,6 +31,10 @@ class ArchivePage(QWidget):
         self.folder_name = os.path.basename(os.getcwd())
         self.settings_path = 'data/settings.json' if self.folder_name == "GUI" else 'GUI/data/settings.json'
         self.dataset_path = 'data/dataset.json' if self.folder_name == "GUI" else 'GUI/data/dataset.json'
+
+        # for py installer only:
+        # self.settings_path = '_internal/data/settings.json'
+        # self.dataset_path = '_internal/data/dataset.json'
 
         self.light = light
         self.icons_manager = icons_manager
@@ -539,6 +543,8 @@ class ArchivePage(QWidget):
                 break
 
         patient_folder = os.path.join(os.getcwd(), "data", "archive", patient_id.upper()) if self.folder_name == "GUI" else os.path.join(os.getcwd(), "GUI", "data", "archive", patient_id.upper())
+        # for py installer only:
+        # patient_folder = os.path.join(os.getcwd(), "_internal", "data", "archive", patient_id.upper())
         try:
             shutil.rmtree(patient_folder)
             self.reset_patient_tables()
@@ -827,6 +833,8 @@ class ArchivePage(QWidget):
         patient_id = (patient['ID']).upper()
         self.current_patient_id = patient_id
         self.folder_path = os.path.join(os.getcwd(), "data", "archive", patient_id) if self.folder_name == "GUI" else os.path.join(os.getcwd(), "GUI", "data", "archive", patient_id)
+        # for py installer only:
+        # self.folder_path = os.path.join(os.getcwd(), "_internal", "data", "archive", patient_id)
         if os.path.exists(self.folder_path):
             self.folder_model.setRootPath(self.folder_path) 
             self.listView_folders.setModel(self.folder_model)

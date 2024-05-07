@@ -7,7 +7,7 @@ import os
 from datetime import datetime
 import numpy as np
 import pygame
-from mtw_run import MtwThread
+from GUI.mtw_run import MtwThread
 import sys
 sys.path.append("../sonicwalk/")
 sys.path.append("sonicwalk")
@@ -350,6 +350,8 @@ class RecordingFrame(QWidget):
 
         self.plotter_start()
         beepPath = "../sonicwalk/audio_samples/beep.wav" if os.path.basename(os.getcwd()) == "GUI" else "sonicwalk/audio_samples/beep.wav"
+        # for py installer only: 
+        # beepPath = os.getcwd()+"/_internal/audio_samples/beep.wav"
         beep = pygame.mixer.Sound(beepPath)
         beep.play()
 

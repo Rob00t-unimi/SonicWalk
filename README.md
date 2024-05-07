@@ -144,8 +144,7 @@ pip install wheels/xsensdeviceapi-2022.0.0-cp39-none-linux_x86_64.whl
 ### Run by code
 Install the Complete GUI application Dependencies, then run:
 ```
-cd GUI
-python main.py
+python SonicWalk.py
 ```
 ### Run by Exe (Windows)
 

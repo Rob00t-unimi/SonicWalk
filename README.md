@@ -31,6 +31,7 @@ Gabriele Esposito's Contribution:
 - Created a gyroscope-based step detector capable of detecting steps during various walking speeds.
 - Integrated sound reproduction for signaling step occurrences using simpleaudio library.
 - Assisted in the porting process to ensure cross-platform compatibility.
+- https://github.com/xyzxyzxyzxy/SonicWalk
 
 
 ### A simple python interface based on the Xsens Device API to communicate with MTw Awinda motion trackers. 
@@ -54,7 +55,7 @@ duration = 90
 samplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2"
 
 with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
-        data = mtw.mtwRecord(duration, plot=True, analyze=True, exType = 0, setStart=None, CalculateBpm=False, shared_data=None)
+        data = mtw.mtwRecord(duration, plot=True, analyze=True, exType = 0, setStart=None, calculateBpm=False, shared_data=None)
 
 data0 = data[0][0]
 data1 = data[0][1]
@@ -97,24 +98,53 @@ The Recorded data returned by the `mtwRecord` function includes several componen
 - The 'interesting points' related to the two signals are stored in `data[2][0]` and `data[2][1]`, which are tuples of Numpy.arrays. These arrays contain the approximate indices of the two signals at which points of interest were detected.
 - `data[3]` contains the average beats per minute (bpm) value if the calculation was requested and the relevant data was acquired. Otherwise, it will be `None`.
 
-
-### Installation
+### Requires and dependencies installation
 Python version 3.9 is required, (it is recommended to create a conda virtual environment using the python version 3.9)\
 Installing the *xsensdeviceapi* dependency:
+
+Windows:
 
 ```
 pip install wheels/xsensdeviceapi-2022.2.0-cp39-none-win_amd64.whl
 ```
-Installing the package:
+Linux:
 ```
-pip install dist/sonicwalk-1.0.0.dev1-py3-none-any.whl
+pip install wheels/xsensdeviceapi-2022.0.0-cp39-none-linux_x86_64.whl
 ```
+#### Installation of Interface Dependencies Only
+- matplotlib
+- pygame
+- scipy
 
-### Usage
-You can find a usage example in the examples directory
-```python
-from sonicwalk import mtw
+    Installing the sonicwalk package:
+    ```
+    pip install dist/sonicwalk-1.0.0.dev1-py3-none-any.whl
+    ```
+    ```
+    pip install matplotlib pygame scipy
+    ```
+    ```python
+    from sonicwalk import mtw
 
-```
+    ```
+#### Installation of Complete GUI application Dependencies
+- matplotlib
+- pygame
+- scipy
+- PyQt5
+- qt_material
+
+    ```
+    pip install PyQt5 matplotlib pygame qt_material scipy
+    ```
+
 
 ## The GUI SonicWalk Application
+### Run by code
+Install the Complete GUI application Dependencies, then run:
+```
+cd GUI
+python main.py
+```
+### Run by Exe (Windows)
+

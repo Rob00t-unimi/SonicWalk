@@ -11,16 +11,16 @@ import multiprocessing as mp
 
 if __name__ == "__main__":
 
-    duration = 60
-    samplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2"
-
     plotPoints = True
 
+    duration = 90
+    samplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2"
+
     with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
-        data = mtw.mtwRecord(duration, plot=True, analyze=True, exType = 0, calculateBpm=False)
+        data = mtw.mtwRecord(duration, plot=True, analyze=True, exType = 0, setStart=None, CalculateBpm=False, shared_data=None)
             # 0 --> walking
-            # 1 --> Walking in place (High Knees, Butt Kicks)3
-            # 2 --> Walking in place (High Knees con sensori sulle cosce)
+            # 1 --> Walking in place (High Knees marching, backward step marching)3
+            # 2 --> Walking in place (High Knees with sensors on the thighs)
             # 3 --> Swing
             # 4 --> Double step
 
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     interestingPoints0 = data[2][0]
     interestingPoints1 = data[2][1]
 
-    bpmValue = data[3]
+    bpmValue = data[3]  # if calculateBpm==False will be None
     print(str(bpmValue))
 
     print("total size of buffers: 0: {:d} 1: {:d}".format(data0.size * data0.itemsize, data1.size * data1.itemsize))

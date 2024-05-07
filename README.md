@@ -1,5 +1,38 @@
 # SonicWalk
 
+SonicWalk is an innovative healthcare application designed to simplify and engage patients during rehabilitative exercises using real-time sonification. Developed in **Python** and **PyQT5** to ensure cross-platform compatibility, the application allows medical staff to manage patient records, monitor exercise sessions, and visualize results. It utilizes **Movella MTw Awinda** motion trackers and their respective APIs to gather necessary data.
+
+### Features
+- **Real-time Sonification**: SonicWalk employs sonification techniques to provide auditory feedback during rehabilitative exercises, enhancing patient engagement, motivation, and ultimately, improving results.
+
+- **Cross-Platform Compatibility**: Built with Python and PyQT5, SonicWalk ensures compatibility across different operating systems (*Windows*, *Linux*), maximizing accessibility and usability.
+
+- **Patient Management**: Medical personnel can easily manage patients' information and exercise records through SonicWalk's intuitive interface, streamlining administrative tasks and optimizing patient care.
+
+- **Exercise Monitoring**: The application facilitates real-time monitoring of exercise sessions by healthcare providers, empowering proactive intervention and personalized guidance for patients throughout their rehabilitation journey.
+
+<!-- - **Data Visualization**: SonicWalk visualizes exercise data, enabling medical staff to analyze trends, identify areas for improvement, and personalize treatment plans. -->
+
+### About the Project
+SonicWalk originated as part of a final internship project for a bachelor's degree in computer science. The project involved the implementation of real-time signal analysis and processing methods to detect points of interest during exercises, as well as the complete development of the graphical user interface and data management logic.
+
+### Contributions
+Roberto Tallarini's Contribution:
+- Expanded the original Gabriele's interface to include additional rehabilitative exercises, such as high-knee marching, backward step marching, swing, and double step.
+- Implemented real-time signals analysis methods for each exercise, including automatic leg detection and audio feedback using the Pygame library (which provides stability and is less susceptible to interference from threads or drivers compared to Simpleaudio).
+- Implemented a bpm estimator to calculate the medium bpm of the patient.
+- Ideated, Designed and developed a comprehensive graphical user interface for managing patients informations, records, exercise sessions, and music libraries.
+- Conducted the porting of the original code to Windows and integrated it with the graphical user interface.
+- Envisioned, designed, and implemented the entire user interface and data management system.
+
+Gabriele Esposito's Contribution:
+- Developed a Python interface based on the Xsens Device API to communicate with MTw Awinda motion trackers.
+- Implemented data recording and real-time plotting of motion tracking data.
+- Created a gyroscope-based step detector capable of detecting steps during various walking speeds.
+- Integrated sound reproduction for signaling step occurrences using simpleaudio library.
+- Assisted in the porting process to ensure cross-platform compatibility.
+
+
 ### A simple python interface based on the Xsens Device API to communicate with MTw Awinda motion trackers. 
 
 Data from MTw motion trackers can be recorded and returned as a Numpy.array (pitch angle).
@@ -10,24 +43,42 @@ The interface is created specifically to work with two MTw Awinda sensors that n
 Sensors produce motion tracking data in the form of Euler angles, for the specific application of step detection pitch angle only is recorded and processed.
 
 The gyroscope based step detector is capable to detect steps during very slow walk, and can work with a great range of speeds.
-To signal the occurence of a step a sound can be reproduced from a sample library. The sample library can be specified as a path to a directory containing .WAV samples, such samples will be reproduced sequentially in lexicographic order. 
+To signal the occurence of a step a sound can be reproduced from a sample library. The sample library can be specified as a path to a directory containing .WAV or .mp3 samples, such samples will be reproduced sequentially in lexicographic order. 
 This gives the possibility to partition a music track into samples that will be reproduced back to back while the subject wearing the sensors is walking, at the speed the subject is walking at.
 
 A usage example can be found in the examples directory
 
 ```python
-duration = 60
+
+duration = 90
 samplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2"
 
 with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
-    data = mtw.mtwRecord(duration, plot=True, analyze=True)
+        data = mtw.mtwRecord(duration, plot=True, analyze=True, exType = 0, setStart=None, CalculateBpm=False, shared_data=None)
 
 data0 = data[0][0]
 data1 = data[0][1]
 index0 = data[1][0]
 index1 = data[1][1]
 
+interestingPoints0 = data[2][0]
+interestingPoints1 = data[2][1]
+
+bpmValue = data[3]  # if calculateBpm==False will be None
+
 ```
+- **exType** indicates the exercise to run:
+
+    0. Walking
+    1.  Walking in place (High Knees marching, backward step marching)
+    2. Walking in place (High Knees with sensors on the thighs)
+    3. Swing
+    4. Double step
+
+- **setStart** is a callback function to call when the exercise starts
+- **CalculateBpm** replace the real time feedback width a the calculation of medium bpm
+- **shared_data** is an optional pre-allocated SharedData object
+
 
 A **MtwAwinda** singleton object instance must be created in a **with** statement,
 this ensures proper setup of the sensors and closing. 
@@ -39,16 +90,20 @@ Two additional flags can be provided:
 - plot: spawns a daemon that handles real time plotting (using matplotlib).
 - analyze: spawns two daemons (one for each sensor) handling step detection and samples reproduction from the library of samples provided.
 
-Recorded data is returned by the function as a tuple of Numpy.arrays. 
-With the first element consisting of two buffers of pitch angles of a maximum lenght of 72000 samples, and the second being the index at witch the recording has stopped.
-The two buffers of length 72000 samples can contain roughly 10 minutes of recording (at 120Hz) after witch the buffers are overwritten.
+The Recorded data returned by the `mtwRecord` function includes several components:
+
+- `data[0][0]` and `data[0][1]` are tuples of Numpy.arrays containing the pitch angle buffers for the two signals, respectively. The two buffers of length 72000 samples can contain roughly 10 minutes of recording (at 120Hz) after witch the buffers are overwritten.
+- `data[1][0]` and `data[1][1]` represent the indices at which the recording stopped for the two signals.
+- The 'interesting points' related to the two signals are stored in `data[2][0]` and `data[2][1]`, which are tuples of Numpy.arrays. These arrays contain the approximate indices of the two signals at which points of interest were detected.
+- `data[3]` contains the average beats per minute (bpm) value if the calculation was requested and the relevant data was acquired. Otherwise, it will be `None`.
+
 
 ### Installation
 Python version 3.9 is required, (it is recommended to create a conda virtual environment using the python version 3.9)\
 Installing the *xsensdeviceapi* dependency:
 
 ```
-pip install wheels/xsensdeviceapi-2022.0.0-cp39-none-linux_x86_64.whl
+pip install wheels/xsensdeviceapi-2022.2.0-cp39-none-win_amd64.whl
 ```
 Installing the package:
 ```
@@ -61,3 +116,5 @@ You can find a usage example in the examples directory
 from sonicwalk import mtw
 
 ```
+
+## The GUI SonicWalk Application

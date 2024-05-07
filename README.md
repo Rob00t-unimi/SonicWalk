@@ -24,6 +24,7 @@ Roberto Tallarini's Contribution:
 - Ideated, Designed and developed a comprehensive graphical user interface for managing patients informations, records, exercise sessions, and music libraries.
 - Conducted the porting of the original code to Windows and integrated it with the graphical user interface.
 - Envisioned, designed, and implemented the entire user interface and data management system.
+- https://github.com/Rob00t-unimi/SonicWalk
 
 Gabriele Esposito's Contribution:
 - Developed a Python interface based on the Xsens Device API to communicate with MTw Awinda motion trackers.
@@ -70,11 +71,11 @@ bpmValue = data[3]  # if calculateBpm==False will be None
 ```
 - **exType** indicates the exercise to run:
 
-    0. Walking
-    1.  Walking in place (High Knees marching, backward step marching)
-    2. Walking in place (High Knees with sensors on the thighs)
-    3. Swing
-    4. Double step
+    0) Walking
+    1)  Walking in place (High Knees marching, backward step marching)
+    2) Walking in place (High Knees with sensors on the thighs)
+    3) Swing
+    4) Double step
 
 - **setStart** is a callback function to call when the exercise starts
 - **CalculateBpm** replace the real time feedback width a the calculation of medium bpm
@@ -96,7 +97,7 @@ The Recorded data returned by the `mtwRecord` function includes several componen
 - `data[0][0]` and `data[0][1]` are tuples of Numpy.arrays containing the pitch angle buffers for the two signals, respectively. The two buffers of length 72000 samples can contain roughly 10 minutes of recording (at 120Hz) after witch the buffers are overwritten.
 - `data[1][0]` and `data[1][1]` represent the indices at which the recording stopped for the two signals.
 - The 'interesting points' related to the two signals are stored in `data[2][0]` and `data[2][1]`, which are tuples of Numpy.arrays. These arrays contain the approximate indices of the two signals at which points of interest were detected.
-- `data[3]` contains the average beats per minute (bpm) value if the calculation was requested and the relevant data was acquired. Otherwise, it will be `None`.
+- `data[3]` contains the average beats per minute (bpm) value if the calculation was requested and the relevant data was acquired. Otherwise, it will be `False`.
 
 ### Requires and dependencies installation
 Python version 3.9 is required, (it is recommended to create a conda virtual environment using the python version 3.9)\

@@ -3,8 +3,6 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt
 import os
 import json
-import sys
-sys.path.append("../")
 
 class PatientAdder(QFrame):
     """
@@ -19,6 +17,10 @@ class PatientAdder(QFrame):
             - initialize the object and open the modal dialog window
         """
         super().__init__()
+
+        folder_name = os.path.basename(os.getcwd())
+        self.settings_path = 'data/settings.json' if folder_name == "GUI" else 'GUI/data/settings.json'
+        self.dataset_path = 'data/dataset.json' if folder_name == "GUI" else 'GUI/data/dataset.json'
 
         # patient basic informations structure
         self.patient_info_data = [
@@ -176,7 +178,7 @@ class PatientAdder(QFrame):
             return
 
         # Generate ID for the new patient
-        json_path = os.path.join(os.getcwd(), "data", "dataset.json")
+        json_path = os.path.join(os.getcwd(), self.dataset_path)
         try:
             with open(json_path, 'r') as file:
                 data = json.load(file)

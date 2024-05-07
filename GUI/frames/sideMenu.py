@@ -1,11 +1,7 @@
 from PyQt5.QtWidgets import *
 import webbrowser
 import sys
-
-sys.path.append("../")
-
 from components.menuButton import MenuButton
-
 
 class SideMenu(QFrame):
     """
@@ -26,9 +22,12 @@ class SideMenu(QFrame):
         """
         super().__init__()
 
+        # folder_name = os.path.basename(os.getcwd())
+        # self.settings_path = 'data/settings.json' if folder_name == "GUI" else 'GUI/data/settings.json'
+        # self.dataset_path = 'data/dataset.json' if folder_name == "GUI" else 'GUI/data/dataset.json'
+        
         self.setProperty('class', 'custom_menu')
         # initialize attributes
-        self.settings_file = "data/settings.json" 
         self.toggleThemeMain = toggleTheme
         self.menu_expanded = False  # menu state
         self.light = light

@@ -1,16 +1,15 @@
-import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import pyqtSignal
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import numpy as np
-
-sys.path.append("../")
-
 from frames.patientFrame import PatientFrame
 from frames.exerciseFrame import ExerciseFrame
 from frames.recordingFrame import RecordingFrame
+import sys
+import os
 sys.path.append("../")
+sys.path.append(os.getcwd())
 from sonicwalk.sharedVariables import SharedData
 import time
 from PyQt5.QtCore import QThread

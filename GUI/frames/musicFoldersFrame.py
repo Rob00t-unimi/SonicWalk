@@ -3,7 +3,6 @@ import os
 import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt
-sys.path.append("../")
 
 class MusicFolders(QWidget):
     """
@@ -22,11 +21,15 @@ class MusicFolders(QWidget):
         """
         super().__init__()
 
+        folder_name = os.path.basename(os.getcwd())
+        self.settings_path = 'data/settings.json' if folder_name == "GUI" else 'GUI/data/settings.json'
+        self.dataset_path = 'data/dataset.json' if folder_name == "GUI" else 'GUI/data/dataset.json'
+
         self.icons_manager = icons_manager
         self.firstTime = True
         self.light = True 
         try:
-            with open("data/settings.json", "r") as file:
+            with open(self.settings_path, "r") as file:
                 settings = json.load(file)
             if "light" in settings["theme"]: self.light = True 
             elif "dark" in settings["theme"]: self.light = False 
@@ -34,7 +37,6 @@ class MusicFolders(QWidget):
             print("Settings file not found. Using default theme (light).")
             return True
         
-        self.settingsPath = "data/settings.json"
         self.MusicNames = []
         self.MusicPaths = []
         self.loadMusicFolders()
@@ -210,7 +212,7 @@ class MusicFolders(QWidget):
 
         if response == QMessageBox.Yes:
             try:
-                with open('data/settings.json', 'r') as f:
+                with open(self.settings_path, 'r') as f:
                     settings = json.load(f)
                 
                 music_directories = settings.get('music_directories', [])
@@ -226,7 +228,7 @@ class MusicFolders(QWidget):
                     settings['music_names'] = music_names
                     
                     # Write the updated settings back to the JSON file
-                    with open('data/settings.json', 'w') as f:
+                    with open(self.settings_path, 'w') as f:
                         json.dump(settings, f, indent=4)
                     
                     print(f"Music folder '{name}' at path '{path}' deleted successfully.")
@@ -249,7 +251,7 @@ class MusicFolders(QWidget):
             - loads the music folders names and paths from settings.json
         """
         try:
-            with open(self.settingsPath, 'r') as f:
+            with open(self.settings_path, 'r') as f:
                 settings = json.load(f)
             music_directories = settings.get('music_directories', [])
             music_names = settings.get('music_names', [])
@@ -277,14 +279,14 @@ class MusicFolders(QWidget):
                 music_name = name_dialog.nameLineEdit.text()
 
                 if music_name:
-                    with open(self.settingsPath, 'r') as f:
+                    with open(self.settings_path, 'r') as f:
                         settings = json.load(f)
 
                     settings.setdefault('music_directories', []).append(music_folder)
 
                     settings.setdefault('music_names', []).append(music_name)
 
-                    with open(self.settingsPath, 'w') as f:
+                    with open(self.settings_path, 'w') as f:
                         json.dump(settings, f, indent=4)
                     
                     self.MusicPaths.append(music_folder)

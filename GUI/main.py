@@ -8,6 +8,7 @@ from pages.settings_page import SettingsPage
 from pages.statistics_page import StatisticsPage
 from iconsManager import IconsManager
 import sys
+import os
 from qt_material import apply_stylesheet, list_themes
 
 icons_manager = IconsManager()
@@ -30,7 +31,9 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Sonic-Walk")
         self.resize(1100, 720)
 
-        self.settings_file = "data/settings.json" 
+        self.folder_name = os.path.basename(os.getcwd())
+        self.settings_path = 'data/settings.json' if self.folder_name == "GUI" else 'GUI/data/settings.json'
+        self.dataset_path = 'data/dataset.json' if self.folder_name == "GUI" else 'GUI/data/dataset.json'
 
         # Load theme from the JSON file
         try:
@@ -78,10 +81,11 @@ class MainWindow(QMainWindow):
             # Density
             'density_scale': '0',
         }
-        if theme is None: apply_stylesheet(app, theme=self.theme_name, extra=extra, invert_secondary=self.light, css_file = "custom_css.css")
+        css_path = "custom_css.css" if self.folder_name == "GUI" else "GUI/custom_css.css"
+        if theme is None: apply_stylesheet(app, theme=self.theme_name, extra=extra, invert_secondary=self.light, css_file = css_path)
         else: 
             self.light = True if "dark_" not in theme else False
-            apply_stylesheet(app, theme=theme, extra=extra, invert_secondary=self.light, css_file = "custom_css.css")
+            apply_stylesheet(app, theme=theme, extra=extra, invert_secondary=self.light, css_file = css_path)
 
         if write_theme and theme is not None:
             self.theme_name = theme
@@ -252,10 +256,10 @@ class MainWindow(QMainWindow):
             - write the current theme in settings.JSON.
         """
         try:
-            with open(self.settings_file, "r") as file:
+            with open(self.settings_path, "r") as file:
                 settings = json.load(file)
             settings["theme"] = self.theme_name
-            with open(self.settings_file, "w") as file:
+            with open(self.settings_path, "w") as file:
                 json.dump(settings, file)
         except FileNotFoundError:
             print("Settings file not found. Using default theme (light).")
@@ -266,7 +270,7 @@ class MainWindow(QMainWindow):
         EFFECTS: 
             - Loads theme from settings.JSON and returns the theme name
         """
-        with open(self.settings_file, "r") as file:
+        with open(self.settings_path, "r") as file:
             settings = json.load(file)
             if settings["theme"] is not None and settings["theme"] != "":
                 return settings["theme"]

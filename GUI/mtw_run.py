@@ -1,8 +1,5 @@
 import threading
-import sys
-sys.path.append("../sonicwalk")
 import numpy as np
-
 
 class MtwThread(threading.Thread):
     """
@@ -46,7 +43,7 @@ class MtwThread(threading.Thread):
         EFFECTS: 
             - start the thread and run the analysis and the recording with mtw sensors by calling mtwRecord on MtwAwinda object
         """
-        import mtw
+        from sonicwalk import mtw
         try:
             with mtw.MtwAwinda(120, 19, self.MusicSamplesPath) as mtw:
                 self.mtw = mtw

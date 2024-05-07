@@ -2,8 +2,7 @@ import json
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt 
 import sys
-
-sys.path.append("../")
+import os
 
 class ExerciseFrame(QFrame):
     """
@@ -21,6 +20,10 @@ class ExerciseFrame(QFrame):
                 - Initializes a custom frame for exercise selection.
             """
             super().__init__()
+
+            folder_name = os.path.basename(os.getcwd())
+            self.settings_path = 'data/settings.json' if folder_name == "GUI" else 'GUI/data/settings.json'
+            self.dataset_path = 'data/dataset.json' if folder_name == "GUI" else 'GUI/data/dataset.json'
 
             # initialize attributes
             self.selectedMusic = None 
@@ -141,7 +144,7 @@ class ExerciseFrame(QFrame):
                 - load music paths and names from settings.json
         """
         try:
-            with open('data/settings.json', 'r') as f:
+            with open(self.settings_path, 'r') as f:
                 settings = json.load(f)
             music_directories = settings.get('music_directories', [])
             music_names = settings.get('music_names', [])

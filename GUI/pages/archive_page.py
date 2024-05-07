@@ -8,9 +8,6 @@ import matplotlib.pyplot  as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import numpy as np
-
-import sys
-sys.path.append("../")
 from windows.patientModifier import PatientModifier
 
 class ArchivePage(QWidget):
@@ -30,6 +27,10 @@ class ArchivePage(QWidget):
             Initializes and show the Archive page interface
         """
         super().__init__()
+
+        self.folder_name = os.path.basename(os.getcwd())
+        self.settings_path = 'data/settings.json' if self.folder_name == "GUI" else 'GUI/data/settings.json'
+        self.dataset_path = 'data/dataset.json' if self.folder_name == "GUI" else 'GUI/data/dataset.json'
 
         self.light = light
         self.icons_manager = icons_manager
@@ -110,7 +111,7 @@ class ArchivePage(QWidget):
         research_box_layout.addLayout(search_and_toggle_layout)
 
         # read json dataset
-        with open('data/dataset.json', 'r') as file:
+        with open(self.dataset_path, 'r') as file:
             patient_data = json.load(file)
 
         # filters widgets
@@ -501,7 +502,7 @@ class ArchivePage(QWidget):
             QMessageBox.warning(self, "Error", "No patient selected.")
             return
 
-        json_path = os.path.join(os.getcwd(), "data", "dataset.json")
+        json_path = os.path.join(os.getcwd(), self.dataset_path)
         
         try:
             with open(json_path, 'r') as file:
@@ -537,7 +538,7 @@ class ArchivePage(QWidget):
                 self.patients_list.takeItem(i)
                 break
 
-        patient_folder = os.path.join(os.getcwd(), "data", "archive", patient_id.upper())
+        patient_folder = os.path.join(os.getcwd(), "data", "archive", patient_id.upper()) if self.folder_name == "GUI" else os.path.join(os.getcwd(), "GUI", "data", "archive", patient_id.upper())
         try:
             shutil.rmtree(patient_folder)
             self.reset_patient_tables()
@@ -719,7 +720,7 @@ class ArchivePage(QWidget):
         EFFECTS:  
             - loads the patients from dataset.JSON and sets up the list of patients
         """
-        with open('data/dataset.json', 'r') as file:
+        with open(self.dataset_path, 'r') as file:
             patient_data = json.load(file)
 
         # if there are no patients show the label "no results found"
@@ -825,8 +826,7 @@ class ArchivePage(QWidget):
         patient = item.data(Qt.UserRole)
         patient_id = (patient['ID']).upper()
         self.current_patient_id = patient_id
-        current_path = os.getcwd()
-        self.folder_path = os.path.join(current_path, "data", "archive", patient_id)
+        self.folder_path = os.path.join(os.getcwd(), "data", "archive", patient_id) if self.folder_name == "GUI" else os.path.join(os.getcwd(), "GUI", "data", "archive", patient_id)
         if os.path.exists(self.folder_path):
             self.folder_model.setRootPath(self.folder_path) 
             self.listView_folders.setModel(self.folder_model)
@@ -845,7 +845,7 @@ class ArchivePage(QWidget):
         """
         search_text = self.current_search_text.lower()
         # load json
-        with open('data/dataset.json', 'r') as file:
+        with open(self.dataset_path, 'r') as file:
             patient_data = json.load(file)
 
         # hide all items

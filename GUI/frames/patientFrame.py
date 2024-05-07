@@ -1,8 +1,4 @@
 from PyQt5.QtWidgets import *
-import sys
-
-sys.path.append("../")
-
 from components.patientTable import PatientTable
 from windows.patientSelector import PatientSelector
 from windows.patientAdder import PatientAdder

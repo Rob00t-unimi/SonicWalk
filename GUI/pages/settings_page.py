@@ -1,9 +1,6 @@
 import os
 import shutil
 from PyQt5.QtWidgets import *
-import sys
-sys.path.append("../")
-
 from frames.musicFoldersFrame import MusicFolders
 from qt_material import list_themes
 
@@ -27,6 +24,10 @@ class SettingsPage(QWidget):
             - initialize the object
         """
         super().__init__()
+
+        folder_name = os.path.basename(os.getcwd())
+        self.settings_path = 'data/settings.json' if folder_name == "GUI" else 'GUI/data/settings.json'
+        self.dataset_path = 'data/dataset.json' if folder_name == "GUI" else 'GUI/data/dataset.json'
 
         self.apply_theme = apply_theme
         self.current_theme = current_theme
@@ -117,7 +118,7 @@ class SettingsPage(QWidget):
         left_layout.addStretch()
         right_layout.addStretch()
 
-        self.folder_path = os.path.join(os.getcwd(), "data")
+        self.folder_path = os.path.join(os.getcwd(), "data") if folder_name == "GUI" else os.path.join(os.getcwd(), "GUI/data")
 
     def select_style(self, theme):
         """
@@ -208,7 +209,7 @@ class SettingsPage(QWidget):
                         # User chose not to overwrite, so exit function
                         return
                 shutil.copytree(self.folder_path, destination_path)
-                os.remove(os.path.join(destination_folder, "data", "settings.json"))
+                os.remove(os.path.join(destination_folder, self.settings_path))
                 QMessageBox.information(self, "Repository Copied", "Repository copied successfully.")
             except Exception as e:
                 QMessageBox.warning(self, "Copy Error", f"An error occurred while copying the repository: {e}")

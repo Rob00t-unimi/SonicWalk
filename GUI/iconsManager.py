@@ -1,4 +1,5 @@
 from PyQt5.QtGui import QIcon
+import os
 
 class IconsManager:
     """
@@ -13,10 +14,12 @@ class IconsManager:
             - initialize the object with icons paths
         """
 
+        folder_name = os.path.basename(os.getcwd())
+
         self.color = "black"
 
-        self.blackpath = "icons/black/"
-        self.whitepath = "icons/white/"
+        self.blackpath = "icons/black/" if folder_name == "GUI" else "GUI/icons/black/"
+        self.whitepath = "icons/white/" if folder_name == "GUI" else "GUI/icons/white/"
 
         self.trash_name = "trash.svg"
         self.link_name = "external-link.svg"
@@ -34,7 +37,7 @@ class IconsManager:
         self.settings_name = "settings.svg"
         self.stop_name = "square.svg"
 
-        self.stop_link = "icons/"+ self.stop_name
+        self.stop_link = "icons/"+ self.stop_name if folder_name == "GUI" else "GUI/icons/" + self.stop_name
         # self.set_black()
 
     def switch_icons_color(self):

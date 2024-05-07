@@ -3,9 +3,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt
 import json
 from datetime import datetime, date
-import sys
-
-sys.path.append("../")
+import os
 
 class PatientSelector(QFrame):
     """
@@ -20,6 +18,9 @@ class PatientSelector(QFrame):
             - initialize the object and open the modal dialog window
         """
         super().__init__()
+        folder_name = os.path.basename(os.getcwd())
+        self.settings_path = 'data/settings.json' if folder_name == "GUI" else 'GUI/data/settings.json'
+        self.dataset_path = 'data/dataset.json' if folder_name == "GUI" else 'GUI/data/dataset.json'
 
         self.patient_info_data = [
             ("Name:", ""),
@@ -51,7 +52,7 @@ class PatientSelector(QFrame):
         self.no_results_label.move(200, 250)
 
         # read json dataset
-        with open('data/dataset.json', 'r') as file:
+        with open(self.dataset_path, 'r') as file:
             patient_data = json.load(file)
 
         # filters widgets
@@ -138,7 +139,7 @@ class PatientSelector(QFrame):
         EFFECTS:  
             - loads the patients from dataset.JSON and sets up the list of patients
         """
-        with open('data/dataset.json', 'r') as file:
+        with open(self.dataset_path, 'r') as file:
             patient_data = json.load(file)
 
         # if there are no patients show the label "no results found"
@@ -233,7 +234,7 @@ class PatientSelector(QFrame):
         """
         search_text = self.current_search_text.lower()
         # load json
-        with open('data/dataset.json', 'r') as file:
+        with open(self.dataset_path, 'r') as file:
             patient_data = json.load(file)
 
         # hide all items

@@ -3,9 +3,6 @@ from PyQt5.QtCore import Qt, QDate
 import os
 import json
 
-import sys
-sys.path.append("../")
-
 class PatientModifier(QFrame):
     """
     Dialog window to modify the informations of the selected Patient to the dataset.JSON
@@ -22,6 +19,10 @@ class PatientModifier(QFrame):
             - initialize the object and open the modal dialog window
         """
         super().__init__()
+
+        folder_name = os.path.basename(os.getcwd())
+        self.settings_path = 'data/settings.json' if folder_name == "GUI" else 'GUI/data/settings.json'
+        self.dataset_path = 'data/dataset.json' if folder_name == "GUI" else 'GUI/data/dataset.json'
 
         self.patient_info_data = patient_data
         self.modify_patient_modal()
@@ -177,7 +178,7 @@ class PatientModifier(QFrame):
             QMessageBox.warning(self, "Error", "Please fill in all required fields (Name, Surname).")
             return
 
-        json_path = os.path.join(os.getcwd(), "data", "dataset.json")
+        json_path = os.path.join(os.getcwd(), self.dataset_path)
         try:
             with open(json_path, 'r') as file:
                 data = json.load(file)

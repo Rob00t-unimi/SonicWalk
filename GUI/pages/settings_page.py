@@ -215,7 +215,7 @@ class SettingsPage(QWidget):
                         # User chose not to overwrite, so exit function
                         return
                 shutil.copytree(self.folder_path, destination_path)
-                os.remove(os.path.join(destination_folder, self.settings_path))
+                os.remove(os.path.join(destination_folder, "data/settings.json"))
                 QMessageBox.information(self, "Repository Copied", "Repository copied successfully.")
             except Exception as e:
                 QMessageBox.warning(self, "Copy Error", f"An error occurred while copying the repository: {e}")

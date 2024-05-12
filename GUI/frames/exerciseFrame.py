@@ -39,7 +39,7 @@ class ExerciseFrame(QFrame):
                 # 2 --> Walking in place (High Knees con sensori sulle cosce)
                 # 3 --> Swing
                 # 4 --> Double Step
-            self.musicModality = 2
+            self.musicModality = 0
             self.light = light
             self.bpm = 60
             self.firstRendering = True
@@ -151,6 +151,13 @@ class ExerciseFrame(QFrame):
             with open(self.settings_path, 'r') as f:
                 settings = json.load(f)
             music_directories = settings.get('music_directories', [])
+            for i, path in enumerate(music_directories):
+                if not os.path.isabs(path):
+                    self.this_path = os.getcwd()
+                    if os.path.basename(os.getcwd()) != "GUI":
+                        music_directories[i] = os.path.join(os.getcwd(), path)
+                    else:
+                        music_directories[i] = os.path.join(os.path.dirname(os.getcwd()), path)
             music_names = settings.get('music_names', [])
             self.MusicPaths=music_directories
             self.MusicNames=music_names

@@ -1,1 +1,1 @@
-{"theme": "dark_blue.xml", "music_directories": ["C:/Users/rober/Desktop/MainFolder/CodingProjects/SonicWalk/SonicWalk/sonicwalk/audio_samples/cammino_1_fase_2", "C:/Users/rober/Desktop/MainFolder/CodingProjects/SonicWalk/SonicWalk/sonicwalk/audio_samples/cammino_1_fase_2_mp3"], "music_names": ["wav samples", "mp3 samples"], "light_theme": true}
+{"theme": "light_blue.xml", "music_directories": ["sonicwalk/audio_samples/cammino_1_fase_2", "sonicwalk/audio_samples/cammino_1_fase_2_mp3"], "music_names": ["wav default samples", "mp3 default samples"], "light_theme": true}

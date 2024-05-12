@@ -3,6 +3,8 @@ import os
 import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
+
 
 class MusicFolders(QWidget):
     """
@@ -145,7 +147,12 @@ class MusicFolders(QWidget):
         EFFECTS: 
             - by the os opens the selected folder
         """
-        path = os.path.join(os.getcwd(), path)
+
+        if not os.path.isabs(path):
+            self.this_path = os.getcwd()
+            if os.path.basename(os.getcwd()) != "GUI": path = os.path.join(os.getcwd(), path)
+            else: path = os.path.join(os.path.dirname(os.getcwd()), path)
+
         print("Opening folder:", path)
         try:
             if sys.platform.startswith('win'):
@@ -170,6 +177,12 @@ class MusicFolders(QWidget):
         EFFECTS:
             - returns number of music samples files and the extensions of files
         """
+
+        if not os.path.isabs(folder_path):
+            self.this_path = os.getcwd()
+            if os.path.basename(os.getcwd()) != "GUI": folder_path = os.path.join(os.getcwd(), folder_path)
+            else: folder_path = os.path.join(os.path.dirname(os.getcwd()), folder_path)
+
         total_samples = 0
         file_format = ""
 
@@ -304,6 +317,8 @@ class NameDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Choose a Name")
+        self.folder_name = os.path.basename(os.getcwd())
+        self.setWindowIcon(QIcon('icons/SonicWalk_logo.jpeg' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.jpeg'))
         
         self.nameLineEdit = QLineEdit()
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)

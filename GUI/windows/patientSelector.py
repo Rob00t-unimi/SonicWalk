@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QFrame
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
 import json
 from datetime import datetime, date
 import os
@@ -49,6 +50,8 @@ class PatientSelector(QFrame):
         self.dialog = QDialog()
         self.dialog.setFixedSize(600, 494)
         self.dialog.setWindowTitle("Select Patient")
+        self.folder_name = os.path.basename(os.getcwd())
+        self.dialog.setWindowIcon(QIcon('icons/SonicWalk_logo.jpeg' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.jpeg'))
 
         self.no_results_label = QLabel("No results found", self.dialog)
         self.no_results_label.setAlignment(Qt.AlignCenter)

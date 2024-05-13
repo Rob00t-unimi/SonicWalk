@@ -117,7 +117,8 @@ class MtwCallback(xda.XsCallback):
         self.m_lock.release()
 
 class WirelessMasterCallback(xda.XsCallback):
-    def __init__(self):
+    def __init__(self, stop_recording = None):
+        self.stop_recording = stop_recording
         xda.XsCallback.__init__(self)
         self.m_lock = Lock()
         self.m_connectedMTWs = set()
@@ -129,14 +130,20 @@ class WirelessMasterCallback(xda.XsCallback):
         return mtw
     
     def onConnectivityChanged(self, dev, newState):
+        error = False
         self.m_lock.acquire()
         dev = dev.deviceId().toXsString()
         if newState == xda.XCS_Disconnected:
             print("EVENT: MTW DISCONNECTED -> %s" % (dev))
-            self.m_connectedMTWs.remove(dev)
+            try:
+                self.m_connectedMTWs.remove(dev)
+            except:
+                pass
+            error = ("EVENT: MTW DISCONNECTED -> %s" % (dev))
         elif newState == xda.XCS_Rejected:
             print("EVENT: MTW REJECTED -> %s" % (dev))
             self.m_connectedMTWs.remove(dev)
+            error = ("EVENT: MTW REJECTED -> %s" % (dev))
         elif newState == xda.XCS_PluggedIn:
             print("EVENT: MTW PLUGGED IN -> %s" % (dev))
             self.m_connectedMTWs.remove(dev)
@@ -146,13 +153,18 @@ class WirelessMasterCallback(xda.XsCallback):
         elif newState == xda.XCS_File:
             print("EVENT: MTW FILE -> %s" % (dev))
             self.m_connectedMTWs.remove(dev)
+            error = ("EVENT: MTW FILE -> %s" % (dev))
         elif newState == xda.XCS_Unknown:
             print("EVENT: MTW UNKNOWN -> %s" % (dev))
             self.m_connectedMTWs.remove(dev)
+            error = ("EVENT: MTW UNKNOWN -> %s" % (dev))
         else:
             print("EVENT: MTW ERROR -> %s" % (dev))
             self.m_connectedMTWs.remove(dev)
+            error = ("EVENT: MTW ERROR -> %s" % (dev))
         self.m_lock.release()
+        if error != False:
+            self.stop_recording()
 
 class MtwAwinda(object):
     """Class that allows mtwAwinda devices handling
@@ -220,7 +232,7 @@ class MtwAwinda(object):
                 raise RuntimeError("Could not put device into configuration mode. Aborting.")
 
             # Create and attach callback handler to device
-            self.masterCallback = WirelessMasterCallback() #create callback
+            self.masterCallback = WirelessMasterCallback(self.stopRecording) #create callback
             self.masterDevice.addCallbackHandler(self.masterCallback) #attach callback function to device
 
             #CONFIGURE DEVICE (AWINDA MASTER)
@@ -460,6 +472,8 @@ class MtwAwinda(object):
         os = platform.system()
 
         startTime = xda.XsTimeStamp_nowMs()
+        prev_data_time = time.time()
+        prev_data = None
         while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
             if self.__recordingStopped:
                 self.__recordingStopped = False 
@@ -469,6 +483,16 @@ class MtwAwinda(object):
                 if plot and plotter_process.is_alive(): plotter_process.terminate()
                 return None
             avail = self.__getEuler()
+
+            # if there are the same data related of a sensor for 2 seconds, the sensor is unavailable, raise exception
+            if time.time()-prev_data_time >= 2:
+                prev_data_time = time.time()
+                if prev_data is not None:
+                    coords = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
+                    if prev_data[0] == coords[0] or prev_data[1] == coords[1]:
+                        raise Exception("Error: Unable to record both sensors data, one of the sensors failed. Pleare reboot the sensors.")
+                prev_data = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
+
             if any(avail):
                 # print("new data available at time: " + str(time.time()))
                 coords = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]

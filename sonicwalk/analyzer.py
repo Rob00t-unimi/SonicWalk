@@ -521,7 +521,7 @@ class Analyzer():
             #             self.__pos = not self.__pos # alternate searching types of pitch every 2 peaks founded
 
             time_thresh = 0.4 if not self.__pos else 0.3
-            if time.time() - self.__timestamp >= 0.4 and self.__firstpeak and not self.__foundedPeak:
+            if time.time() - self.__timestamp >= time_thresh and self.__firstpeak and not self.__foundedPeak:
                 # sound here after a delay
                 self.__interestingPoints.append(self.__currentGlobalIndex)
                 self._playSample() if not self.__calculateBpm else self.__betweenStepTimes.append(self.__timestamp)
@@ -610,7 +610,7 @@ class Analyzer():
         # pitch = (self.__pitch - 1) if not self.__pos else (self.__pitch + 2)      # da positivo a negativo è più veloce quindi non anticipo, da negativo a positivo è più lento e anticipo
 
         # ricerca di zero crossing positivo o negativo entro la soglia
-        positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+0.3)     # + 0.25 per permettere alla soglia anche di salire
+        positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+0.35)     # + 0.3 per permettere alla soglia anche di salire
         if positiveZc is not None and ((positiveZc.founded and self.__pos) or (not positiveZc.founded and not self.__pos)):
             elapsed_time = time.time() - self.__timestamp
             if elapsed_time > self.__timeThreshold*1.2:    # se self.__pos è True ho già trovaro un picco quindi lo Zc è valido    
@@ -640,7 +640,7 @@ class Analyzer():
         self.__nextWindow()
 
         if self.__sharedLegDetected.get() == False:
-            self.detectLeg(displacement=10)
+            self.detectLeg(displacement=10) # se il displacement è alto la piega del ginocchio deve essere più ampia, se è basso è meno
 
         if self.__sharedLegDetected.get() == True : 
             if self.__legDetected == False:
@@ -655,7 +655,6 @@ class Analyzer():
     # il piede avanti punta avanti
                 
     # rimane il problema della piegatura del ginocchio che si può risolvere con la threshold sul gradiente
-
     def swingFunction(self, forward = True):
 
         # Backward leg:
@@ -668,7 +667,7 @@ class Analyzer():
         pitch = (self.__pitch - 10) if forward else (self.__pitch + 10)
 
         # ricerca di zero crossing
-        positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+0.3)     # + 0.25 per permettere alla soglia anche di salire
+        positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+0.35)     # + 0.3 per permettere alla soglia anche di salire
         if positiveZc is not None and ((positiveZc.founded and not forward) or (not positiveZc.founded and forward)):
             elapsed_time = time.time() - self.__timestamp
             if elapsed_time > self.__timeThreshold*2:    # se self.__pos è True ho già trovaro un picco quindi lo Zc è valido    

@@ -313,15 +313,19 @@ class RecordingFrame(QWidget):
                     if response == QMessageBox.Yes:
                         self.startExecution()
                 else:
-                    # beepPath = "../sonicwalk/audio_samples/beep.wav"
-                    # beep = pygame.mixer.Sound(beepPath)
-                    # beep.play()
+                    beepPath = "../sonicwalk/audio_samples/beep.wav" if os.path.basename(os.getcwd()) == "GUI" else "sonicwalk/audio_samples/beep.wav"
+                    beep = pygame.mixer.Sound(beepPath)
+                    beep.play()
                     self.signals, self.Fs, self.bpm = result
                     if self.setBpm and self.bpm != False:
                         print("bpm: " + str(self.bpm))
                         self.setBpm(self.bpm) 
-                    elif self.setBpm and self.bpm == False:
+                    elif self.setBpm and self.bpm == False and self.modality == 0:
                         print("Bpm Estimation Failed")
+                        bpm_err = QMessageBox()
+                        bpm_err.setIcon(QMessageBox.Warning)
+                        bpm_err.setText("BPM Estimation Failed, no interesting points detected in the signal. Please retry or set BPM manually in the Music phase.")
+                        response = bpm_err.exec_()
 
                     self.saveRecording()   
             else:

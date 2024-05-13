@@ -124,11 +124,11 @@ class MainWindow(QMainWindow):
         """
         if self.light: icons_manager.set_black()
         else: icons_manager.set_white()
-        print("finding children...")
+        # print("finding children...")
         widgets = self.findWidgets("icon_name")
         for widget in widgets:
             name = widget.property("icon_name")
-            print(name)
+            # print(name)
             if name == "sun":
                 if self.light:
                     widget.setProperty("icon_name", "moon")

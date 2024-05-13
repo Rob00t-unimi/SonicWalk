@@ -77,6 +77,8 @@ class MtwThread(threading.Thread):
             self.result = e
         except Exception as e:
             self.result = e
+        except:
+            print("Something went wrong...")
 
     def get_results(self):
         """

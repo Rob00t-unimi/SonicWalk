@@ -154,7 +154,6 @@ class WirelessMasterCallback(xda.XsCallback):
             self.m_connectedMTWs.remove(dev)
         self.m_lock.release()
 
-
 class MtwAwinda(object):
     """Class that allows mtwAwinda devices handling
     

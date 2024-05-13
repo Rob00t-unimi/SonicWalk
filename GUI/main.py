@@ -36,7 +36,7 @@ class MainWindow(QMainWindow):
         self.resize(1100, 720)
         
         self.folder_name = os.path.basename(os.getcwd())
-        self.setWindowIcon(QIcon('icons/SonicWalk_logo.jpeg' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.jpeg'))
+        self.setWindowIcon(QIcon('icons/SonicWalk_logo.png' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.png'))
 
         self.settings_path = 'data/settings.json' if self.folder_name == "GUI" else 'GUI/data/settings.json'
         self.dataset_path = 'data/dataset.json' if self.folder_name == "GUI" else 'GUI/data/dataset.json'

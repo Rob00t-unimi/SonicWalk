@@ -144,6 +144,7 @@ class SettingsPage(QWidget):
             self.current_theme = theme
             self.apply_theme(theme=theme, write_theme=True)
         except Exception as e:
+            print("SONO QUI")
             print(str(e))
 
     def confirm_delete_repository(self):

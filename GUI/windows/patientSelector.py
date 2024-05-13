@@ -51,7 +51,7 @@ class PatientSelector(QFrame):
         self.dialog.setFixedSize(600, 494)
         self.dialog.setWindowTitle("Select Patient")
         self.folder_name = os.path.basename(os.getcwd())
-        self.dialog.setWindowIcon(QIcon('icons/SonicWalk_logo.jpeg' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.jpeg'))
+        self.dialog.setWindowIcon(QIcon('icons/SonicWalk_logo.png' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.png'))
 
         self.no_results_label = QLabel("No results found", self.dialog)
         self.no_results_label.setAlignment(Qt.AlignCenter)

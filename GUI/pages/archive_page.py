@@ -404,7 +404,7 @@ class ArchivePage(QWidget):
         self.current_patient_id = None
         self.current_patient = None
 
-
+        self.last_folder_clicked = None
 
 # METHODS -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
@@ -542,6 +542,10 @@ class ArchivePage(QWidget):
                 self.patients_list.takeItem(i)
                 break
 
+        if self.patients_list.count() == 0: 
+            self.no_results_label.raise_()  # on top
+            self.no_results_label.show()
+
         patient_folder = os.path.join(os.getcwd(), "data", "archive", patient_id.upper()) if self.folder_name == "GUI" else os.path.join(os.getcwd(), "GUI", "data", "archive", patient_id.upper())
         # for py installer only:
         # patient_folder = os.path.join(os.getcwd(), "_internal", "data", "archive", patient_id.upper())
@@ -626,6 +630,9 @@ class ArchivePage(QWidget):
                 if folder_path in self.file_model.filePath(index):
                     self.reset()
 
+                if self.current_patient is not None:
+                    self.set_folders_model()
+
     def delete_selected_file(self):
         """
         MODIFIES: 
@@ -652,7 +659,10 @@ class ArchivePage(QWidget):
                         QMessageBox.warning(self, 'Error', 
                                             f"Error while deleting file '{file_path}': {e}",
                                             QMessageBox.Ok, QMessageBox.Ok)
-                self.reset()    
+                self.reset()   
+                if self.last_folder_clicked is not None:
+                    self.folder_clicked(self.last_folder_clicked)
+
        
     def on_folder_loaded(self):
         """
@@ -676,6 +686,7 @@ class ArchivePage(QWidget):
         folder_path = self.folder_model.fileInfo(index).absoluteFilePath()
         self.file_model.setRootPath(folder_path)
         self.listView_files.setRootIndex(self.file_model.index(folder_path))
+        self.last_folder_clicked = index
 
     def load_selected_file(self, index):
         """
@@ -832,7 +843,10 @@ class ArchivePage(QWidget):
         patient = item.data(Qt.UserRole)
         patient_id = (patient['ID']).upper()
         self.current_patient_id = patient_id
-        self.folder_path = os.path.join(os.getcwd(), "data", "archive", patient_id) if self.folder_name == "GUI" else os.path.join(os.getcwd(), "GUI", "data", "archive", patient_id)
+        self.set_folders_model()
+
+    def set_folders_model(self):
+        self.folder_path = os.path.join(os.getcwd(), "data", "archive", self.current_patient_id) if self.folder_name == "GUI" else os.path.join(os.getcwd(), "GUI", "data", "archive", self.current_patient_id)
         # for py installer only:
         # self.folder_path = os.path.join(os.getcwd(), "_internal", "data", "archive", patient_id)
         if os.path.exists(self.folder_path):

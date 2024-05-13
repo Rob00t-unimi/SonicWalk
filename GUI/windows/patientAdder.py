@@ -50,7 +50,7 @@ class PatientAdder(QFrame):
         modal = QDialog()
         modal.setWindowTitle("Add New Patient")
         self.folder_name = os.path.basename(os.getcwd())
-        modal.setWindowIcon(QIcon('icons/SonicWalk_logo.jpeg' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.jpeg'))
+        modal.setWindowIcon(QIcon('icons/SonicWalk_logo.png' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.png'))
         modal.setFixedWidth(650)
         layout = QVBoxLayout(modal)
 

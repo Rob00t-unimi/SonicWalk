@@ -20,7 +20,7 @@ class RecordingFrame(QWidget):
     thread_signal = pyqtSignal()
     thread_signal_start = pyqtSignal()
 
-    def __init__(self, light = True, getMusicModality = None, getMusicPath = None, getExerciseNumber = None, getPatient = None, getBpm = None, setBpm = None, changeEnabledAll = None, shared_data = None, plotter_start = None, setSaved = None):#, mtw_run_finished = None):
+    def __init__(self, light = True, getMusicModality = None, getMusicPath = None, getExerciseNumber = None, getSelectedLeg = None, getPatient = None, getBpm = None, setBpm = None, changeEnabledAll = None, shared_data = None, plotter_start = None, setSaved = None):#, mtw_run_finished = None):
         """
 
         Requires:
@@ -66,6 +66,7 @@ class RecordingFrame(QWidget):
         self.getMusicModality = getMusicModality
         self.getMusicPath = getMusicPath
         self.getExerciseNumber = getExerciseNumber
+        self.getSelectedLeg = getSelectedLeg
         self.changeEnabledAll = changeEnabledAll
         self.getPatient = getPatient
         self.getBpm = getBpm
@@ -250,8 +251,10 @@ class RecordingFrame(QWidget):
         # Execute mtw_run in a different thread
         analyze = True
         self.exerciseTime = 90 if self.modality != 0 else 20
+        if self.selectedExercise == 3 or self.selectedExercise == 4: selectedLeg = self.getSelectedLeg()
+        else: selectedLeg = None
         
-        self.record_thread = MtwThread(Duration=self.exerciseTime, MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.emit_startSignal, CalculateBpm=self.calculateBpm, shared_data = self.shared_data, sound = self.sound)
+        self.record_thread = MtwThread(Duration=self.exerciseTime, MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, selectedLeg=selectedLeg, Analyze=analyze, setStart = self.emit_startSignal, CalculateBpm=self.calculateBpm, shared_data = self.shared_data, sound = self.sound)
         self.record_thread.daemon = True
         self.record_thread.start()
 

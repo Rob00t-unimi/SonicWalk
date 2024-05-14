@@ -39,6 +39,7 @@ class ExerciseFrame(QFrame):
                 # 2 --> Walking in place (High Knees con sensori sulle cosce)
                 # 3 --> Swing
                 # 4 --> Double Step
+            self.selected_front_leg = True # True if right leg, False if left leg
             self.musicModality = 0
             self.light = light
             self.bpm = 60
@@ -53,7 +54,7 @@ class ExerciseFrame(QFrame):
             label_selected_exercise = QLabel("Selected Exercise:")
             self.layout_selection.addWidget(label_selected_exercise)
             self.exercise_selector = QComboBox()
-            self.exercise_selector.addItems(["Walk", "March in place", "Swing", "Double Step"])
+            self.exercise_selector.addItems(["Walk", "March in place", "Swing - Right leg front", "Swing - Left leg front", "Double Step - Right leg front", "Double Step - Left leg front"])
             self.exercise_selector.currentTextChanged.connect(self.selectExercise)
             self.layout_selection.addWidget(self.exercise_selector)
 
@@ -197,12 +198,14 @@ class ExerciseFrame(QFrame):
             EFFECTS:    
                 - Sets the selected exercise number based on the chosen option.
         """
-        print(text)
         if text == "Walk": self.selectedExercise = 0 
-        elif text == "March in place": self.selectedExercise = 1
-        elif text == "March in place (Butt Kicks)": self.selectedExercise = 1
-        elif text == "Swing": self.selectedExercise = 3
-        elif text == "Double Step": self.selectedExercise = 4
+        elif "March" in text: self.selectedExercise = 1
+        elif "Swing" in text: self.selectedExercise = 3
+        elif "Double Step" in text: self.selectedExercise = 4
+        print(f"Selected Exercise: {text}, Exercise Number: {self.selectedExercise}")
+        if "Left" in text: self.selected_front_leg=False
+        elif "Right" in text: self.selected_front_leg=True
+        if "leg" in text: print(f"Front Leg: {'Left' if not self.selected_front_leg else 'Right'}")
 
     def _buttonClick(self, number):
         """"
@@ -262,6 +265,13 @@ class ExerciseFrame(QFrame):
             - Rerurns selected exercise number
         """
         return self.selectedExercise
+    
+    def getSelectedLeg(self):
+        """
+        EFFECTS:    
+            - Rerurns True if forward leg is the right leg, else False
+        """
+        return self.selected_front_leg
     
     def getBpm(self):
         """

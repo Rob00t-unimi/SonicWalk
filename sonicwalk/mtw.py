@@ -268,6 +268,7 @@ class MtwAwinda(object):
             
             print("Getting XsDevice instances for all MTWs...")
             allDeviceIds = self.control.deviceIds()
+            allDeviceIds.sort() # sort by id to have ordered devices by standard rule
             mtwDeviceIds = list()
             for dev in allDeviceIds:
                 if dev.isMtw():
@@ -395,7 +396,7 @@ class MtwAwinda(object):
     def mtwCalibrate():
         pass
 
-    def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True, exType:int=0, calculateBpm:bool=False, shared_data:object=None, setStart:callable=None, sound:bool=True):
+    def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True, exType:int=0, selectedLeg:bool=None, calculateBpm:bool=False, shared_data:object=None, setStart:callable=None, sound:bool=True):
         """Record pitch data for duration seconds
         
         Returns a numpy.array object containing the data for each device and the relative index, and interesting points bidimensional array of indexes
@@ -452,8 +453,10 @@ class MtwAwinda(object):
                 analyzer1 = Analyzer()
                 sharedLegBool = LegDetected() 
                 sharedSyncronizer = ProcessWaiting()
-                analyzer_process0 = mp.Process(target=analyzer0, name="analyzer0", args=(shared_data.data0, shared_data.index0, 0, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints0, betweenStepsTimes0, calculateBpm, sound), daemon=True)
-                analyzer_process1 = mp.Process(target=analyzer1, name="analyzer1", args=(shared_data.data1, shared_data.index1, 1, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints1, betweenStepsTimes1, calculateBpm, sound), daemon=True)
+                # First id device assumed as right leg, is related with data0, so with analyzer_process0
+                # Second id device assumed as left leg is related with data1, so with analyzer_process1
+                analyzer_process0 = mp.Process(target=analyzer0, name="analyzer0", args=(shared_data.data0, shared_data.index0, 0, sharedIndex, samples, exType, selectedLeg, sharedLegBool, sharedSyncronizer.start, interestingPoints0, betweenStepsTimes0, calculateBpm, sound), daemon=True)
+                analyzer_process1 = mp.Process(target=analyzer1, name="analyzer1", args=(shared_data.data1, shared_data.index1, 1, sharedIndex, samples, exType, not selectedLeg, sharedLegBool, sharedSyncronizer.start, interestingPoints1, betweenStepsTimes1, calculateBpm, sound), daemon=True)
                 analyzer_process0.start()
                 analyzer_process1.start()
                 #delete local version of samples 

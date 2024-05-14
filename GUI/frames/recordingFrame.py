@@ -59,7 +59,7 @@ class RecordingFrame(QWidget):
         self.selectedExercise = None
         self.modality = None
         self.patient_info_data = None
-        self.calculateBpm = False
+        self.calculateBpm = True
         self.bpm = None
         # self.mtw_run_finished = mtw_run_finished
 
@@ -238,7 +238,8 @@ class RecordingFrame(QWidget):
         self.modality = self.getMusicModality()
         self.selectedMusic = self.getMusicPath()
         self.selectedExercise = self.getExerciseNumber()
-        self.calculateBpm = True if self.modality == 0 else False
+        # self.calculateBpm = True if self.modality == 0 else False
+        self.sound = False if self.modality !=2 else True
 
         # set the execution state on false
         self.execution = False
@@ -247,9 +248,10 @@ class RecordingFrame(QWidget):
         self.changeEnabledAll()
 
         # Execute mtw_run in a different thread
-        analyze = False if self.modality == 1 else True
+        analyze = True
+        self.exerciseTime = 90 if self.modality != 0 else 20
         
-        self.record_thread = MtwThread(Duration=self.exerciseTime, MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.emit_startSignal, CalculateBpm=self.calculateBpm, shared_data = self.shared_data)
+        self.record_thread = MtwThread(Duration=self.exerciseTime, MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, Analyze=analyze, setStart = self.emit_startSignal, CalculateBpm=self.calculateBpm, shared_data = self.shared_data, sound = self.sound)
         self.record_thread.daemon = True
         self.record_thread.start()
 
@@ -317,14 +319,26 @@ class RecordingFrame(QWidget):
                     beep = pygame.mixer.Sound(beepPath)
                     beep.play()
                     self.signals, self.Fs, self.bpm = result
-                    if self.setBpm and self.bpm != False:
-                        print("bpm: " + str(self.bpm))
-                        self.setBpm(self.bpm) 
-                    elif self.setBpm and self.bpm == False and self.modality == 0:
+                    try:
+                        if self.setBpm and self.bpm != False:
+                            print("bpm: " + str(self.bpm))
+                            self.setBpm(self.bpm) 
+                            bpm_estimation_msg = QMessageBox()
+                            bpm_estimation_msg.setIcon(QMessageBox.Information)
+                            if self.modality == 0: bpm_estimation_msg.setText(f"BPM Estimation: {int(self.bpm)}. Bpm successfully setted")
+                            else: bpm_estimation_msg.setText("BPM Estimation: "+str(int(self.bpm)))
+                            response = bpm_estimation_msg.exec_()
+                        else: 
+                            raise Exception("Bpm Estimation or setting Failed")
+                    except:
                         print("Bpm Estimation Failed")
                         bpm_err = QMessageBox()
                         bpm_err.setIcon(QMessageBox.Warning)
                         bpm_err.setText("BPM Estimation Failed, no interesting points detected in the signal. Please retry or set BPM manually in the Music phase.")
+                        if self.setBpm and self.bpm == False and self.modality == 0:
+                            bpm_err.setText("BPM Estimation Failed, no interesting points detected in the signal. Please retry or set BPM manually in the Music phase.")
+                        else:
+                            bpm_err.setText("BPM Setting Failed. Please retry or set BPM manually in the Music phase.")
                         response = bpm_err.exec_()
 
                     self.saveRecording()   

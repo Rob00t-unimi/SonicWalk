@@ -395,7 +395,7 @@ class MtwAwinda(object):
     def mtwCalibrate():
         pass
 
-    def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True, exType:int=0, calculateBpm:bool=False, shared_data:object=None, setStart: callable=None):
+    def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True, exType:int=0, calculateBpm:bool=False, shared_data:object=None, setStart:callable=None, sound:bool=True):
         """Record pitch data for duration seconds
         
         Returns a numpy.array object containing the data for each device and the relative index, and interesting points bidimensional array of indexes
@@ -436,89 +436,89 @@ class MtwAwinda(object):
         betweenStepsTimes0 = RawArray('d', 1000)
         betweenStepsTimes1 = RawArray('d', 1000)
 
-        # if any((plot, analyze)):
+        if any((plot, analyze)):
 
-        if plot:
-            plotter = Plotter()
-            plotter_process = mp.Process(target=plotter, args=(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1), daemon=True)
-            plotter_process.start()
+            if plot:
+                plotter = Plotter()
+                plotter_process = mp.Process(target=plotter, args=(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1), daemon=True)
+                plotter_process.start()
+                
+            if analyze:
+                #samples are loaded only if analyzer is has to spawn
+                samples = self.__loadSamples(sound)
+                if samples is not None: sharedIndex = SharedCircularIndex(len(samples))
+                else: sharedIndex = None
+                analyzer0 = Analyzer()
+                analyzer1 = Analyzer()
+                sharedLegBool = LegDetected() 
+                sharedSyncronizer = ProcessWaiting()
+                analyzer_process0 = mp.Process(target=analyzer0, name="analyzer0", args=(shared_data.data0, shared_data.index0, 0, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints0, betweenStepsTimes0, calculateBpm, sound), daemon=True)
+                analyzer_process1 = mp.Process(target=analyzer1, name="analyzer1", args=(shared_data.data1, shared_data.index1, 1, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints1, betweenStepsTimes1, calculateBpm, sound), daemon=True)
+                analyzer_process0.start()
+                analyzer_process1.start()
+                #delete local version of samples 
+                # del samples
+                # gc.collect()
             
-        if analyze:
-            #samples are loaded only if analyzer is has to spawn
-            samples = self.__loadSamples(not calculateBpm)
-            if samples is not None: sharedIndex = SharedCircularIndex(len(samples))
-            else: sharedIndex = None
-            analyzer0 = Analyzer()
-            analyzer1 = Analyzer()
-            sharedLegBool = LegDetected() 
-            sharedSyncronizer = ProcessWaiting()
-            analyzer_process0 = mp.Process(target=analyzer0, name="analyzer0", args=(shared_data.data0, shared_data.index0, 0, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints0, betweenStepsTimes0, calculateBpm), daemon=True)
-            analyzer_process1 = mp.Process(target=analyzer1, name="analyzer1", args=(shared_data.data1, shared_data.index1, 1, sharedIndex, samples, exType, sharedLegBool, sharedSyncronizer.start, interestingPoints1, betweenStepsTimes1, calculateBpm), daemon=True)
-            analyzer_process0.start()
-            analyzer_process1.start()
-            #delete local version of samples 
-            # del samples
-            # gc.collect()
-        
-        time.sleep(1) #wait one second before starting orientation reset and to allow processes to properly start
-        self.__resetOrientation()
+            time.sleep(1) #wait one second before starting orientation reset and to allow processes to properly start
+            self.__resetOrientation()
 
-        try:
-            if setStart is not None: setStart()
-        except:
-            raise RuntimeError("Impossible to call setStart function")
-        
-        print("Recording started..." + str(time.time()))
-        os = platform.system()
+            try:
+                if setStart is not None: setStart()
+            except:
+                raise RuntimeError("Impossible to call setStart function")
+            
+            print("Recording started..." + str(time.time()))
+            os = platform.system()
 
-        startTime = xda.XsTimeStamp_nowMs()
-        prev_data_time = time.time()
-        prev_data = None
-        while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
-            if self.__recordingStopped:
-                self.__recordingStopped = False 
-                if analyze:
-                    if analyzer_process0.is_alive(): analyzer_process0.terminate()
-                    if analyzer_process1.is_alive(): analyzer_process1.terminate()
-                if plot and plotter_process.is_alive(): plotter_process.terminate()
-                return None
-            avail = self.__getEuler()
+            startTime = xda.XsTimeStamp_nowMs()
+            prev_data_time = time.time()
+            prev_data = None
+            while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
+                if self.__recordingStopped:
+                    self.__recordingStopped = False 
+                    if analyze:
+                        if analyzer_process0.is_alive(): analyzer_process0.terminate()
+                        if analyzer_process1.is_alive(): analyzer_process1.terminate()
+                    if plot and plotter_process.is_alive(): plotter_process.terminate()
+                    return None
+                avail = self.__getEuler()
 
-            # if there are the same data related of a sensor for 2 seconds, the sensor is unavailable, raise exception
-            if time.time()-prev_data_time >= 2:
-                prev_data_time = time.time()
-                if prev_data is not None:
+                # if there are the same data related of a sensor for 2 seconds, the sensor is unavailable, raise exception
+                if time.time()-prev_data_time >= 2:
+                    prev_data_time = time.time()
+                    if prev_data is not None:
+                        coords = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
+                        if prev_data[0] == coords[0] or prev_data[1] == coords[1]:
+                            raise Exception("Error: Unable to record both sensors data, one of the sensors failed. Pleare reboot the sensors.")
+                    prev_data = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
+
+                if any(avail):
+                    # print("new data available at time: " + str(time.time()))
                     coords = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
-                    if prev_data[0] == coords[0] or prev_data[1] == coords[1]:
-                        raise Exception("Error: Unable to record both sensors data, one of the sensors failed. Pleare reboot the sensors.")
-                prev_data = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
+                    coords = [a*b for a,b in zip(coords,avail)] #send only new data
+                    write_shared(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1, coords)
+                #allow other processes to run
+                #sleep 3ms (a new packet is received roughly every 8.33ms)
+                
+                xda.msleep(0) if os =="Windows" else xda.msleep(3)
 
-            if any(avail):
-                # print("new data available at time: " + str(time.time()))
-                coords = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
-                coords = [a*b for a,b in zip(coords,avail)] #send only new data
-                write_shared(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1, coords)
-            #allow other processes to run
-            #sleep 3ms (a new packet is received roughly every 8.33ms)
+            write_shared(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1, None, terminate=True)
             
-            xda.msleep(0) if os =="Windows" else xda.msleep(3)
+            if plot:
+                plotter_process.join()
+                
+            if analyze:
+                analyzer_process0.join()
+                analyzer_process1.join()
+                #result of step counting is written into shared memory
+                print("Total number of steps: {:d}".format(int(shared_data.data0[shared_data.index0.value-1]) + int(shared_data.data1[shared_data.index1.value-1])))
 
-        write_shared(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1, None, terminate=True)
-        
-        if plot:
-            plotter_process.join()
-            
-        if analyze:
-            analyzer_process0.join()
-            analyzer_process1.join()
-            #result of step counting is written into shared memory
-            print("Total number of steps: {:d}".format(int(shared_data.data0[shared_data.index0.value-1]) + int(shared_data.data1[shared_data.index1.value-1])))
-
-        # else:
-        #     #record the data and return it without analisys
-        #     startTime = xda.XsTimeStamp_nowMs()
-        #     while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
-        #         _ = self.__getEuler() #fills object buffer with data from Mtw devices
+        else:
+            #record the data and return it without analisys
+            startTime = xda.XsTimeStamp_nowMs()
+            while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
+                _ = self.__getEuler() #fills object buffer with data from Mtw devices
 
         # clean raw arrays from data after termination value
         def extractData(rawArray):

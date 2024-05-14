@@ -302,7 +302,9 @@ class Analyzer():
                     self.__peakHistory[self.__completeMovements % self.__history_sz] = self.__peak
 
                     # play sound and increment the movement counter
-                    self._playSample() if not self.__calculateBpm else self.__betweenStepTimes.append(self.__timestamp)
+                    if self.__sound: self._playSample()
+                    # set time for bpm estimator
+                    if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
 
                     # save point
                     self.__interestingPoints.append(self.__currentGlobalIndex)
@@ -366,7 +368,10 @@ class Analyzer():
                     # set swing phase to false until we find a positive zero crossing
                     self.__swingPhase = False
                     self.__timestamp = time.time() # reset timestamp (new step)
-                    self._playSample() if not self.__calculateBpm else self.__betweenStepTimes.append(self.__timestamp)
+                    # play sound and increment the movement counter
+                    if self.__sound: self._playSample()
+                    # set time for bpm estimator
+                    if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
                     self.__interestingPoints.append(self.__currentGlobalIndex)
 
                 self.__peak = 0.0 #reset peak whenever a zero crossing is encountered (negative gradient)
@@ -514,7 +519,10 @@ class Analyzer():
             #         self.__timestamp = time.time()
             #         if not self.__foundedPeak:
             #             self.__interestingPoints.append(self.__currentGlobalIndex)  # add the pick into the interesting points list
-            #             self._playSample() if not self.__calculateBpm else self.__betweenStepTimes.append(self.__timestamp)
+            #                                 
+            #            if self.__sound: self._playSample()
+            #            # set time for bpm estimator
+            #            if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
             #             self.__foundedPeak = True  # first valid pitch is founded
             #         else:
             #             self.__foundedPeak = False # second muted pitch is founded
@@ -524,7 +532,10 @@ class Analyzer():
             if time.time() - self.__timestamp >= time_thresh and self.__firstpeak and not self.__foundedPeak:
                 # sound here after a delay
                 self.__interestingPoints.append(self.__currentGlobalIndex)
-                self._playSample() if not self.__calculateBpm else self.__betweenStepTimes.append(self.__timestamp)
+                # play sound and increment the movement counter
+                if self.__sound: self._playSample()
+                # set time for bpm estimator
+                if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
                 self.__foundedPeak = True
                 self.__findMininmum = not self.__findMininmum
                 self._updateWindows() 
@@ -570,7 +581,10 @@ class Analyzer():
 
                         # sound here could be too late, if it arrives after 0.4 seconds the sound is already reproduced and this part skipped
                         self.__interestingPoints.append(self.__currentGlobalIndex)
-                        self._playSample() if not self.__calculateBpm else self.__betweenStepTimes.append(self.__timestamp)
+                        # play sound and increment the movement counter
+                        if self.__sound: self._playSample()
+                        # set time for bpm estimator
+                        if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
 
                     else:   # if there is the first peak and the interesting peak - this is the last peak
                         print("max pos 2") if self.__findMininmum == False else print("min neg 2")
@@ -618,7 +632,10 @@ class Analyzer():
                 self.__interestingPoints.append(self.__currentGlobalIndex)
                 self.__pos = not self.__pos     # switch research of zero crossing type
                 self.__timestamp = time.time()  # update time stamp
-                self._playSample() if not self.__calculateBpm else self.__betweenStepTimes.append(self.__timestamp)
+                # play sound and increment the movement counter
+                if self.__sound: self._playSample()
+                # set time for bpm estimator
+                if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
                 # play sound and increment step count
 
             # threshold update
@@ -664,7 +681,7 @@ class Analyzer():
 
         # questo mi consente di traslare i segnali di 10 ° e - 10 °
 
-        pitch = (self.__pitch - 10) if forward else (self.__pitch + 10)
+        pitch = (self.__pitch - 10) if forward else (self.__pitch + 15)
 
         # ricerca di zero crossing
         positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+0.35)     # + 0.3 per permettere alla soglia anche di salire
@@ -673,8 +690,10 @@ class Analyzer():
             if elapsed_time > self.__timeThreshold*2:    # se self.__pos è True ho già trovaro un picco quindi lo Zc è valido    
                                                         # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
                 self.__timestamp = time.time()  # update time stamp
-                # play sound and increment step count
-                self._playSample() if not self.__calculateBpm else self.__betweenStepTimes.append(self.__timestamp)
+                # play sound and increment the movement counter
+                if self.__sound: self._playSample()
+                # set time for bpm estimator
+                if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
                 self.__interestingPoints.append(self.__currentGlobalIndex)
 
             # threshold update
@@ -685,7 +704,7 @@ class Analyzer():
     ################################ OBJECT CALL ======================================================== && Rob ========
 
     
-    def __call__(self, data, index, num, sharedIndex, samples, exType, sharedLegBool, syncProcesses, interestingPoints, betweenStepsTimes, calculateBpm):
+    def __call__(self, data, index, num, sharedIndex, samples, exType, sharedLegBool, syncProcesses, interestingPoints, betweenStepsTimes, calculateBpm, sound):
         
         self.syncProcesses = syncProcesses
 
@@ -705,6 +724,7 @@ class Analyzer():
         self.__sharedLegDetected = sharedLegBool
         self.__sharedInterestingPoints = interestingPoints
         self.__calculateBpm = calculateBpm
+        self.__sound = sound
         self.__sharedBetweenStepsTimes = betweenStepsTimes
 
         # 0 --> walking

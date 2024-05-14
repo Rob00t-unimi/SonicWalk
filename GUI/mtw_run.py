@@ -5,7 +5,7 @@ class MtwThread(threading.Thread):
     """
     A thread class for performing the analysis and recording of the MTW devices.
     """
-    def __init__(self, Duration=90, MusicSamplesPath="../sonicwalk/audio_samples/cammino_1_fase_2", Exercise=0, Analyze=True, setStart=None, CalculateBpm=False, shared_data=None):
+    def __init__(self, Duration=90, MusicSamplesPath="../sonicwalk/audio_samples/cammino_1_fase_2", Exercise=0, Analyze=True, setStart=None, CalculateBpm=False, shared_data=None, sound=True):
         """    
         REQUIRES:
             - Duration (int): Duration of the recording in seconds. Defaults to 90.
@@ -34,6 +34,7 @@ class MtwThread(threading.Thread):
         self._stop_event = threading.Event()  # Event to indicates the end of the thread
         self.mtw = None
         self.stop_plotter = None
+        self.sound = sound
 
     def run(self):
         """    
@@ -47,7 +48,7 @@ class MtwThread(threading.Thread):
         try:
             with mtw.MtwAwinda(120, 19, self.MusicSamplesPath) as mtw:
                 self.mtw = mtw
-                data = mtw.mtwRecord(duration=self.Duration, plot=False, analyze=self.Analyze, exType=self.Exercise, calculateBpm=self.CalculateBpm, shared_data=self.shared_data, setStart=self.setStart)
+                data = mtw.mtwRecord(duration=self.Duration, plot=False, analyze=self.Analyze, exType=self.Exercise, calculateBpm=self.CalculateBpm, shared_data=self.shared_data, setStart=self.setStart, sound = self.sound)
                 
             if data is not None:
                 data0 = data[0][0]
@@ -55,6 +56,8 @@ class MtwThread(threading.Thread):
                 index0 = data[1][0]
                 index1 = data[1][1]
                 bpmValue = data[3]
+                
+                print(f"bpm value {bpmValue}")
 
                 pitch0 = data0[:index0]
                 pitch1 = data1[:index1]

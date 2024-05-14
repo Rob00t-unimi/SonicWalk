@@ -527,34 +527,44 @@ class MtwAwinda(object):
         def extractData(rawArray):
             array = []
             for data in rawArray:
-                if data!= (-2000):  # end value
-                    array.append(int(data))
+                if data != (-2000):  # end value
+                    array.append(data)
                 else:
                     break
-            return array
+            return np.array(array)
         
+        def removeOutliers(np_arr):
+            # Z score method
+            if np_arr.size == 0: return np_arr
+
+            print(np_arr)
+            mean_elapsed_time = np.mean(np_arr) # mean
+            std_dev_elapsed_time = np.std(np_arr)   # standard deviation
+            if std_dev_elapsed_time == 0 or np.isnan(std_dev_elapsed_time): return np_arr
+
+            z_scores = [(time - mean_elapsed_time) / std_dev_elapsed_time for time in np_arr]
+            z_score_threshold = 3
+            outliers_indices = [i for i, z_score in enumerate(z_scores) if abs(z_score) > z_score_threshold]
+            filtered_elapsed_times = np.delete(np_arr, outliers_indices)
+            print(filtered_elapsed_times)
+            if filtered_elapsed_times.size == 0: return np_arr
+
+            return filtered_elapsed_times
+
         if analyze:
             # create bidimentional array of interesting points
             points0 = extractData(interestingPoints0)
             points1 = extractData(interestingPoints1)
             interestingPoints = [points0, points1]      
-            
+
             if calculateBpm:
                 # convert timestamps to bpm value
-                times0 = extractData(betweenStepsTimes0)
-                times1 = extractData(betweenStepsTimes1)
-                times0.extend(times1)
-                # print(str(times0))
-                if len(times0) != 0:
-                    times0.sort()
-                    elapsed_times = []
-                    for i in range(len(times0) - 1):
-                        elapsed_time = times0[i + 1] - times0[i]
-                        elapsed_times.append(elapsed_time)
-                    # average in minutes
-                    mediumTimeValue = (sum(elapsed_times)/len(elapsed_times))/60
-                    # calculate bpm
-                    if mediumTimeValue != 0: bpmTimeValue = 1/mediumTimeValue 
+                times0 = np.concatenate((extractData(betweenStepsTimes0), extractData(betweenStepsTimes1)))
+                if times0.size != 0:
+                    elapsed_times = removeOutliers(np.diff(np.sort(times0))) # sort, calculate differences, remove outliers by z-score
+                    if elapsed_times.size != 0:
+                        mediumTimeValue = np.mean(elapsed_times) / 60 # Mean in minutes
+                        bpmTimeValue = 1 / mediumTimeValue if mediumTimeValue != 0 else False   # Calculate bpm
                     else: bpmTimeValue = False
                 else: bpmTimeValue = False
             else: bpmTimeValue = False

@@ -550,7 +550,7 @@ class RecordingFrame(QWidget):
                 if self.modality == 0:
                     musicMode ="noMusic"
                 elif self.modality == 1:
-                    musicMode ="music"
+                    musicMode ="pre-recorded"
                 elif self.modality == 2:
                     musicMode ="realTime"
 

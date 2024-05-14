@@ -53,7 +53,7 @@ class ExerciseFrame(QFrame):
             label_selected_exercise = QLabel("Selected Exercise:")
             self.layout_selection.addWidget(label_selected_exercise)
             self.exercise_selector = QComboBox()
-            self.exercise_selector.addItems(["Walk", "March in place (Hight Knees)", "March in place (Butt Kicks)", "Swing", "Double Step"])
+            self.exercise_selector.addItems(["Walk", "March in place", "Swing", "Double Step"])
             self.exercise_selector.currentTextChanged.connect(self.selectExercise)
             self.layout_selection.addWidget(self.exercise_selector)
 
@@ -76,7 +76,7 @@ class ExerciseFrame(QFrame):
             self.noMusic_button.setCheckable(True)
             self.noMusic_button.clicked.connect(lambda: self._buttonClick(0))
 
-            self.music_button = QPushButton("Music")
+            self.music_button = QPushButton("Pre-Recorded")
             self.music_button.setCheckable(True)
             self.music_button.clicked.connect(lambda: self._buttonClick(1))
 
@@ -199,7 +199,7 @@ class ExerciseFrame(QFrame):
         """
         print(text)
         if text == "Walk": self.selectedExercise = 0 
-        elif text == "March in place (Hight Knees)": self.selectedExercise = 1
+        elif text == "March in place": self.selectedExercise = 1
         elif text == "March in place (Butt Kicks)": self.selectedExercise = 1
         elif text == "Swing": self.selectedExercise = 3
         elif text == "Double Step": self.selectedExercise = 4

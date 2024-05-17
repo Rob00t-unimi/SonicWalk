@@ -438,21 +438,23 @@ class Analyzer():
         if self.__endController() : return
         self.__nextWindow()
 
-        # # AUTO DETECTION
-        # if self.__sharedLegDetected.get() == False:
-        #     self.detectLeg(displacement=5)
+        if self.__auto_detectLegs:
+            print("AUTO DETECTION...")
+            # AUTO DETECTION
+            if self.__sharedLegDetected.get() == False:
+                self.detectLeg(displacement=5)
 
-        # if self.__sharedLegDetected.get() == True : 
-        #     if self.__legDetected == False:
-        #         self.otherLeg()
-        #     else:
-        #         self.stepLeg()
-
-        if self.__selectedLeg is not None:
-            if self.__selectedLeg:
-                self.stepLeg()
-            else:
-                self.otherLeg()
+            if self.__sharedLegDetected.get() == True : 
+                if self.__legDetected == False:
+                    self.otherLeg()
+                else:
+                    self.stepLeg()
+        else:
+            if self.__selectedLeg is not None:
+                if self.__selectedLeg:
+                    self.stepLeg()
+                else:
+                    self.otherLeg()
         return 
         
     def _updateWindows(self):
@@ -663,17 +665,20 @@ class Analyzer():
         if self.__endController() : return
         self.__nextWindow()
 
-        # # AUTO DETECTION
-        # if self.__sharedLegDetected.get() == False:
-        #     self.detectLeg(displacement=10) # se il displacement è alto la piega del ginocchio deve essere più ampia, se è basso è meno
+        if self.__auto_detectLegs:
+            print("AUTO DETECTION...")
+            # AUTO DETECTION
+            if self.__sharedLegDetected.get() == False:
+                self.detectLeg(displacement=10) # se il displacement è alto la piega del ginocchio deve essere più ampia, se è basso è meno
 
-        # if self.__sharedLegDetected.get() == True : 
-        #     if self.__legDetected == False:
-        #         self.swingFunction(forward=False)
-        #     else:
-        #         self.swingFunction(forward=True)
-        if self.__selectedLeg is not None:
-            self.swingFunction(self.__selectedLeg)
+            if self.__sharedLegDetected.get() == True : 
+                if self.__legDetected == False:
+                    self.swingFunction(forward=False)
+                else:
+                    self.swingFunction(forward=True)
+        else:
+            if self.__selectedLeg is not None:
+                self.swingFunction(self.__selectedLeg)
     
 
     # potrebbe verificarsi che gli angoli negativi sono proporzionlmente più bassi rispetto ai positivi quindi si dovrebbero adottare traslazioni differenti
@@ -695,7 +700,7 @@ class Analyzer():
 
         # ricerca di zero crossing
         positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+0.35)     # + 0.3 per permettere alla soglia anche di salire
-        # if positiveZc is not None and ((positiveZc.founded and not forward) or (not positiveZc.founded and forward)):
+        if self.__auto_detectLegs: forward = not forward
         if positiveZc is not None and ((positiveZc.founded and forward) or (not positiveZc.founded and not forward)):
             elapsed_time = time.time() - self.__timestamp
             if elapsed_time > self.__timeThreshold*2:    # se self.__pos è True ho già trovaro un picco quindi lo Zc è valido    
@@ -706,16 +711,17 @@ class Analyzer():
                 # set time for bpm estimator
                 if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
                 self.__interestingPoints.append(self.__currentGlobalIndex)
+                print("gradient: " + str(self.__gradientThreshold))
 
             # threshold update
             self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=0.85, min_value=0.3)
-            print("gradient: " + str(self.__gradientThreshold))
+            # print("gradient: " + str(self.__gradientThreshold))
 
 
     ################################ OBJECT CALL ======================================================== && Rob ========
 
     
-    def __call__(self, data, index, num, sharedIndex, samples, exType, selectedLeg, sharedLegBool, syncProcesses, interestingPoints, betweenStepsTimes, calculateBpm, sound):
+    def __call__(self, data, index, num, sharedIndex, samples, exType, auto_detectLegs, selectedLeg, sharedLegBool, syncProcesses, interestingPoints, betweenStepsTimes, calculateBpm, sound):
         
         self.syncProcesses = syncProcesses
 
@@ -738,6 +744,7 @@ class Analyzer():
         self.__calculateBpm = calculateBpm
         self.__sound = sound
         self.__sharedBetweenStepsTimes = betweenStepsTimes
+        self.__auto_detectLegs = auto_detectLegs
 
         # 0 --> walking
         # 1 --> Walking in place and Marching

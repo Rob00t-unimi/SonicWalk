@@ -396,7 +396,7 @@ class MtwAwinda(object):
     def mtwCalibrate():
         pass
 
-    def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True, exType:int=0, selectedLeg:bool=None, calculateBpm:bool=False, shared_data:object=None, setStart:callable=None, sound:bool=True):
+    def mtwRecord(self, duration:float, plot:bool=False, analyze:bool=True, exType:int=0, auto_detectLegs:bool=True, selectedLeg:bool=None, calculateBpm:bool=False, shared_data:object=None, setStart:callable=None, sound:bool=True):
         """Record pitch data for duration seconds
         
         Returns a numpy.array object containing the data for each device and the relative index, and interesting points bidimensional array of indexes
@@ -405,6 +405,7 @@ class MtwAwinda(object):
         if plot=True it spawns a daemon that handles plotting
         if analyze=True (default) it spawns a daemon that performs step counting
         exType defines the type of analysis to be performed
+        if auto_detectLegs = True it automatically detect backward and forward legs
         """
 
         if not isinstance(duration, int) or duration <= 10:
@@ -455,8 +456,8 @@ class MtwAwinda(object):
                 sharedSyncronizer = ProcessWaiting()
                 # First id device assumed as right leg, is related with data0, so with analyzer_process0
                 # Second id device assumed as left leg is related with data1, so with analyzer_process1
-                analyzer_process0 = mp.Process(target=analyzer0, name="analyzer0", args=(shared_data.data0, shared_data.index0, 0, sharedIndex, samples, exType, selectedLeg, sharedLegBool, sharedSyncronizer.start, interestingPoints0, betweenStepsTimes0, calculateBpm, sound), daemon=True)
-                analyzer_process1 = mp.Process(target=analyzer1, name="analyzer1", args=(shared_data.data1, shared_data.index1, 1, sharedIndex, samples, exType, not selectedLeg, sharedLegBool, sharedSyncronizer.start, interestingPoints1, betweenStepsTimes1, calculateBpm, sound), daemon=True)
+                analyzer_process0 = mp.Process(target=analyzer0, name="analyzer0", args=(shared_data.data0, shared_data.index0, 0, sharedIndex, samples, exType, auto_detectLegs, selectedLeg, sharedLegBool, sharedSyncronizer.start, interestingPoints0, betweenStepsTimes0, calculateBpm, sound), daemon=True)
+                analyzer_process1 = mp.Process(target=analyzer1, name="analyzer1", args=(shared_data.data1, shared_data.index1, 1, sharedIndex, samples, exType, auto_detectLegs, not selectedLeg, sharedLegBool, sharedSyncronizer.start, interestingPoints1, betweenStepsTimes1, calculateBpm, sound), daemon=True)
                 analyzer_process0.start()
                 analyzer_process1.start()
                 #delete local version of samples 
@@ -464,6 +465,7 @@ class MtwAwinda(object):
                 # gc.collect()
             
             time.sleep(1) #wait one second before starting orientation reset and to allow processes to properly start
+            time.sleep(2)
             self.__resetOrientation()
 
             try:

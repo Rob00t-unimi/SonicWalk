@@ -89,6 +89,11 @@ class RecordingFrame(QWidget):
         # init pygame
         pygame.init()
         self.clock = pygame.time.Clock()
+        if os.path.basename(os.getcwd()) == "GUI":
+            self.indication_sounds = ["../sonicwalk/audio_samples/start_exercise.mp3", "../sonicwalk/audio_samples/feet_together.mp3", "../sonicwalk/audio_samples/right_feet_forward.mp3", "../sonicwalk/audio_samples/left_feet_forward.mp3", "../sonicwalk/audio_samples/start_movement.mp3", "../sonicwalk/audio_samples/exercise_completed.mp3"]
+        else: 
+            self.indication_sounds = ["sonicwalk/audio_samples/start_exercise.mp3", "sonicwalk/audio_samples/feet_together.mp3", "sonicwalk/audio_samples/right_feet_forward.mp3", "sonicwalk/audio_samples/left_feet_forward.mp3", "sonicwalk/audio_samples/start_movement.mp3", "sonicwalk/audio_samples/exercise_completed.mp3"]
+        self.indications_index = 0
 
         # create a timer
         self.timer = QTimer(self)
@@ -250,11 +255,15 @@ class RecordingFrame(QWidget):
 
         # Execute mtw_run in a different thread
         analyze = True
-        self.exerciseTime = 90 if self.modality != 0 else 20
-        if self.selectedExercise == 3 or self.selectedExercise == 4: selectedLeg = self.getSelectedLeg()
-        else: selectedLeg = None
+        self.exerciseTime = 90 if self.modality != 0 else 25
+        if self.selectedExercise == 3 or self.selectedExercise == 4: self.selectedLeg = self.getSelectedLeg()
+        else: self.selectedLeg = None
         
-        self.record_thread = MtwThread(Duration=self.exerciseTime, MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, selectedLeg=selectedLeg, Analyze=analyze, setStart = self.emit_startSignal, CalculateBpm=self.calculateBpm, shared_data = self.shared_data, sound = self.sound)
+        indication = pygame.mixer.Sound(self.indication_sounds[0])
+        indication.play()
+        self.indications_index = 1
+
+        self.record_thread = MtwThread(Duration=self.exerciseTime, MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, auto_detectLegs = False, selectedLeg=self.selectedLeg, Analyze=analyze, setStart = self.emit_startSignal, CalculateBpm=self.calculateBpm, shared_data = self.shared_data, sound = self.sound)
         self.record_thread.daemon = True
         self.record_thread.start()
 
@@ -282,13 +291,39 @@ class RecordingFrame(QWidget):
             - self.Fs
             - self.bpm
             - self
+            - self.indications_index
 
         EFFECTS:    
             - Checks the execution status of the MtwThread.
-            - if is not alive and there's not errors sets the results and executes saveRecording
+            - if is not alive and there's not errors sets the results, show the estimated bpm and executes saveRecording
+            - if is alive play the vocal instructions
             - if there's errors show QMessageBox to retry
         """
-        if not self.record_thread.is_alive():
+        
+        if self.record_thread.is_alive():
+
+            if not pygame.mixer.get_busy():
+                indication = pygame.mixer.Sound(self.indication_sounds[self.indications_index])
+                if not self.execution:
+                    if self.indications_index ==1:  # Riproduci i suoni 0 e 1
+                        indication.play()
+                        self.indications_index += 1
+                else:
+                    if self.indications_index == 2: 
+                        if self.selectedLeg is not None and self.selectedLeg: 
+                            indication.play()
+                            self.indications_index = 4    # salto il 3
+                        elif self.selectedLeg is not None and not self.selectedLeg:
+                            self.indications_index = 3     # salto il 2
+                            indication = pygame.mixer.Sound(self.indication_sounds[self.indications_index])
+                            indication.play()
+                            self.indications_index = 4
+                        elif self.selectedLeg is None:
+                            self.indications_index = 4
+                    elif self.indications_index < 5:
+                        indication.play()
+                        self.indications_index += 1
+        else:
             print("closed thread")
 
             self.playingMusic = False   # stops music
@@ -318,9 +353,8 @@ class RecordingFrame(QWidget):
                     if response == QMessageBox.Yes:
                         self.startExecution()
                 else:
-                    beepPath = "../sonicwalk/audio_samples/beep.wav" if os.path.basename(os.getcwd()) == "GUI" else "sonicwalk/audio_samples/beep.wav"
-                    beep = pygame.mixer.Sound(beepPath)
-                    beep.play()
+                    end = pygame.mixer.Sound(self.indication_sounds[5])
+                    end.play()
                     self.signals, self.Fs, self.bpm = result
                     try:
                         if self.setBpm and self.bpm != False:
@@ -337,11 +371,11 @@ class RecordingFrame(QWidget):
                         print("Bpm Estimation Failed")
                         bpm_err = QMessageBox()
                         bpm_err.setIcon(QMessageBox.Warning)
-                        bpm_err.setText("BPM Estimation Failed, no interesting points detected in the signal. Please retry or set BPM manually in the Music phase.")
+                        bpm_err.setText("BPM Estimation Failed, no interesting points detected in the signal. Please retry or set BPM manually in the Pre-Recorded phase.")
                         if self.setBpm and self.bpm == False and self.modality == 0:
-                            bpm_err.setText("BPM Estimation Failed, no interesting points detected in the signal. Please retry or set BPM manually in the Music phase.")
+                            bpm_err.setText("BPM Estimation Failed, no interesting points detected in the signal. Please retry or set BPM manually in the Pre-Recorded phase.")
                         else:
-                            bpm_err.setText("BPM Setting Failed. Please retry or set BPM manually in the Music phase.")
+                            bpm_err.setText("BPM Setting Failed. Please retry or set BPM manually in the Pre-Recorded phase.")
                         response = bpm_err.exec_()
 
                     self.saveRecording()   
@@ -374,11 +408,6 @@ class RecordingFrame(QWidget):
         self.connection_msg.reject()
 
         self.plotter_start()
-        beepPath = "../sonicwalk/audio_samples/beep.wav" if os.path.basename(os.getcwd()) == "GUI" else "sonicwalk/audio_samples/beep.wav"
-        # for py installer only: 
-        # beepPath = os.getcwd()+"/_internal/audio_samples/beep.wav"
-        beep = pygame.mixer.Sound(beepPath)
-        beep.play()
 
         if self.modality == 1:
 

@@ -5,12 +5,14 @@ class MtwThread(threading.Thread):
     """
     A thread class for performing the analysis and recording of the MTW devices.
     """
-    def __init__(self, Duration=90, MusicSamplesPath="../sonicwalk/audio_samples/cammino_1_fase_2", Exercise=0, selectedLeg=None, Analyze=True, setStart=None, CalculateBpm=False, shared_data=None, sound=True):
+    def __init__(self, Duration=90, MusicSamplesPath="../sonicwalk/audio_samples/cammino_1_fase_2", Exercise=0, auto_detectLegs = True , selectedLeg=None, Analyze=True, setStart=None, CalculateBpm=False, shared_data=None, sound=True):
         """    
         REQUIRES:
             - Duration (int): Duration of the recording in seconds. Defaults to 90.
             - MusicSamplesPath (str): Path to the music samples directory. Defaults to "../sonicwalk/audio_samples/cammino_1_fase_2".
             - Exercise (int): Type of exercise: 0 for walking, 1 for walking in place (High Knees, Butt Kicks), 2 for walking in place (High Knees with sensors on the thighs), 3 for the swing, 4 for the double step. Defaults to 0 (walking).
+            - auto_detectLegs (bool): true for auto detect legs, false otherwise. Defaults to True
+            - selectedLeg (bool): true if right leg forward, false if left leg forward. Defaults to None.
             - Analyze (bool): Indicates whether real-time analysis of the exercise will be performed. Defaults to True.
             - setStart (callable): Function to emit a signal when the recording starts. Defaults to None.
             - CalculateBpm (bool): Indicates whether to calculate BPM during analysis. Defaults to False.
@@ -36,6 +38,7 @@ class MtwThread(threading.Thread):
         self.mtw = None
         self.stop_plotter = None
         self.sound = sound
+        self.auto_detectLegs = auto_detectLegs
 
     def run(self):
         """    
@@ -49,7 +52,7 @@ class MtwThread(threading.Thread):
         try:
             with mtw.MtwAwinda(120, 19, self.MusicSamplesPath) as mtw:
                 self.mtw = mtw
-                data = mtw.mtwRecord(duration=self.Duration, plot=False, analyze=self.Analyze, exType=self.Exercise, selectedLeg = self.selectedLeg, calculateBpm=self.CalculateBpm, shared_data=self.shared_data, setStart=self.setStart, sound = self.sound)
+                data = mtw.mtwRecord(duration=self.Duration, plot=False, analyze=self.Analyze, exType=self.Exercise, auto_detectLegs = self.auto_detectLegs, selectedLeg = self.selectedLeg, calculateBpm=self.CalculateBpm, shared_data=self.shared_data, setStart=self.setStart, sound = self.sound)
                 
             if data is not None:
                 data0 = data[0][0]

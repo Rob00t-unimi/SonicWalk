@@ -43,12 +43,29 @@ class ExerciseFrame(QFrame):
             self.musicModality = 0
             self.light = light
             self.bpm = 60
+            self.sensibility = 3
             self.firstRendering = True
+            self.patient_info = None
 
-            # set self layout
-            self.layout_selection = QVBoxLayout(self)
-            self.layout_selection.setContentsMargins(30, 30, 30, 30)
+            # Main layout
+            self.layout = QVBoxLayout(self)
             self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Ignored) 
+
+            # Scroll area
+            self.scroll_area = QScrollArea()
+            self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # Disable horizontal scrolling
+            self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)     # Enable vertical scrolling as needed
+            self.scroll_area.setWidgetResizable(True)
+
+            # Container widget for the scroll area
+            self.scroll_content = QWidget()
+            self.scroll_area.setWidget(self.scroll_content)
+
+            # Layout for the content inside the scroll area
+            self.layout_selection = QVBoxLayout(self.scroll_content)
+
+            # Add scroll area to the main layout
+            self.layout.addWidget(self.scroll_area)
 
             # exercise selection
             label_selected_exercise = QLabel("Selected Exercise:")
@@ -58,14 +75,23 @@ class ExerciseFrame(QFrame):
             self.exercise_selector.currentTextChanged.connect(self.selectExercise)
             self.layout_selection.addWidget(self.exercise_selector)
 
-            # music selection
-            self.label_selected_music = QLabel("Selected Music:")
-            self.layout_selection.addWidget(self.label_selected_music)
-            self.musicOptions = self._findMusicOptions()
-            self.music_selector = QComboBox()
-            self.music_selector.addItems(self.musicOptions if self.musicOptions is not None else [""])
-            self.music_selector.currentTextChanged.connect(self.selectMusic)
-            self.layout_selection.addWidget(self.music_selector)
+            # Slider for Sensibility
+            self.slider2_label = QLabel("Sensibility:")
+            self.slider2_frame = QWidget()
+            self.sensibility_slider = QSlider(Qt.Horizontal)  
+            self.sensibility_slider.setRange(1, 5) 
+            self.sensibility_slider.setValue(self.sensibility)  
+            self.sensibility_slider.setTickInterval(1)  
+            self.sensibility_slider.valueChanged.connect(self._setSensibility)
+            self.sensibility_value_label = QLabel("  " + str(self.sensibility_slider.value()))
+
+            frame2_layout = QHBoxLayout()
+            frame2_layout.addWidget(self.sensibility_slider)
+            frame2_layout.addWidget(self.sensibility_value_label)
+            self.slider2_frame.setLayout(frame2_layout) 
+
+            self.layout_selection.addWidget(self.slider2_label)
+            self.layout_selection.addWidget(self.slider2_frame)
 
             # define a frame for buttons
             self.music_buttons_frame = QWidget()
@@ -85,15 +111,25 @@ class ExerciseFrame(QFrame):
             self.realTimeMusic_button.setCheckable(True)
             self.realTimeMusic_button.clicked.connect(lambda: self._buttonClick(2))
 
+            # music selection
+            self.label_selected_music = QLabel("Selected Music:")
+            self.layout_selection.addWidget(self.label_selected_music)
+            self.musicOptions = self._findMusicOptions()
+            self.music_selector = QComboBox()
+            self.music_selector.addItems(self.musicOptions if self.musicOptions is not None else [""])
+            self.music_selector.currentTextChanged.connect(self.selectMusic)
+            self.layout_selection.addWidget(self.music_selector)
+
             # Slider for BPM
             self.slider_label = QLabel("Velocity:")
             self.slider_frame = QWidget()
             self.bpm_slider = QSlider(Qt.Horizontal)  
             self.bpm_slider.setRange(1, 150) 
-            self.bpm_slider.setValue(60)  
+            self.bpm_slider.setValue(self.bpm)  
             self.bpm_slider.setTickInterval(5)  
             self.bpm_slider.valueChanged.connect(self._setBpm)
             self.bpm_value_label = QLabel("  "+str(self.bpm_slider.value())+" bpm")
+
             frame_layout = QHBoxLayout()
             frame_layout.addWidget(self.bpm_slider)
             frame_layout.addWidget(self.bpm_value_label)
@@ -112,6 +148,82 @@ class ExerciseFrame(QFrame):
                 self.selectMusic(self.MusicNames[0])
 
             self.noMusic_button.click()
+
+    def setPatientId(self, patientId):
+        """
+            MODIFIES:   
+                - self.patient_info
+
+            EFFECTS:    
+                - updates patient_info
+        """
+        if patientId is None: 
+            self.patient_info = None
+            self.sensibility = 3
+            # self.bpm = 60
+            self.sensibility_slider.setValue(self.sensibility) 
+        else:
+            self.patient_id = patientId
+            try:
+                with open(self.dataset_path, 'r') as file:
+                    data = json.load(file)
+
+                for patient in data:
+                    if patient["ID"] == patientId:
+                        self.patient_info = patient
+                        self.load_sensibility()
+                        # self.bpm = patient[exercise + "_bpm"]
+                        break
+            except:
+                print("Error: impossible to load patient data")
+
+        # self.bpm_slider.setValue(self.bpm)
+
+    def load_sensibility(self):
+        if self.selectedExercise == 0: exercise = "walk" 
+        elif self.selectedExercise == 1: exercise = "march"
+        elif self.selectedExercise == 3: exercise = "swing"
+        elif self.selectedExercise == 4: exercise = "double_step"
+
+        self.sensibility = self.patient_info[exercise + "_sensibility"]
+        self.sensibility_slider.setValue(self.sensibility) 
+
+    def update_patient_sensibility(self):
+        if self.patient_info is not None:
+            if self.selectedExercise == 0: exercise = "walk" 
+            elif self.selectedExercise == 1: exercise = "march"
+            elif self.selectedExercise == 3: exercise = "swing"
+            elif self.selectedExercise == 4: exercise = "double_step"
+            self.patient_info[exercise + "_sensibility"] = self.sensibility
+
+            try:
+                with open(self.dataset_path, 'r') as file:
+                    data = json.load(file)
+                for existing_patient in data:
+                    if existing_patient["ID"] == self.patient_info["ID"]:
+                        existing_patient.update(self.patient_info)
+                        # print(self.patient_info)
+                        break
+            except:
+                print("Error: impossible to load patient data")
+            try:
+                with open(self.dataset_path, 'w') as file:
+                    json.dump(data, file)
+            except Exception as e:
+                print("Error: impossible to save the sensibility")
+
+
+    def _setSensibility(self):
+        """
+            MODIFIES:   
+                - self.sensibility
+
+            EFFECTS:    
+                - updates sensibility value and label
+        """
+        self.sensibility = self.sensibility_slider.value()
+        self.sensibility_value_label.setText("  "+str(self.sensibility))
+        self.update_patient_sensibility()
 
     def _setBpm(self):
         """
@@ -207,6 +319,8 @@ class ExerciseFrame(QFrame):
         elif "Right" in text: self.selected_front_leg=True
         if "leg" in text: print(f"Front Leg: {'Left' if not self.selected_front_leg else 'Right'}")
 
+        self.load_sensibility()
+
     def _buttonClick(self, number):
         """"
             REQUIRES:   
@@ -279,6 +393,13 @@ class ExerciseFrame(QFrame):
             - Rerurns selected bpm
         """
         return self.bpm
+    
+    def getSensibility(self):
+        """
+        EFFECTS:    
+            - Rerurns sensibility value
+        """
+        return self.sensibility
     
     def paintEvent(self, event):
         # when the ExerciseFrame is rendered it is executed paintEvent

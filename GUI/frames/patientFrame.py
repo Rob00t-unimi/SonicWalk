@@ -7,7 +7,7 @@ class PatientFrame(QFrame):
     """
     Custom frame for patient visualization, selection and adding.
     """
-    def __init__(self, light = True, enablePlayButton = None, disablePlayButton = None):
+    def __init__(self, light = True, enablePlayButton = None, disablePlayButton = None, setPatientId = None):
         """
         REQUIRES:
             - light (bool): a boolean indicating light or dark theme
@@ -29,6 +29,7 @@ class PatientFrame(QFrame):
         self.disablePlayButton = disablePlayButton
         self.light = light
         self.data = None
+        self.setPatientId = setPatientId
 
         # layout
         layout_patient = QVBoxLayout(self)
@@ -110,7 +111,10 @@ class PatientFrame(QFrame):
             if dat.strip():
                 dataEmpty = False
                 break
-        if dataEmpty: self.disablePlayButton()
+        if dataEmpty: 
+            self.disablePlayButton()
+            self.setPatientId(None)
+        else: self.setPatientId(self.data[2][1]) # set patient id in exercise frame        
 
     def getPatient(self):
         """

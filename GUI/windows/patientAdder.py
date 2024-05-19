@@ -153,6 +153,10 @@ class PatientAdder(QFrame):
             "Weight": str(measurements_table.cellWidget(1, 0).value()) + " kg",
             "Right_Leg_Length": str(measurements_table.cellWidget(2, 0).value()) + " cm",
             "Left_Leg_Length": str(measurements_table.cellWidget(3, 0).value()) + " cm",
+            "walk_sensibility": 3,
+            "march_sensibility": 3,
+            "swing_sensibility": 3,
+            "double_step_sensibility": 3,
             }, modal.close)
         )
 

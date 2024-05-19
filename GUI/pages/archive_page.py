@@ -559,7 +559,7 @@ class ArchivePage(QWidget):
             self.listView_folders.clearSelection()
             QMessageBox.information(self, "Deleting success", "Patient deleted successfully.")
         except FileNotFoundError:
-            pass
+            QMessageBox.information(self, "Deleting success", "Patient deleted successfully.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred while deleting the patient folder: {str(e)}")
 

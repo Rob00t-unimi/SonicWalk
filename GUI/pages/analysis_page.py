@@ -55,7 +55,7 @@ class AnalysisPage(QWidget):
 
         # create sub frames
         self.selection_frame = ExerciseFrame(light=self.light)
-        self.actions_frame = RecordingFrame(setBpm = self.selection_frame.setBpm, getBpm = self.selection_frame.getBpm, getMusicModality = self.selection_frame.getMusicModality, getMusicPath = self.selection_frame.getMusicPath, getExerciseNumber = self.selection_frame.getExerciseNumber, getSelectedLeg=self.selection_frame.getSelectedLeg, light = self.light, changeEnabledAll = self.changeEnabledAll, shared_data=self.shared_data, plotter_start = self.plotter_start, setSaved = self.setSaved)#, mtw_run_finished = self.mtw_run_finished)
+        self.actions_frame = RecordingFrame(setBpm = self.selection_frame.setBpm, getBpm = self.selection_frame.getBpm, getMusicModality = self.selection_frame.getMusicModality, getMusicPath = self.selection_frame.getMusicPath, getExerciseNumber = self.selection_frame.getExerciseNumber, getSensibility = self.selection_frame.getSensibility, getSelectedLeg=self.selection_frame.getSelectedLeg, light = self.light, changeEnabledAll = self.changeEnabledAll, shared_data=self.shared_data, plotter_start = self.plotter_start, setSaved = self.setSaved)#, mtw_run_finished = self.mtw_run_finished)
         self.patient_frame = PatientFrame(light=self.light, enablePlayButton = self.actions_frame.enablePlayButton, disablePlayButton = self.actions_frame.disablePlayButton, setPatientId = self.selection_frame.setPatientId) 
         self.actions_frame.getPatient = self.patient_frame.getPatient
         self.plotter_frame = QWidget()

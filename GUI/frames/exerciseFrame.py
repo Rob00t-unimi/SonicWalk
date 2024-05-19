@@ -180,20 +180,28 @@ class ExerciseFrame(QFrame):
         # self.bpm_slider.setValue(self.bpm)
 
     def load_sensibility(self):
-        if self.selectedExercise == 0: exercise = "walk" 
-        elif self.selectedExercise == 1: exercise = "march"
-        elif self.selectedExercise == 3: exercise = "swing"
-        elif self.selectedExercise == 4: exercise = "double_step"
+        text = self.exercise_selector.currentText()
+        if text == "Walk": exercise = "walk"
+        elif "March" in text: exercise = "march"
+        elif "Swing" in text and "Left" in text: exercise = "swing_left"
+        elif "Swing" in text and "Right" in text: exercise = "swing_right"
+        elif "Double Step" in text and "Left" in text: exercise = "double_step_left"
+        elif "Double Step" in text and "Right" in text: exercise = "double_step_right"
 
         self.sensibility = self.patient_info[exercise + "_sensibility"]
         self.sensibility_slider.setValue(self.sensibility) 
+        print("sensibility level: " + str(self.sensibility))
 
     def update_patient_sensibility(self):
+
         if self.patient_info is not None:
-            if self.selectedExercise == 0: exercise = "walk" 
-            elif self.selectedExercise == 1: exercise = "march"
-            elif self.selectedExercise == 3: exercise = "swing"
-            elif self.selectedExercise == 4: exercise = "double_step"
+            text = self.exercise_selector.currentText()
+            if text == "Walk": exercise = "walk"
+            elif "March" in text: exercise = "march"
+            elif "Swing" in text and "Left" in text: exercise = "swing_left"
+            elif "Swing" in text and "Right" in text: exercise = "swing_right"
+            elif "Double Step" in text and "Left" in text: exercise = "double_step_left"
+            elif "Double Step" in text and "Right" in text: exercise = "double_step_right"
             self.patient_info[exercise + "_sensibility"] = self.sensibility
 
             try:
@@ -206,6 +214,7 @@ class ExerciseFrame(QFrame):
                         break
             except:
                 print("Error: impossible to load patient data")
+                return
             try:
                 with open(self.dataset_path, 'w') as file:
                     json.dump(data, file)
@@ -222,6 +231,7 @@ class ExerciseFrame(QFrame):
                 - updates sensibility value and label
         """
         self.sensibility = self.sensibility_slider.value()
+        print("sensibility level: " + str(self.sensibility))
         self.sensibility_value_label.setText("  "+str(self.sensibility))
         self.update_patient_sensibility()
 
@@ -319,7 +329,8 @@ class ExerciseFrame(QFrame):
         elif "Right" in text: self.selected_front_leg=True
         if "leg" in text: print(f"Front Leg: {'Left' if not self.selected_front_leg else 'Right'}")
 
-        self.load_sensibility()
+        if self.patient_info is not None:
+            self.load_sensibility()
 
     def _buttonClick(self, number):
         """"

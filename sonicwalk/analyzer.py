@@ -267,18 +267,35 @@ class Analyzer():
 
     ################################ STEP DETECTION =======================================================================
         
-    # RIFLESSIONE: 
-    #       Siccome il segnale è pulito e il rumore è basso e quando è alto è per lo più negativo (per via del piegamento delle ginocchia)
-    #       Per rimuovere la threshold dinamica si potrebbe pensare di elevare il segnale al cubo, distanziando rumore e passi, poi aumentando la traslazione si ottiene una threshold fissa                
-
     def __detectStep(self):
 
         if self.__endController() : return
         self.__nextWindow()
 
+        displacement = 5
+        validRange = 3.0
+        min_treshold = 5.0
+        time_threshold = 0.1 # seconds
+
+        if self.__sensitivity == 1:
+            self.displacement = 5
+            self.validRange = 3.0   # 8.0 - 3.0 = 5.0, alzo la threshold minima e taglio di più il rumore
+            self.min_treshold = 8.0 # alzo la threshold minima dei picchi (picchi più significativi)
+        elif self.__sensitivity == 2:
+            self.displacement = 5   
+            self.validRange = 3.0    # 7.0 - 3.0 = 4.0, alzo la threshold minima e taglio di più il rumore
+            self.min_treshold = 7.0  # alzo la threshold minima dei picchi (picchi più significativi)
+        elif self.__sensitivity == 4:
+            self.displacement = 4   # diminuisco il displacement rilevando zc più in basso (aumento la sensibilità), aumento però il ritardo
+            self.validRange = 4.0   # aumento il range per il rilevamento dei picchi, quindi scendo fino a 1.0 (5.0 - 4.0) (picchi meno significativi ma includo più rumore)
+            self.min_treshold = 5.0
+        elif self.__sensitivity == 5:
+            self.displacement = 2   # diminuisco il displacement rilevando zc più in basso (aumento la sensibilità), aumento però il ritardo
+            self.validRange = 0.5   # scendo fino a 0 (picchi meno significativi ma includo più rumore)
+            self.min_treshold = 0.5
         
         #TEST: subtract a certain angle to trigger sound earlier in the cycle
-        self.__pitch = self.__pitch - 5
+        self.__pitch = self.__pitch - displacement
 
         # update peak (only in swing phase : after a positive zero-crossing is encountered 
         # - until the next zero-crossing with negative gradient)
@@ -291,7 +308,7 @@ class Analyzer():
         if negativeZc is not None and negativeZc.founded:
             if self.__swingPhase == True:
                 elapsed_time = time.time() - self.__timestamp
-                if self.__peak >= self.__threshold - 3.0 and elapsed_time > self.__timeThreshold:
+                if self.__peak >= self.__threshold - validRange and elapsed_time > time_threshold:
                     # a step is valid only if last peak is greater than adaptive threshold 
                     # minus a constant angle to allow angles less than the minimum to be re gistered
 
@@ -311,7 +328,7 @@ class Analyzer():
 
                     # update threshold
                     newthresh = np.min(self.__peakHistory)
-                    self.__threshold = newthresh if newthresh > 5.0 else 5.0 # ensure that threshold cannot go below 2.0
+                    self.__threshold = newthresh if newthresh > min_treshold else min_treshold # ensure that threshold cannot go below 2.0
 
                 self.__peak = 0.0 #reset peak whenever a zero crossing is encountered (negative gradient)
         elif negativeZc is not None and not negativeZc.founded: #positiveZc
@@ -322,7 +339,7 @@ class Analyzer():
     ### Supporta:
     #           - Marcia sul posto (Ginocchia alte - High knees march) con sensori sulle caviglie
     #           - Marcia sul posto (Ginocchia alte - High knees march) con sensori sulle cosce
-    #           - Macia sul posto (piedi indietro - butt kicks) sensori sulle caviglie
+    #           - Macia sul posto (piedi indietro - back kicks) sensori sulle caviglie
             
     ### ALGORITMO
             
@@ -349,8 +366,13 @@ class Analyzer():
         if self.__endController() : return
         self.__nextWindow()
 
-        # Window manipulation
         self.__threshold = 12
+        if self.__sensitivity == 1: self.__threshold = 20
+        elif self.__sensitivity == 2: self.__threshold = 16
+        elif self.__sensitivity == 4: self.__threshold = 8
+        elif self.__sensitivity == 5: self.__threshold = 3
+
+        # Window manipulation
         if (self.__exType == 1):
             self.__pitch = - self.__pitch
         self.__pitch = self.__pitch - self.__threshold
@@ -438,11 +460,17 @@ class Analyzer():
         if self.__endController() : return
         self.__nextWindow()
 
+        displacement = 5
+        if self.__sensitivity == 1: displacement = 10
+        elif self.__sensitivity == 2: displacement = 8
+        elif self.__sensitivity == 4: displacement = 4
+        elif self.__sensitivity == 5: displacement = 2
+
         if self.__auto_detectLegs:
             print("AUTO DETECTION...")
             # AUTO DETECTION
             if self.__sharedLegDetected.get() == False:
-                self.detectLeg(displacement=5)
+                self.detectLeg(displacement=displacement)
 
             if self.__sharedLegDetected.get() == True : 
                 if self.__legDetected == False:
@@ -511,34 +539,17 @@ class Analyzer():
             previous = self.__previousWindow
             window = self.__window
 
-            # # Remove values above or below zero
-            # pitch[pitch <= 0 if self.__pos else pitch >= 0] = 0
-            # previous[previous <= 0 if self.__pos else previous >= 0] = 0
-            # window[window <= 0 if self.__pos else window >= 0] = 0
+            max_time_wait = 0.4 if not self.__pos else 0.3  # max wait time before play sound
+            displacement = 5
+            time_threshold = 0.25   # time threshold between peaks
+            peak_threshold = 5
 
-            # # Find if there are peaks or minimum values
-            # findedPeak = self.peakFinder(previous_window=previous, window=window, current_window=pitch, minimum = (not self.__pos), positive=(self.__pos))
+            if self.__sensitivity == 1: peak_threshold = 12
+            elif self.__sensitivity == 2: peak_threshold = 8
+            elif self.__sensitivity == 4: peak_threshold = 3
+            elif self.__sensitivity == 5: peak_threshold = 1
 
-            # # If a peak or a minimum has been found, check if it is valid
-            # if findedPeak:
-            #     peak = np.max(window) if self.__pos else (-1*np.min(window))
-            #     # self.__interestingPoints.append(self.__currentGlobalIndex)
-            #     elapsed_time = time.time() - self.__timestamp
-            #     if elapsed_time > self.__timeThreshold*(5 if self.__foundedPeak else 2) and peak > 5:
-            #         self.__timestamp = time.time()
-            #         if not self.__foundedPeak:
-            #             self.__interestingPoints.append(self.__currentGlobalIndex)  # add the pick into the interesting points list
-            #                                 
-            #            if self.__sound: self._playSample()
-            #            # set time for bpm estimator
-            #            if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
-            #             self.__foundedPeak = True  # first valid pitch is founded
-            #         else:
-            #             self.__foundedPeak = False # second muted pitch is founded
-            #             self.__pos = not self.__pos # alternate searching types of pitch every 2 peaks founded
-
-            time_thresh = 0.4 if not self.__pos else 0.3
-            if time.time() - self.__timestamp >= time_thresh and self.__firstpeak and not self.__foundedPeak:
+            if time.time() - self.__timestamp >= max_time_wait and self.__firstpeak and not self.__foundedPeak:
                 # sound here after a delay
                 self.__interestingPoints.append(self.__currentGlobalIndex)
                 # play sound and increment the movement counter
@@ -553,9 +564,9 @@ class Analyzer():
 
             # Remove values above or below zero
             if self.__findMininmum == self.__pos and self.__pos == True:              
-                pitch = pitch + 5               # traslo in alto quando cerco minimi positivi, per assicurarmi di prenderli tutti
-                previous = previous + 5         # al contratio non serve traslare perchè andando indietro non arrivo mai a 0 (perderei l'equilibrio)
-                window = window + 5
+                pitch = pitch + displacement               # traslo in alto quando cerco minimi positivi, per assicurarmi di prenderli tutti
+                previous = previous + displacement         # al contratio non serve traslare perchè andando indietro non arrivo mai a 0 (perderei l'equilibrio)
+                window = window + displacement
             pitch[pitch <= 0 if self.__pos else pitch >= 0] = 0
             previous[previous <= 0 if self.__pos else previous >= 0] = 0
             window[window <= 0 if self.__pos else window >= 0] = 0
@@ -567,8 +578,8 @@ class Analyzer():
                 peak = abs(np.max(window)) if not self.__findMininmum else (abs(np.min(window)))
                 # self.__interestingPoints.append(self.__currentGlobalIndex)
                 elapsed_time = time.time() - self.__timestamp
-                thresh = 0 if self.__findMininmum == self.__pos else 5
-                if elapsed_time > self.__timeThreshold*2.5 and peak > thresh:
+                thresh = 0 if self.__findMininmum == self.__pos else peak_threshold
+                if elapsed_time > time_threshold and peak > thresh:
                     self.__timestamp = time.time()
 
                     # findMininmum starts false
@@ -603,8 +614,6 @@ class Analyzer():
                         self.__firstpeak = False    # reset first peak
                         # self.__interestingPoints.append(self.__currentGlobalIndex)
                         
-
-
             # update windows
             self._updateWindows() 
 
@@ -629,15 +638,34 @@ class Analyzer():
         if self.__endController() : return
         self.__nextWindow()
 
-        pitch = (self.__pitch - 5) if not self.__pos else (self.__pitch + 5)
+        displacement0 = -5
+        displacement1 = 5
+        valid_gradient_range = 0.35 # per permettere alla soglia anche di salire
+        time_threshold = 0.12 # seconds   # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
+        min_gradient_threshold = 0.4
+  
+        # THIS VALUES NOT GOOD
+        # if self.__sensitivity == 1: 
+        #     min_gradient_threshold = 0.6
+        #     valid_gradient_range = 0.2
+        # elif self.__sensitivity == 2: 
+        #     min_gradient_threshold = 0.5
+        #     valid_gradient_range = 0.3
+        # elif self.__sensitivity == 4: 
+        #     min_gradient_threshold = 0.3
+        #     valid_gradient_range = 0.45
+        # elif self.__sensitivity == 5: 
+        #     min_gradient_threshold = 0.2
+        #     valid_gradient_range = 0.55
+
+        pitch = (self.__pitch + displacement0) if not self.__pos else (self.__pitch + displacement1)
         # pitch = (self.__pitch - 1) if not self.__pos else (self.__pitch + 2)      # da positivo a negativo è più veloce quindi non anticipo, da negativo a positivo è più lento e anticipo
 
         # ricerca di zero crossing positivo o negativo entro la soglia
-        positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+0.35)     # + 0.3 per permettere alla soglia anche di salire
+        positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+valid_gradient_range)     # + 0.3 per permettere alla soglia anche di salire
         if positiveZc is not None and ((positiveZc.founded and self.__pos) or (not positiveZc.founded and not self.__pos)):
             elapsed_time = time.time() - self.__timestamp
-            if elapsed_time > self.__timeThreshold*1.2:    # se self.__pos è True ho già trovaro un picco quindi lo Zc è valido    
-                                                        # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
+            if elapsed_time > time_threshold:    # se self.__pos è True ho già trovaro un picco quindi lo Zc è valido    
                 self.__interestingPoints.append(self.__currentGlobalIndex)
                 self.__pos = not self.__pos     # switch research of zero crossing type
                 self.__timestamp = time.time()  # update time stamp
@@ -648,7 +676,7 @@ class Analyzer():
                 # play sound and increment step count
 
             # threshold update
-            self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=0.85, min_value=0.4)
+            self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=0.85, min_value=min_gradient_threshold)
             # print("gradient: " + str(self.__gradientThreshold))
 
 
@@ -665,11 +693,17 @@ class Analyzer():
         if self.__endController() : return
         self.__nextWindow()
 
+        displacement = 10
+        if self.__sensitivity == 1: displacement = 15
+        elif self.__sensitivity == 2: displacement = 12
+        elif self.__sensitivity == 4: displacement = 8
+        elif self.__sensitivity == 5: displacement = 5
+
         if self.__auto_detectLegs:
             print("AUTO DETECTION...")
             # AUTO DETECTION
             if self.__sharedLegDetected.get() == False:
-                self.detectLeg(displacement=10) # se il displacement è alto la piega del ginocchio deve essere più ampia, se è basso è meno
+                self.detectLeg(displacement=displacement) # se il displacement è alto la piega del ginocchio deve essere più ampia, se è basso è meno
 
             if self.__sharedLegDetected.get() == True : 
                 if self.__legDetected == False:
@@ -696,15 +730,26 @@ class Analyzer():
 
         # questo mi consente di traslare i segnali di 10 ° e - 10 °
 
-        pitch = (self.__pitch - 10) if forward else (self.__pitch + 15)
+        # standard values
+        displacement0 = -10
+        displacement1 = 15
+        valid_gradient_range = 0.35 # per permettere alla soglia anche di salire
+        time_threshold = 0.2 # seconds   # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
+        min_gradient_threshold = 0.3
+
+        # if self.__sensitivity == 1: 
+        # elif self.__sensitivity == 2: 
+        # elif self.__sensitivity == 4: 
+        # elif self.__sensitivity == 5: 
+
+        pitch = (self.__pitch + displacement0) if forward else (self.__pitch + displacement1)
 
         # ricerca di zero crossing
-        positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+0.35)     # + 0.3 per permettere alla soglia anche di salire
+        positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+valid_gradient_range)
         if self.__auto_detectLegs: forward = not forward
         if positiveZc is not None and ((positiveZc.founded and forward) or (not positiveZc.founded and not forward)):
             elapsed_time = time.time() - self.__timestamp
-            if elapsed_time > self.__timeThreshold*2:    # se self.__pos è True ho già trovaro un picco quindi lo Zc è valido    
-                                                        # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
+            if elapsed_time > time_threshold:    # se self.__pos è True ho già trovaro un picco quindi lo Zc è valido         
                 self.__timestamp = time.time()  # update time stamp
                 # play sound and increment the movement counter
                 if self.__sound: self._playSample()
@@ -714,14 +759,14 @@ class Analyzer():
                 print("gradient: " + str(self.__gradientThreshold))
 
             # threshold update
-            self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=0.85, min_value=0.3)
+            self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=0.85, min_value=min_gradient_threshold)
             # print("gradient: " + str(self.__gradientThreshold))
 
 
     ################################ OBJECT CALL ======================================================== && Rob ========
 
     
-    def __call__(self, data, index, num, sharedIndex, samples, exType, auto_detectLegs, selectedLeg, sharedLegBool, syncProcesses, interestingPoints, betweenStepsTimes, calculateBpm, sound):
+    def __call__(self, data, index, num, sharedIndex, samples, exType, sensitivityLev, auto_detectLegs, selectedLeg, sharedLegBool, syncProcesses, interestingPoints, betweenStepsTimes, calculateBpm, sound):
         
         self.syncProcesses = syncProcesses
 
@@ -745,6 +790,7 @@ class Analyzer():
         self.__sound = sound
         self.__sharedBetweenStepsTimes = betweenStepsTimes
         self.__auto_detectLegs = auto_detectLegs
+        self.__sensitivity = sensitivityLev
 
         # 0 --> walking
         # 1 --> Walking in place and Marching

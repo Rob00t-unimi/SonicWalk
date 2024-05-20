@@ -5,7 +5,7 @@ class MtwThread(threading.Thread):
     """
     A thread class for performing the analysis and recording of the MTW devices.
     """
-    def __init__(self, Duration=90, MusicSamplesPath="../sonicwalk/audio_samples/cammino_1_fase_2", Exercise=0, auto_detectLegs = True , selectedLeg=None, Analyze=True, setStart=None, CalculateBpm=False, shared_data=None, sound=True):
+    def __init__(self, Duration=90, MusicSamplesPath="../sonicwalk/audio_samples/cammino_1_fase_2", Exercise=0, sensitivityLev = 3, auto_detectLegs = True , selectedLeg=None, Analyze=True, setStart=None, CalculateBpm=False, shared_data=None, sound=True):
         """    
         REQUIRES:
             - Duration (int): Duration of the recording in seconds. Defaults to 90.
@@ -39,6 +39,7 @@ class MtwThread(threading.Thread):
         self.stop_plotter = None
         self.sound = sound
         self.auto_detectLegs = auto_detectLegs
+        self.sensitivity = sensitivityLev
 
     def run(self):
         """    
@@ -52,7 +53,7 @@ class MtwThread(threading.Thread):
         try:
             with mtw.MtwAwinda(120, 19, self.MusicSamplesPath) as mtw:
                 self.mtw = mtw
-                data = mtw.mtwRecord(duration=self.Duration, plot=False, analyze=self.Analyze, exType=self.Exercise, auto_detectLegs = self.auto_detectLegs, selectedLeg = self.selectedLeg, calculateBpm=self.CalculateBpm, shared_data=self.shared_data, setStart=self.setStart, sound = self.sound)
+                data = mtw.mtwRecord(duration=self.Duration, plot=False, analyze=self.Analyze, exType=self.Exercise, sensitivityLev = self.sensitivity, auto_detectLegs = self.auto_detectLegs, selectedLeg = self.selectedLeg, calculateBpm=self.CalculateBpm, shared_data=self.shared_data, setStart=self.setStart, sound = self.sound)
                 
             if data is not None:
                 data0 = data[0][0]

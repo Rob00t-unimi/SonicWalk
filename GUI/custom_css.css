@@ -132,3 +132,23 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
     font-size: 20px
 }}
 
+QSlider[class="success"]::sub-page {{
+    background-color: #28a745; 
+}}
+QSlider[class="danger"]::sub-page {{
+    background-color: #dc3545; 
+}}
+QSlider[class="warning"]::sub-page {{
+    background-color: #ffc107; 
+}}
+
+QSlider[class="success"]::add-page {{
+    background-color: #d4edda; 
+}}
+QSlider[class="danger"]::add-page {{
+    background-color: #f8d7da; 
+}}
+QSlider[class="warning"]::add-page {{
+    background-color: #fff3cd; 
+}}
+

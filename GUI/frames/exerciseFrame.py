@@ -43,7 +43,7 @@ class ExerciseFrame(QFrame):
             self.musicModality = 0
             self.light = light
             self.bpm = 60
-            self.sensibility = 3
+            self.sensitivity = 3
             self.firstRendering = True
             self.patient_info = None
 
@@ -75,19 +75,24 @@ class ExerciseFrame(QFrame):
             self.exercise_selector.currentTextChanged.connect(self.selectExercise)
             self.layout_selection.addWidget(self.exercise_selector)
 
-            # Slider for Sensibility
-            self.slider2_label = QLabel("Sensibility:")
+            # Slider for sensitivity
+            self.slider2_label = QLabel("Sensitivity:")
+            self.slider2_label.setToolTip("Sensitivity is inversely proportional to detection accuracy")
             self.slider2_frame = QWidget()
-            self.sensibility_slider = QSlider(Qt.Horizontal)  
-            self.sensibility_slider.setRange(1, 5) 
-            self.sensibility_slider.setValue(self.sensibility)  
-            self.sensibility_slider.setTickInterval(1)  
-            self.sensibility_slider.valueChanged.connect(self._setSensibility)
-            self.sensibility_value_label = QLabel("  " + str(self.sensibility_slider.value()))
+            self.sensitivity_slider = QSlider(Qt.Horizontal)  
+            self.sensitivity_slider.setToolTip("Suggested Level: 3")
+            self.sensitivity_slider.setRange(1, 5) 
+            self.sensitivity_slider.setValue(self.sensitivity)  
+            self.sensitivity_slider.setTickInterval(1)  
+            self.sensitivity_slider.valueChanged.connect(self._setsensitivity)
+            self.changeSliderColor()
+            self.sensitivity_value_label = QLabel("  " + str(self.sensitivity_slider.value()))
+            self.sensitivity_value_label.setToolTip("Suggested Level: 3")
+
 
             frame2_layout = QHBoxLayout()
-            frame2_layout.addWidget(self.sensibility_slider)
-            frame2_layout.addWidget(self.sensibility_value_label)
+            frame2_layout.addWidget(self.sensitivity_slider)
+            frame2_layout.addWidget(self.sensitivity_value_label)
             self.slider2_frame.setLayout(frame2_layout) 
 
             self.layout_selection.addWidget(self.slider2_label)
@@ -149,6 +154,14 @@ class ExerciseFrame(QFrame):
 
             self.noMusic_button.click()
 
+    def changeSliderColor(self):
+        if self.sensitivity == 3: color = "success" # green
+        elif self.sensitivity == 2 or self.sensitivity == 4: color = "warning" # yellow
+        elif self.sensitivity == 1 or self.sensitivity == 5: color = "danger" # red
+
+        self.sensitivity_slider.setProperty("class", color)
+        self.sensitivity_slider.style().polish(self.sensitivity_slider)
+
     def setPatientId(self, patientId):
         """
             MODIFIES:   
@@ -159,9 +172,10 @@ class ExerciseFrame(QFrame):
         """
         if patientId is None: 
             self.patient_info = None
-            self.sensibility = 3
+            self.sensitivity = 3
             # self.bpm = 60
-            self.sensibility_slider.setValue(self.sensibility) 
+            self.sensitivity_slider.setValue(self.sensitivity) 
+            self.changeSliderColor()
         else:
             self.patient_id = patientId
             try:
@@ -171,7 +185,7 @@ class ExerciseFrame(QFrame):
                 for patient in data:
                     if patient["ID"] == patientId:
                         self.patient_info = patient
-                        self.load_sensibility()
+                        self.load_sensitivity()
                         # self.bpm = patient[exercise + "_bpm"]
                         break
             except:
@@ -179,7 +193,7 @@ class ExerciseFrame(QFrame):
 
         # self.bpm_slider.setValue(self.bpm)
 
-    def load_sensibility(self):
+    def load_sensitivity(self):
         text = self.exercise_selector.currentText()
         if text == "Walk": exercise = "walk"
         elif "March" in text: exercise = "march"
@@ -188,11 +202,12 @@ class ExerciseFrame(QFrame):
         elif "Double Step" in text and "Left" in text: exercise = "double_step_left"
         elif "Double Step" in text and "Right" in text: exercise = "double_step_right"
 
-        self.sensibility = self.patient_info[exercise + "_sensibility"]
-        self.sensibility_slider.setValue(self.sensibility) 
-        print("sensibility level: " + str(self.sensibility))
+        self.sensitivity = self.patient_info[exercise + "_sensitivity"]
+        self.sensitivity_slider.setValue(self.sensitivity) 
+        self.changeSliderColor()
+        print("sensitivity level: " + str(self.sensitivity))
 
-    def update_patient_sensibility(self):
+    def update_patient_sensitivity(self):
 
         if self.patient_info is not None:
             text = self.exercise_selector.currentText()
@@ -202,7 +217,7 @@ class ExerciseFrame(QFrame):
             elif "Swing" in text and "Right" in text: exercise = "swing_right"
             elif "Double Step" in text and "Left" in text: exercise = "double_step_left"
             elif "Double Step" in text and "Right" in text: exercise = "double_step_right"
-            self.patient_info[exercise + "_sensibility"] = self.sensibility
+            self.patient_info[exercise + "_sensitivity"] = self.sensitivity
 
             try:
                 with open(self.dataset_path, 'r') as file:
@@ -219,21 +234,22 @@ class ExerciseFrame(QFrame):
                 with open(self.dataset_path, 'w') as file:
                     json.dump(data, file)
             except Exception as e:
-                print("Error: impossible to save the sensibility")
+                print("Error: impossible to save the sensitivity")
 
 
-    def _setSensibility(self):
+    def _setsensitivity(self):
         """
             MODIFIES:   
-                - self.sensibility
+                - self.sensitivity
 
             EFFECTS:    
-                - updates sensibility value and label
+                - updates sensitivity value and label
         """
-        self.sensibility = self.sensibility_slider.value()
-        print("sensibility level: " + str(self.sensibility))
-        self.sensibility_value_label.setText("  "+str(self.sensibility))
-        self.update_patient_sensibility()
+        self.sensitivity = self.sensitivity_slider.value()
+        print("sensitivity level: " + str(self.sensitivity))
+        self.sensitivity_value_label.setText("  "+str(self.sensitivity))
+        self.update_patient_sensitivity()
+        self.changeSliderColor()
 
     def _setBpm(self):
         """
@@ -330,7 +346,7 @@ class ExerciseFrame(QFrame):
         if "leg" in text: print(f"Front Leg: {'Left' if not self.selected_front_leg else 'Right'}")
 
         if self.patient_info is not None:
-            self.load_sensibility()
+            self.load_sensitivity()
 
     def _buttonClick(self, number):
         """"
@@ -405,12 +421,12 @@ class ExerciseFrame(QFrame):
         """
         return self.bpm
     
-    def getSensibility(self):
+    def getsensitivity(self):
         """
         EFFECTS:    
-            - Rerurns sensibility value
+            - Rerurns sensitivity value
         """
-        return self.sensibility
+        return self.sensitivity
     
     def paintEvent(self, event):
         # when the ExerciseFrame is rendered it is executed paintEvent

@@ -20,7 +20,7 @@ class RecordingFrame(QWidget):
     thread_signal = pyqtSignal()
     thread_signal_start = pyqtSignal()
 
-    def __init__(self, light = True, getMusicModality = None, getMusicPath = None, getExerciseNumber = None, getSensibility = None, getSelectedLeg = None, getPatient = None, getBpm = None, setBpm = None, changeEnabledAll = None, shared_data = None, plotter_start = None, setSaved = None):#, mtw_run_finished = None):
+    def __init__(self, light = True, getMusicModality = None, getMusicPath = None, getExerciseNumber = None, getsensitivity = None, getSelectedLeg = None, getPatient = None, getBpm = None, setBpm = None, changeEnabledAll = None, shared_data = None, plotter_start = None, setSaved = None):#, mtw_run_finished = None):
         """
 
         Requires:
@@ -71,7 +71,7 @@ class RecordingFrame(QWidget):
         self.getPatient = getPatient
         self.getBpm = getBpm
         self.setBpm = setBpm
-        self.getSensibility = getSensibility
+        self.getsensitivity = getsensitivity
 
         self.light = light
 
@@ -245,6 +245,7 @@ class RecordingFrame(QWidget):
         self.modality = self.getMusicModality()
         self.selectedMusic = self.getMusicPath()
         self.selectedExercise = self.getExerciseNumber()
+        self.sensitivity = self.getsensitivity()
         # self.calculateBpm = True if self.modality == 0 else False
         self.sound = False if self.modality !=2 else True
 
@@ -264,7 +265,7 @@ class RecordingFrame(QWidget):
         indication.play()
         self.indications_index = 1
 
-        self.record_thread = MtwThread(Duration=self.exerciseTime, MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, auto_detectLegs = False, selectedLeg=self.selectedLeg, Analyze=analyze, setStart = self.emit_startSignal, CalculateBpm=self.calculateBpm, shared_data = self.shared_data, sound = self.sound)
+        self.record_thread = MtwThread(Duration=self.exerciseTime, MusicSamplesPath=self.selectedMusic, Exercise=self.selectedExercise, sensitivityLev = self.sensitivity, auto_detectLegs = False, selectedLeg=self.selectedLeg, Analyze=analyze, setStart = self.emit_startSignal, CalculateBpm=self.calculateBpm, shared_data = self.shared_data, sound = self.sound)
         self.record_thread.daemon = True
         self.record_thread.start()
 

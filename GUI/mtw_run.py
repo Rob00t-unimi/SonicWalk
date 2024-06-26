@@ -17,6 +17,7 @@ class MtwThread(threading.Thread):
             - setStart (callable): Function to emit a signal when the recording starts. Defaults to None.
             - CalculateBpm (bool): Indicates whether to calculate BPM during analysis. Defaults to False.
             - shared_data (SharedData): Pre-initialized object from sharedVariables module. Defaults to None.
+            - sound: a boolean indicating if the real time sound must be played during the exercise.
 
         MODIFIES: 
             - self

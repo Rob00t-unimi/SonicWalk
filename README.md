@@ -1,4 +1,5 @@
 # SonicWalk
+## Introduction    
 
 SonicWalk is an innovative healthcare application designed to simplify and engage patients during rehabilitative exercises using real-time sonification. Developed in **Python** and **PyQT5** to ensure cross-platform compatibility, the application allows medical staff to manage patient records, monitor exercise sessions, and visualize results. It utilizes **Movella MTw Awinda** motion trackers and their respective APIs to gather necessary data.
 
@@ -56,7 +57,7 @@ duration = 90
 samplesPath = "../sonicwalk/audio_samples/cammino_1_fase_2"
 
 with mtw.MtwAwinda(120, 19, samplesPath) as mtw:
-        data = mtw.mtwRecord(duration, plot=True, analyze=True, exType = 0, setStart=None, calculateBpm=False, shared_data=None)
+        data = mtw.mtwRecord(duration, plot=True, analyze=True, exType=0, sensitivityLev=3, auto_detectLegs=False , selectedLeg=True, calculateBpm=False, shared_data=None, setStart=None, sound=True)
 
 data0 = data[0][0]
 data1 = data[0][1]
@@ -78,8 +79,13 @@ bpmValue = data[3]  # if calculateBpm==False will be None
     4) Double step
 
 - **setStart** is a callback function to call when the exercise starts
-- **CalculateBpm** replace the real time feedback width a the calculation of medium bpm
+- **CalculateBpm** is a boolean indicating if the bpm must be extimated during the execution of the exercise
 - **shared_data** is an optional pre-allocated SharedData object
+- **sensitivityLev** is a number between 1 and 5 indicating the level of sensitivity (inversely proportional to accuracy), default: 3
+- **selectedLeg** is a boolean indicating the manual selected leg (true if right leg forward, false if left leg forward. Defaults to None.)
+- **auto_detectLegs** is a boolean indicating if the legs must be automatically detected or not
+- **sound** is a boolean indicating if the real time sound must be played during the exercise
+
 
 
 A **MtwAwinda** singleton object instance must be created in a **with** statement,
@@ -99,6 +105,10 @@ The Recorded data returned by the `mtwRecord` function includes several componen
 - The 'interesting points' related to the two signals are stored in `data[2][0]` and `data[2][1]`, which are tuples of Numpy.arrays. These arrays contain the approximate indices of the two signals at which points of interest were detected.
 - `data[3]` contains the average beats per minute (bpm) value if the calculation was requested and the relevant data was acquired. Otherwise, it will be `False`.
 
+# Installation
+## Simplified Installation (Executable Package)
+.exe coming soon
+## Detailed Installation (Python Environment Setup)
 ### Requires and dependencies installation
 Python version 3.9 is required, (it is recommended to create a conda virtual environment using the python version 3.9)\
 Installing the *xsensdeviceapi* dependency:
@@ -112,7 +122,7 @@ Linux:
 ```
 pip install wheels/xsensdeviceapi-2022.0.0-cp39-none-linux_x86_64.whl
 ```
-#### Installation of Interface Dependencies Only
+#### Installation of the simple Python interface Dependencies
 - matplotlib
 - pygame
 - scipy
@@ -128,7 +138,7 @@ pip install wheels/xsensdeviceapi-2022.0.0-cp39-none-linux_x86_64.whl
     from sonicwalk import mtw
 
     ```
-#### Installation of Complete GUI application Dependencies
+#### Installation of GUI application Dependencies
 - matplotlib
 - pygame
 - scipy
@@ -139,12 +149,8 @@ pip install wheels/xsensdeviceapi-2022.0.0-cp39-none-linux_x86_64.whl
     pip install PyQt5 matplotlib pygame qt_material scipy
     ```
 
-
-## The GUI SonicWalk Application
-### Run by code
+#### Run the GUI by Shell
 Install the Complete GUI application Dependencies, then run:
 ```
 python SonicWalk.py
 ```
-### Run by Exe (Windows)
-

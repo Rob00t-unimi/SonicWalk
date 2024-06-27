@@ -1,0 +1,166 @@
+{
+    "walk" : {
+        "sensitivity_1" : {
+            "displacement" : 5,
+            // 8.0 - 3.0 = 5.0, alzo la threshold minima e taglio di più il rumore
+            "validRange" : 3.0,
+            // alzo la threshold minima dei picchi (picchi più significativi)
+            "min_threshold" : 8.0,
+            "time_threshold" : 0.1
+        },
+        "sensitivity_2" : {
+            "displacement" : 5,
+            // 7.0 - 3.0 = 4.0, alzo la threshold minima e taglio di più il rumore
+            "validRange" : 3.0,
+            // alzo la threshold minima dei picchi (picchi più significativi)
+            "min_threshold" : 7.0,
+            "time_threshold" : 0.1
+        },
+        "sensitivity_3" : {
+            "displacement" : 5,
+            "validRange" : 3.0,
+            "min_threshold" : 5.0,
+            "time_threshold" : 0.1
+        },
+        "sensitivity_4" : {
+            // diminuisco il displacement rilevando zc più in basso (aumento la sensibilità), aumento però il ritardo
+            "displacement" : 4,
+            // aumento il range per il rilevamento dei picchi, quindi scendo fino a 1.0 (5.0 - 4.0) (picchi meno significativi ma includo più rumore)
+            "validRange" : 4.0,
+            "min_threshold" : 5.0,
+            "time_threshold" : 0.1
+        },
+        "sensitivity_5" : {
+            //  diminuisco il displacement rilevando zc più in basso (aumento la sensibilità), aumento però il ritardo
+            "displacement" : 2,
+            // scendo fino a 0 (picchi meno significativi ma includo più rumore)
+            "validRange" : 0.5,
+            "min_threshold" : 0.5,
+            "time_threshold" : 0.1
+        }
+    },
+    "march" : {
+        "sensitivity_1" : {
+            "threshold" : 20
+        },
+        "sensitivity_2" : {
+            "threshold" : 16
+        },
+        "sensitivity_3" : {
+            "threshold" : 12
+        },
+        "sensitivity_4" : {
+            "threshold" : 8
+        },
+        "sensitivity_5" : {
+            "threshold" : 3
+        }
+    },
+    "double_step" : {
+        "leg_detection" : {
+            "sensitivity_1" : {
+                "displacement" : 10
+            },
+            "sensitivity_2" : {
+                "displacement" : 8
+            },
+            "sensitivity_3" : {
+                "displacement" : 5
+            },
+            "sensitivity_4" : {
+                "displacement" : 4
+            },
+            "sensitivity_5" : {
+                "displacement" : 2
+            }
+        },
+        "step_leg" : {
+            "sensitivity_1" : {
+                "threshold" : 12
+            },
+            "sensitivity_2" : {
+                "threshold" : 8
+            },
+            "sensitivity_3" : {
+                "threshold" : 5
+            },
+            "sensitivity_4" : {
+                "threshold" : 3
+            },
+            "sensitivity_5" : {
+                "threshold" : 1
+            }
+        },
+        "other_leg" : {
+            "sensitivity_1" : {
+                "valid_gradient_range" : 0.35,
+                "min_gradient_threshold" : 0.4,
+                "time_threshold" : 0.12
+            },
+            "sensitivity_2" : {
+                "valid_gradient_range" : 0.35,
+                "min_gradient_threshold" : 0.4,
+                "time_threshold" : 0.12
+            },
+            "sensitivity_3" : {
+                "valid_gradient_range" : 0.35,
+                "min_gradient_threshold" : 0.4,
+                "time_threshold" : 0.12
+            },
+            "sensitivity_4" : {
+                "valid_gradient_range" : 0.35,
+                "min_gradient_threshold" : 0.4,
+                "time_threshold" : 0.12
+            },
+            "sensitivity_5" : {
+                "valid_gradient_range" : 0.35,
+                "min_gradient_threshold" : 0.4,
+                "time_threshold" : 0.12
+            }
+        }
+    },
+    "swing" : {
+        "leg_detection" : {
+            "sensitivity_1" : {
+                "displacement" : 15
+            },
+            "sensitivity_2" : {
+                "displacement" : 12
+            },
+            "sensitivity_3" : {
+                "displacement" : 10
+            },
+            "sensitivity_4" : {
+                "displacement" : 8
+            },
+            "sensitivity_5" : {
+                "displacement" : 5
+            }
+        },
+        "sensitivity_1" : {
+            "valid_gradient_range" : 0.35,
+            "min_gradient_threshold" : 0.3,
+            "time_threshold" : 0.2
+        },
+        "sensitivity_2" : {
+            "valid_gradient_range" : 0.35,
+            "min_gradient_threshold" : 0.3,
+            "time_threshold" : 0.2
+        },
+        "sensitivity_3" : {
+            "valid_gradient_range" : 0.35,
+            "min_gradient_threshold" : 0.3,
+            "time_threshold" : 0.2
+        },
+        "sensitivity_4" : {
+            "valid_gradient_range" : 0.35,
+            "min_gradient_threshold" : 0.3,
+            "time_threshold" : 0.2
+        },
+        "sensitivity_5" : {
+            "valid_gradient_range" : 0.35,
+            "min_gradient_threshold" : 0.3,
+            "time_threshold" : 0.2
+        }
+    }
+}

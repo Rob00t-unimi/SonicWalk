@@ -21,10 +21,12 @@
 # SOFTWARE.
 
 # import simpleaudio
+import re
 import pygame
 import time
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
+import json
 
 class ZeroCrossingDetectionResult:
     def __init__(self, found_crossing=False, gradient=None):
@@ -111,6 +113,29 @@ class Analyzer():
                 time.sleep(0.003)
     
     ################################ UTILS ======================================================== && Rob ========
+
+    def extractParameters(self):
+        """
+        Extracts sensitivity parameters for the exercises from a JSON file.
+
+        Effects:
+            returns a dictionary containing the parameters
+        """
+        def remove_comments(json_string):
+            # Remove // comments
+            json_string = re.sub(r'\/\/.*', '', json_string)
+            # Remove /* ... */ comments
+            json_string = re.sub(r'\/\*.*?\*\/', '', json_string, flags=re.DOTALL)
+            return json_string
+        try:
+            with open('sonicwalk/sensitivity_levels.json', 'r') as file:
+                json_string = file.read()
+
+            json_string = remove_comments(json_string)
+            data = json.loads(json_string)
+            return data
+        except FileNotFoundError:
+            print("Error: The file 'sensitivity_levels.json' was not found.")
                 
     def _playSample(self):
         """
@@ -272,28 +297,11 @@ class Analyzer():
         if self.__endController() : return
         self.__nextWindow()
 
-        displacement = 5
-        validRange = 3.0
-        min_treshold = 5.0
-        time_threshold = 0.1 # seconds
-
-        if self.__sensitivity == 1:
-            self.displacement = 5
-            self.validRange = 3.0   # 8.0 - 3.0 = 5.0, alzo la threshold minima e taglio di più il rumore
-            self.min_treshold = 8.0 # alzo la threshold minima dei picchi (picchi più significativi)
-        elif self.__sensitivity == 2:
-            self.displacement = 5   
-            self.validRange = 3.0    # 7.0 - 3.0 = 4.0, alzo la threshold minima e taglio di più il rumore
-            self.min_treshold = 7.0  # alzo la threshold minima dei picchi (picchi più significativi)
-        elif self.__sensitivity == 4:
-            self.displacement = 4   # diminuisco il displacement rilevando zc più in basso (aumento la sensibilità), aumento però il ritardo
-            self.validRange = 4.0   # aumento il range per il rilevamento dei picchi, quindi scendo fino a 1.0 (5.0 - 4.0) (picchi meno significativi ma includo più rumore)
-            self.min_treshold = 5.0
-        elif self.__sensitivity == 5:
-            self.displacement = 2   # diminuisco il displacement rilevando zc più in basso (aumento la sensibilità), aumento però il ritardo
-            self.validRange = 0.5   # scendo fino a 0 (picchi meno significativi ma includo più rumore)
-            self.min_treshold = 0.5
-        
+        displacement = self.__parameters["walk"][f"sensitivity_{self.__sensitivity}"]["displacement"]
+        validRange = self.__parameters["walk"][f"sensitivity_{self.__sensitivity}"]["validRange"]
+        min_threshold = self.__parameters["walk"][f"sensitivity_{self.__sensitivity}"]["min_threshold"]
+        time_threshold =self.__parameters["walk"][f"sensitivity_{self.__sensitivity}"]["time_threshold"] # seconds
+      
         #TEST: subtract a certain angle to trigger sound earlier in the cycle
         self.__pitch = self.__pitch - displacement
 
@@ -328,7 +336,7 @@ class Analyzer():
 
                     # update threshold
                     newthresh = np.min(self.__peakHistory)
-                    self.__threshold = newthresh if newthresh > min_treshold else min_treshold # ensure that threshold cannot go below 2.0
+                    self.__threshold = newthresh if newthresh > min_threshold else min_threshold # ensure that threshold cannot go below 2.0
 
                 self.__peak = 0.0 #reset peak whenever a zero crossing is encountered (negative gradient)
         elif negativeZc is not None and not negativeZc.founded: #positiveZc
@@ -366,11 +374,7 @@ class Analyzer():
         if self.__endController() : return
         self.__nextWindow()
 
-        self.__threshold = 12
-        if self.__sensitivity == 1: self.__threshold = 20
-        elif self.__sensitivity == 2: self.__threshold = 16
-        elif self.__sensitivity == 4: self.__threshold = 8
-        elif self.__sensitivity == 5: self.__threshold = 3
+        self.__threshold = self.__parameters["march"][f"sensitivity_{self.__sensitivity}"]["threshold"]
 
         # Window manipulation
         if (self.__exType == 1):
@@ -460,11 +464,7 @@ class Analyzer():
         if self.__endController() : return
         self.__nextWindow()
 
-        displacement = 5
-        if self.__sensitivity == 1: displacement = 10
-        elif self.__sensitivity == 2: displacement = 8
-        elif self.__sensitivity == 4: displacement = 4
-        elif self.__sensitivity == 5: displacement = 2
+        displacement = self.__parameters["double_step"]["leg_detection"][f"sensitivity_{self.__sensitivity}"]["displacement"]
 
         if self.__auto_detectLegs:
             print("AUTO DETECTION...")
@@ -542,12 +542,7 @@ class Analyzer():
             max_time_wait = 0.4 if not self.__pos else 0.3  # max wait time before play sound
             displacement = 5
             time_threshold = 0.25   # time threshold between peaks
-            peak_threshold = 5
-
-            if self.__sensitivity == 1: peak_threshold = 12
-            elif self.__sensitivity == 2: peak_threshold = 8
-            elif self.__sensitivity == 4: peak_threshold = 3
-            elif self.__sensitivity == 5: peak_threshold = 1
+            peak_threshold = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["threshold"]
 
             if time.time() - self.__timestamp >= max_time_wait and self.__firstpeak and not self.__foundedPeak:
                 # sound here after a delay
@@ -640,9 +635,9 @@ class Analyzer():
 
         displacement0 = -5
         displacement1 = 5
-        valid_gradient_range = 0.35 # per permettere alla soglia anche di salire
-        time_threshold = 0.12 # seconds   # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
-        min_gradient_threshold = 0.4
+        valid_gradient_range = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["valid_gradient_range"] # per permettere alla soglia anche di salire
+        time_threshold = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["time_threshold"] # seconds   # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
+        min_gradient_threshold = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
   
         # THIS VALUES NOT GOOD
         # if self.__sensitivity == 1: 
@@ -693,11 +688,7 @@ class Analyzer():
         if self.__endController() : return
         self.__nextWindow()
 
-        displacement = 10
-        if self.__sensitivity == 1: displacement = 15
-        elif self.__sensitivity == 2: displacement = 12
-        elif self.__sensitivity == 4: displacement = 8
-        elif self.__sensitivity == 5: displacement = 5
+        displacement = self.__parameters["swing"]["leg_detection"][f"sensitivity_{self.__sensitivity}"]["displacement"]
 
         if self.__auto_detectLegs:
             print("AUTO DETECTION...")
@@ -733,14 +724,9 @@ class Analyzer():
         # standard values
         displacement0 = -10
         displacement1 = 15
-        valid_gradient_range = 0.35 # per permettere alla soglia anche di salire
-        time_threshold = 0.2 # seconds   # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
-        min_gradient_threshold = 0.3
-
-        # if self.__sensitivity == 1: 
-        # elif self.__sensitivity == 2: 
-        # elif self.__sensitivity == 4: 
-        # elif self.__sensitivity == 5: 
+        valid_gradient_range = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["valid_gradient_range"] # per permettere alla soglia anche di salire
+        time_threshold = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["time_threshold"] # seconds   # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
+        min_gradient_threshold = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
 
         pitch = (self.__pitch + displacement0) if forward else (self.__pitch + displacement1)
 
@@ -791,6 +777,7 @@ class Analyzer():
         self.__sharedBetweenStepsTimes = betweenStepsTimes
         self.__auto_detectLegs = auto_detectLegs
         self.__sensitivity = sensitivityLev
+        self.__parameters = self.extractParameters()
 
         # 0 --> walking
         # 1 --> Walking in place and Marching

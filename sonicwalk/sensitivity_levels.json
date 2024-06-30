@@ -76,19 +76,24 @@
         },
         "step_leg" : {
             "sensitivity_1" : {
-                "threshold" : 12
+                "peak_threshold" : 12,
+                "time_threshold" : 0.25
             },
             "sensitivity_2" : {
-                "threshold" : 8
+                "peak_threshold" : 8,
+                "time_threshold" : 0.25
             },
             "sensitivity_3" : {
-                "threshold" : 5
+                "peak_threshold" : 5,
+                "time_threshold" : 0.25
             },
             "sensitivity_4" : {
-                "threshold" : 3
+                "peak_threshold" : 3,
+                "time_threshold" : 0.25
             },
             "sensitivity_5" : {
-                "threshold" : 1
+                "peak_threshold" : 1,
+                "time_threshold" : 0.25
             }
         },
         "other_leg" : {

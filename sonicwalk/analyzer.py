@@ -272,7 +272,6 @@ class Analyzer():
             Effects:
                 Updates the gradient threshold based on the new gradient and the old threshold.
                 The new threshold is the average of the new gradient and the old one. 
-                The lower bound of the new threshold is 0.3
                 EMA (Exponential Moving Average)
         """
 
@@ -541,8 +540,8 @@ class Analyzer():
 
             max_time_wait = 0.4 if not self.__pos else 0.3  # max wait time before play sound
             displacement = 5
-            time_threshold = 0.25   # time threshold between peaks
-            peak_threshold = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["threshold"]
+            time_threshold = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["time_threshold"]   # time threshold between peaks
+            peak_threshold = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["peak_threshold"]
 
             if time.time() - self.__timestamp >= max_time_wait and self.__firstpeak and not self.__foundedPeak:
                 # sound here after a delay
@@ -670,6 +669,7 @@ class Analyzer():
                 if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
                 # play sound and increment step count
 
+            # DA SPOSTARE NELL'IF !!!!!!!!!
             # threshold update
             self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=0.85, min_value=min_gradient_threshold)
             # print("gradient: " + str(self.__gradientThreshold))

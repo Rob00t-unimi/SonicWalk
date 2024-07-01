@@ -279,13 +279,14 @@ class Analyzer():
         # alfa minore da più peso alla media vecchia
         # alfa maggiore da più peso alla media nuova
         
-        self.__gradientHistory[1:] = self.__gradientHistory[:-1]
-        self.__gradientHistory[0] = newGradient
+        # self.__gradientHistory[1:] = self.__gradientHistory[:-1]
+        # self.__gradientHistory[0] = newGradient
 
         # EMA (Exponential Moving Average)
         # Nella prima posizione della history ho il valore più recente, nell'ultima il più vecchio
-        mean = np.mean(self.__gradientHistory)
-        newMean = (alpha * mean) + ((1-alpha)*self.__gradientThreshold)
+        # mean = np.mean(self.__gradientHistory)
+        # newMean = (alpha * mean) + ((1-alpha)*self.__gradientThreshold)
+        newMean = (alpha * newGradient) + ((1-alpha)*self.__gradientThreshold)
         self.__gradientThreshold =  newMean if newMean > min_value else min_value
 
 
@@ -300,6 +301,11 @@ class Analyzer():
         validRange = self.__parameters["walk"][f"sensitivity_{self.__sensitivity}"]["validRange"]
         min_threshold = self.__parameters["walk"][f"sensitivity_{self.__sensitivity}"]["min_threshold"]
         time_threshold =self.__parameters["walk"][f"sensitivity_{self.__sensitivity}"]["time_threshold"] # seconds
+
+        # print("DISPLACEMENT: " + str(displacement))
+        # print("VALIDRANGE: " + str(validRange))
+        # print("TIME_THRESHOLD: " + str(time_threshold))
+        # print("MIN_THRESHOLD:"+str(min_threshold))
       
         #TEST: subtract a certain angle to trigger sound earlier in the cycle
         self.__pitch = self.__pitch - displacement
@@ -372,8 +378,6 @@ class Analyzer():
         # Initialization
         if self.__endController() : return
         self.__nextWindow()
-
-        self.__threshold = self.__parameters["march"][f"sensitivity_{self.__sensitivity}"]["threshold"]
 
         # Window manipulation
         if (self.__exType == 1):
@@ -641,11 +645,12 @@ class Analyzer():
         if self.__endController() : return
         self.__nextWindow()
 
-        displacement0 = -5
-        displacement1 = 5
+        displacement1 = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["displacement"]
+        displacement0 = - displacement1
         valid_gradient_range = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["valid_gradient_range"] # per permettere alla soglia anche di salire
         time_threshold = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["time_threshold"] # seconds   # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
         min_gradient_threshold = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
+        alpha = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["alpha"]
   
         # THIS VALUES NOT GOOD
         # if self.__sensitivity == 1: 
@@ -678,10 +683,9 @@ class Analyzer():
                 if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
                 # play sound and increment step count
 
-            # DA SPOSTARE NELL'IF !!!!!!!!!
-            # threshold update
-            self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=0.85, min_value=min_gradient_threshold)
-            # print("gradient: " + str(self.__gradientThreshold))
+                # threshold update
+                self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=alpha, min_value=min_gradient_threshold)
+                print("gradient: " + str(self.__gradientThreshold))
 
 
     ################################ SWING DETECTION ======================================================== && Rob ========
@@ -712,7 +716,8 @@ class Analyzer():
                     self.swingFunction(forward=True)
         else:
             if self.__selectedLeg is not None:
-                self.swingFunction(self.__selectedLeg)
+                # self.__selectedLeg = True se la gamba avanti è la destra False se è la sinistra
+                self.swingFunction(forward=self.__selectedLeg)
     
 
     # potrebbe verificarsi che gli angoli negativi sono proporzionlmente più bassi rispetto ai positivi quindi si dovrebbero adottare traslazioni differenti
@@ -731,8 +736,8 @@ class Analyzer():
         # questo mi consente di traslare i segnali di 10 ° e - 10 °
 
         # standard values
-        displacement0 = -10
-        displacement1 = 15
+        displacement0 = -15  # per la gamba davanti dato che fa angoli positivi quasi sempre sopra i 5 gradi
+        displacement1 = 10  # per la gamba dietro dato che fa angoli negativi che salgono vicino a 0
         valid_gradient_range = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["valid_gradient_range"] # per permettere alla soglia anche di salire
         time_threshold = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["time_threshold"] # seconds   # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
         min_gradient_threshold = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
@@ -753,9 +758,9 @@ class Analyzer():
                 self.__interestingPoints.append(self.__currentGlobalIndex)
                 print("gradient: " + str(self.__gradientThreshold))
 
-            # threshold update
-            self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=0.85, min_value=min_gradient_threshold)
-            # print("gradient: " + str(self.__gradientThreshold))
+                # threshold update
+                self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=0.85, min_value=min_gradient_threshold)
+                # print("gradient: " + str(self.__gradientThreshold))
 
 
     ################################ OBJECT CALL ======================================================== && Rob ========
@@ -797,6 +802,7 @@ class Analyzer():
         # WALKING
     
         if exType == 0: 
+            self.__threshold = self.__parameters["walk"][f"sensitivity_{self.__sensitivity}"]["min_threshold"]
             print("Step Analyzer")
             print('...analyzer daemon {:d} started'.format(num))
             self.runAnalysis(method=self.__detectStep)
@@ -804,6 +810,7 @@ class Analyzer():
         # MARCHING
 
         elif exType == 1 or exType == 2: 
+            self.__threshold = self.__parameters["march"][f"sensitivity_{self.__sensitivity}"]["threshold"]
             print("Marching Analyzer")
             print('...analyzer daemon {:d} started'.format(num))
             self.runAnalysis(method=self.__detectMarch)
@@ -818,6 +825,8 @@ class Analyzer():
         # DOUBLE STEP
 
         elif exType == 4: 
+            self.__threshold = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["min_peak_threshold"]
+            self.__gradientThreshold = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
             print("Double Step Analyzer")
             print('...analyzer daemon {:d} started'.format(num))
             self.runAnalysis(method=self.__detectDoubleStep)

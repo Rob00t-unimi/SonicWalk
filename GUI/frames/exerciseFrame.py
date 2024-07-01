@@ -76,23 +76,24 @@ class ExerciseFrame(QFrame):
             self.layout_selection.addWidget(self.exercise_selector)
 
             # Slider for sensitivity
-            self.slider2_label = QLabel("Sensitivity:")
-            self.slider2_label.setToolTip("Sensitivity is inversely proportional to detection accuracy")
             self.slider2_frame = QWidget()
             self.sensitivity_slider = QSlider(Qt.Horizontal)  
-            self.sensitivity_slider.setToolTip("Suggested Level: 3")
+            self.sensitivity_slider.setToolTip("Suggested Level: (3;3)")
             self.sensitivity_slider.setRange(1, 5) 
             self.sensitivity_slider.setValue(self.sensitivity)  
             self.sensitivity_slider.setTickInterval(1)  
             self.sensitivity_slider.valueChanged.connect(self._setsensitivity)
             self.changeSliderColor()
-            self.sensitivity_value_label = QLabel("  " + str(self.sensitivity_slider.value()))
-            self.sensitivity_value_label.setToolTip("Suggested Level: 3")
+            # self.sensitivity_value_label = QLabel("  " + str(self.sensitivity_slider.value()))
+            # self.sensitivity_value_label.setToolTip("Suggested Level: 3")
+            self.slider2_label = QLabel(f"<b>Sensitivity:</b> {self.sensitivity_slider.value()}         |        <b>Precision:</b> {6-self.sensitivity_slider.value()} ")
+            self.slider2_label.setToolTip("Sensitivity is inversely proportional to detection accuracy (Precision); Suggested levels: (3;3)")
+            self.slider2_label.setAlignment(Qt.AlignCenter)
 
 
             frame2_layout = QHBoxLayout()
             frame2_layout.addWidget(self.sensitivity_slider)
-            frame2_layout.addWidget(self.sensitivity_value_label)
+            # frame2_layout.addWidget(self.sensitivity_value_label)
             self.slider2_frame.setLayout(frame2_layout) 
 
             self.layout_selection.addWidget(self.slider2_label)
@@ -247,7 +248,8 @@ class ExerciseFrame(QFrame):
         """
         self.sensitivity = self.sensitivity_slider.value()
         print("sensitivity level: " + str(self.sensitivity))
-        self.sensitivity_value_label.setText("  "+str(self.sensitivity))
+        # self.sensitivity_value_label.setText("  "+str(self.sensitivity))
+        self.slider2_label.setText(f"<b>Sensitivity:</b> {self.sensitivity_slider.value()}         |        <b>Precision:</b> {6-self.sensitivity_slider.value()} ")
         self.update_patient_sensitivity()
         self.changeSliderColor()
 

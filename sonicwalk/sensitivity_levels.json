@@ -2,41 +2,39 @@
     "walk" : {
         "sensitivity_1" : {
             "displacement" : 5,
-            // 8.0 - 3.0 = 5.0, alzo la threshold minima e taglio di più il rumore
             "validRange" : 3.0,
-            // alzo la threshold minima dei picchi (picchi più significativi)
-            "min_threshold" : 8.0,
+            "min_threshold" : 9.0,
             "time_threshold" : 0.1
+            // scendo di 5 + threshold minima di 9 - 3 = 11
         },
         "sensitivity_2" : {
             "displacement" : 5,
-            // 7.0 - 3.0 = 4.0, alzo la threshold minima e taglio di più il rumore
             "validRange" : 3.0,
-            // alzo la threshold minima dei picchi (picchi più significativi)
             "min_threshold" : 7.0,
             "time_threshold" : 0.1
+            // scendo di 5 + threshold minima di 7 - 3 = 9
         },
         "sensitivity_3" : {
             "displacement" : 5,
             "validRange" : 3.0,
             "min_threshold" : 5.0,
-            "time_threshold" : 0.1
+            "time_threshold" : 0.1        
+            // scendo di 5 + threshold minima di 5 - 3 = 7
         },
         "sensitivity_4" : {
-            // diminuisco il displacement rilevando zc più in basso (aumento la sensibilità), aumento però il ritardo
-            "displacement" : 4,
-            // aumento il range per il rilevamento dei picchi, quindi scendo fino a 1.0 (5.0 - 4.0) (picchi meno significativi ma includo più rumore)
-            "validRange" : 4.0,
-            "min_threshold" : 5.0,
+            "displacement" : 5,
+            "validRange" : 3.0,
+            "min_threshold" : 3.0,
             "time_threshold" : 0.1
+            // scendo di 5 + threshold minima di 3 - 3 = 5
         },
         "sensitivity_5" : {
-            //  diminuisco il displacement rilevando zc più in basso (aumento la sensibilità), aumento però il ritardo
-            "displacement" : 2,
-            // scendo fino a 0 (picchi meno significativi ma includo più rumore)
-            "validRange" : 0.5,
-            "min_threshold" : 0.5,
+            // ritardo di 2.5 gradi
+            "displacement" : 2.5, 
+            "validRange" : 2.5,
+            "min_threshold" : 3,
             "time_threshold" : 0.1
+            // scendo di 2.5 + threshold minima di 3 - 3 = 2.5
         }
     },
     "march" : {
@@ -75,57 +73,78 @@
             }
         },
         "step_leg" : {
+            // se time_threshold viene impostato >= 0.3 o 0.4 il segnale sonoro viene riprodotto sempre a 0.3 o 0.4 secondi fissi dal rilevamento di un picco
+
             "sensitivity_1" : {
-                "min_peak_threshold" : 12,
+                "min_peak_threshold" : 10,
                 "validRange" : 3.0,
                 "time_threshold" : 0.1
+                // 10 - 3 = 7
             },
             "sensitivity_2" : {
                 "min_peak_threshold" : 8,
                 "validRange" : 3.0,
                 "time_threshold" : 0.1
+                // 8 - 3 = 5
             },
             "sensitivity_3" : {
+                "min_peak_threshold" : 6,
+                "validRange" : 3.0,
+                "time_threshold" : 0.1
+                // 6 - 3 = 3
+            },
+            "sensitivity_4" : {
                 "min_peak_threshold" : 5,
                 "validRange" : 3.0,
                 "time_threshold" : 0.1
+                // 5 - 3 = 2
             },
-            "sensitivity_4" : {
+            "sensitivity_5" : {
                 "min_peak_threshold" : 4,
                 "validRange" : 3.0,
                 "time_threshold" : 0.1
-            },
-            "sensitivity_5" : {
-                "min_peak_threshold" : 3,
-                "validRange" : 3.0,
-                "time_threshold" : 0.1
+                // 4 - 3 = 1
             }
         },
         "other_leg" : {
             "sensitivity_1" : {
-                "valid_gradient_range" : 0.35,
-                "min_gradient_threshold" : 0.4,
-                "time_threshold" : 0.12
+                "displacement" : 5,
+                "valid_gradient_range" : 0.65, //aumentando la sensibilità aumenta ciò che accetto sicuramente e quindi diminuisco il range
+                "min_gradient_threshold" : 0.17,
+                // tan(10°) = 0.17 - quindi accetto sempre tutto ciò che sta sotto 0.17
+                "time_threshold" : 0.12,
+                "alpha" : 0.6
             },
             "sensitivity_2" : {
-                "valid_gradient_range" : 0.35,
-                "min_gradient_threshold" : 0.4,
-                "time_threshold" : 0.12
+                "displacement" : 5,
+                "valid_gradient_range" : 0.45,
+                "min_gradient_threshold" : 0.36,
+                // tan(20°) = 0.36
+                "time_threshold" : 0.12,
+                "alpha" : 0.6
             },
             "sensitivity_3" : {
-                "valid_gradient_range" : 0.35,
-                "min_gradient_threshold" : 0.4,
-                "time_threshold" : 0.12
+                "displacement" : 5,
+                "valid_gradient_range" : 0.3,
+                "min_gradient_threshold" : 0.577,
+                // tan(30°) = 0.577
+                "time_threshold" : 0.12,
+                "alpha" : 0.6
             },
             "sensitivity_4" : {
-                "valid_gradient_range" : 0.35,
-                "min_gradient_threshold" : 0.4,
-                "time_threshold" : 0.12
+                "displacement" : 5,
+                "valid_gradient_range" : 0.2,
+                "min_gradient_threshold" : 0.75,
+                "time_threshold" : 0.12,
+                "alpha" : 0.5
             },
             "sensitivity_5" : {
-                "valid_gradient_range" : 0.35,
-                "min_gradient_threshold" : 0.4,
-                "time_threshold" : 0.12
+                "displacement" : 5,
+                "valid_gradient_range" : 0.2,
+                "min_gradient_threshold" : 1,
+                // tan(45°) = 1.19
+                "time_threshold" : 0.12,
+                "alpha" : 0.5
             }
         }
     },

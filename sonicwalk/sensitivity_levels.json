@@ -76,24 +76,29 @@
         },
         "step_leg" : {
             "sensitivity_1" : {
-                "peak_threshold" : 12,
-                "time_threshold" : 0.25
+                "min_peak_threshold" : 12,
+                "validRange" : 3.0,
+                "time_threshold" : 0.1
             },
             "sensitivity_2" : {
-                "peak_threshold" : 8,
-                "time_threshold" : 0.25
+                "min_peak_threshold" : 8,
+                "validRange" : 3.0,
+                "time_threshold" : 0.1
             },
             "sensitivity_3" : {
-                "peak_threshold" : 5,
-                "time_threshold" : 0.25
+                "min_peak_threshold" : 5,
+                "validRange" : 3.0,
+                "time_threshold" : 0.1
             },
             "sensitivity_4" : {
-                "peak_threshold" : 3,
-                "time_threshold" : 0.25
+                "min_peak_threshold" : 4,
+                "validRange" : 3.0,
+                "time_threshold" : 0.1
             },
             "sensitivity_5" : {
-                "peak_threshold" : 1,
-                "time_threshold" : 0.25
+                "min_peak_threshold" : 3,
+                "validRange" : 3.0,
+                "time_threshold" : 0.1
             }
         },
         "other_leg" : {

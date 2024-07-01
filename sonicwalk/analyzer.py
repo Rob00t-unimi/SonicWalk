@@ -539,15 +539,17 @@ class Analyzer():
             window = self.__window
 
             max_time_wait = 0.4 if not self.__pos else 0.3  # max wait time before play sound
-            displacement = 5
+            displacement = 5 # solo se cerco massimi negativi e minimi positivi
             time_threshold = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["time_threshold"]   # time threshold between peaks
-            peak_threshold = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["peak_threshold"]
+            min_peak_threshold = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["min_peak_threshold"]    # abs sui massimi positivi e minimi negativi
+            validRange = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["validRange"]
 
             if time.time() - self.__timestamp >= max_time_wait and self.__firstpeak and not self.__foundedPeak:
                 # sound here after a delay
                 self.__interestingPoints.append(self.__currentGlobalIndex)
                 # play sound and increment the movement counter
                 if self.__sound: self._playSample()
+                # print("AFTER DELAY")
                 # set time for bpm estimator
                 if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
                 self.__foundedPeak = True
@@ -572,10 +574,16 @@ class Analyzer():
                 peak = abs(np.max(window)) if not self.__findMininmum else (abs(np.min(window)))
                 # self.__interestingPoints.append(self.__currentGlobalIndex)
                 elapsed_time = time.time() - self.__timestamp
-                thresh = 0 if self.__findMininmum == self.__pos else peak_threshold
+                thresh = 0 if self.__findMininmum == self.__pos else self.__threshold - validRange
                 if elapsed_time > time_threshold and peak > thresh:
                     self.__timestamp = time.time()
-
+                    if self.__findMininmum != self.__pos: 
+                        # aggiorna la soglia 
+                        # print(f"THRESHOLD: {self.__threshold}")
+                        self.__peakHistory[self.__completeMovements % self.__history_sz] = peak
+                        newthresh = np.min(self.__peakHistory)
+                        self.__threshold = newthresh if newthresh > min_peak_threshold else min_peak_threshold
+                        
                     # findMininmum starts false
                     # firstpeak starts false
                     # pos starts true
@@ -597,6 +605,7 @@ class Analyzer():
                         self.__interestingPoints.append(self.__currentGlobalIndex)
                         # play sound and increment the movement counter
                         if self.__sound: self._playSample()
+                        # print("BEFORE DELAY")
                         # set time for bpm estimator
                         if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
 

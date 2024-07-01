@@ -109,8 +109,10 @@
         "other_leg" : {
             "sensitivity_1" : {
                 "displacement" : 5,
-                "valid_gradient_range" : 0.65, //aumentando la sensibilità aumenta ciò che accetto sicuramente e quindi diminuisco il range
-                "min_gradient_threshold" : 0.17,
+                "valid_gradient_range" : 0.65, 
+                //aumentando la sensibilità aumenta ciò che accetto sicuramente e quindi diminuisco il range
+                "min_gradient_threshold" : 0.17, 
+                // implica che accetta di default solo passi lenti
                 // tan(10°) = 0.17 - quindi accetto sempre tutto ciò che sta sotto 0.17
                 "time_threshold" : 0.12,
                 "alpha" : 0.6
@@ -136,12 +138,14 @@
                 "valid_gradient_range" : 0.2,
                 "min_gradient_threshold" : 0.75,
                 "time_threshold" : 0.12,
-                "alpha" : 0.5
+                "alpha" : 0.6
             },
             "sensitivity_5" : {
                 "displacement" : 5,
                 "valid_gradient_range" : 0.2,
+                // cresce lentamente - range di accettazione più piccolo
                 "min_gradient_threshold" : 1,
+                // accetta di default quasi tutti i passi anche veloci (in questo caso veloci = brevi)
                 // tan(45°) = 1.19
                 "time_threshold" : 0.12,
                 "alpha" : 0.5

@@ -86,7 +86,7 @@ class ExerciseFrame(QFrame):
             self.changeSliderColor()
             # self.sensitivity_value_label = QLabel("  " + str(self.sensitivity_slider.value()))
             # self.sensitivity_value_label.setToolTip("Suggested Level: 3")
-            self.slider2_label = QLabel(f"<b>Sensitivity:</b> {self.sensitivity_slider.value()}         |        <b>Precision:</b> {6-self.sensitivity_slider.value()} ")
+            self.slider2_label = QLabel(f"<b>Precision:</b> {6-self.sensitivity_slider.value()}         |        <b>Sensitivity:</b> {self.sensitivity_slider.value()} ")
             self.slider2_label.setToolTip("Sensitivity is inversely proportional to detection accuracy (Precision); Suggested levels: (3;3)")
             self.slider2_label.setAlignment(Qt.AlignCenter)
 
@@ -249,7 +249,7 @@ class ExerciseFrame(QFrame):
         self.sensitivity = self.sensitivity_slider.value()
         print("sensitivity level: " + str(self.sensitivity))
         # self.sensitivity_value_label.setText("  "+str(self.sensitivity))
-        self.slider2_label.setText(f"<b>Sensitivity:</b> {self.sensitivity_slider.value()}         |        <b>Precision:</b> {6-self.sensitivity_slider.value()} ")
+        self.slider2_label.setText(f"<b>Precision:</b> {6-self.sensitivity_slider.value()}         |        <b>Sensitivity:</b> {self.sensitivity_slider.value()} ")
         self.update_patient_sensitivity()
         self.changeSliderColor()
 

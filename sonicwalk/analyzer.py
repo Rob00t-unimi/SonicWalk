@@ -736,18 +736,18 @@ class Analyzer():
         # questo mi consente di traslare i segnali di 10 ° e - 10 °
 
         # standard values
-        displacement0 = -15  # per la gamba davanti dato che fa angoli positivi quasi sempre sopra i 5 gradi
-        displacement1 = 10  # per la gamba dietro dato che fa angoli negativi che salgono vicino a 0
+        displacement0 = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["displacement0"]  # -10 per la gamba davanti dato che fa angoli positivi che scendono anche fino a 0
+        displacement1 = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["displacement1"]  # 15 per la gamba dietro dato che fa angoli negativi che salgono vicino a -5
         valid_gradient_range = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["valid_gradient_range"] # per permettere alla soglia anche di salire
         time_threshold = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["time_threshold"] # seconds   # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
         min_gradient_threshold = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
+        alpha = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["alpha"]
 
         pitch = (self.__pitch + displacement0) if forward else (self.__pitch + displacement1)
 
         # ricerca di zero crossing
         positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+valid_gradient_range)
-        if self.__auto_detectLegs: forward = not forward
-        if positiveZc is not None and ((positiveZc.founded and forward) or (not positiveZc.founded and not forward)):
+        if positiveZc is not None and (positiveZc.founded != forward):
             elapsed_time = time.time() - self.__timestamp
             if elapsed_time > time_threshold:    # se self.__pos è True ho già trovaro un picco quindi lo Zc è valido         
                 self.__timestamp = time.time()  # update time stamp
@@ -759,7 +759,7 @@ class Analyzer():
                 print("gradient: " + str(self.__gradientThreshold))
 
                 # threshold update
-                self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=0.85, min_value=min_gradient_threshold)
+                self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=alpha, min_value=min_gradient_threshold)
                 # print("gradient: " + str(self.__gradientThreshold))
 
 
@@ -818,6 +818,7 @@ class Analyzer():
         # SWING
 
         elif exType == 3:
+            self.__gradientThreshold = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
             print("Swing Analyzer")
             print('...analyzer daemon {:d} started'.format(num))
             self.runAnalysis(method=self.__detectSwing)

@@ -56,6 +56,7 @@
     },
     "double_step" : {
         "leg_detection" : {
+            // not tested
             "sensitivity_1" : {
                 "displacement" : 10
             },
@@ -141,12 +142,12 @@
                 "alpha" : 0.6
             },
             "sensitivity_5" : {
-                "displacement" : 5,
+                "displacement" : 4,
                 "valid_gradient_range" : 0.2,
                 // cresce lentamente - range di accettazione più piccolo
                 "min_gradient_threshold" : 1,
                 // accetta di default quasi tutti i passi anche veloci (in questo caso veloci = brevi)
-                // tan(45°) = 1.19
+                // tan(45°) = 1
                 "time_threshold" : 0.12,
                 "alpha" : 0.5
             }
@@ -154,6 +155,7 @@
     },
     "swing" : {
         "leg_detection" : {
+            // not tested
             "sensitivity_1" : {
                 "displacement" : 15
             },
@@ -169,35 +171,56 @@
             "sensitivity_5" : {
                 "displacement" : 5
             }
-        },
+        },        
         "sensitivity_1" : {
-            "valid_gradient_range" : 0.35,
-            "min_gradient_threshold" : 0.3,
-            "time_threshold" : 0.2,
-            "alpha" : 0.5
+            "displacement0" : -15,
+            "displacement1" : 20,
+            "valid_gradient_range" : 0.65, 
+            //aumentando la sensibilità aumenta ciò che accetto sicuramente e quindi diminuisco il range
+            "min_gradient_threshold" : 0.17, 
+            // implica che accetta di default solo passi lenti
+            // tan(10°) = 0.17 - quindi accetto sempre tutto ciò che sta sotto 0.17
+            "time_threshold" : 0.15,
+            "alpha" : 0.6
         },
         "sensitivity_2" : {
-            "valid_gradient_range" : 0.35,
-            "min_gradient_threshold" : 0.3,
-            "time_threshold" : 0.2,
-            "alpha" : 0.5
+            "displacement0" : -15,
+            "displacement1" : 20,
+            "valid_gradient_range" : 0.45,
+            "min_gradient_threshold" : 0.36,
+            // tan(20°) = 0.36
+            "time_threshold" : 0.15,
+            "alpha" : 0.6
         },
         "sensitivity_3" : {
-            "valid_gradient_range" : 0.35,
-            "min_gradient_threshold" : 0.3,
-            "time_threshold" : 0.2,
-            "alpha" : 0.5
+            // -10 per la gamba davanti dato che fa angoli positivi che scendono anche fino a 0
+            "displacement0" : -10,
+            // 15 per la gamba dietro dato che fa angoli negativi che salgono vicino a -5
+            "displacement1" : 15,
+            "valid_gradient_range" : 0.3,
+            "min_gradient_threshold" : 0.577,
+            // tan(30°) = 0.577
+            "time_threshold" : 0.15,
+            "alpha" : 0.6
         },
         "sensitivity_4" : {
-            "valid_gradient_range" : 0.35,
-            "min_gradient_threshold" : 0.3,
-            "time_threshold" : 0.2,
-            "alpha" : 0.5
+            // all'accorciarsi dei passi la distanza da zero diventa piu simile sia per negativo che per positivo
+            "displacement0" : -10,
+            "displacement1" : 10,
+            "valid_gradient_range" : 0.25,
+            "min_gradient_threshold" : 0.75,
+            "time_threshold" : 0.13,
+            "alpha" : 0.6
         },
         "sensitivity_5" : {
-            "valid_gradient_range" : 0.35,
-            "min_gradient_threshold" : 0.3,
-            "time_threshold" : 0.2,
+            "displacement0" : -9,
+            "displacement1" : 9,
+            "valid_gradient_range" : 0.25,
+            // cresce lentamente - range di accettazione più piccolo
+            "min_gradient_threshold" : 1.19,
+            // accetta di default quasi tutti i passi anche veloci (in questo caso veloci = brevi)
+            // tan(50°) = 1.19
+            "time_threshold" : 0.12,
             "alpha" : 0.5
         }
     }

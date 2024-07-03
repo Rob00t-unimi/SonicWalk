@@ -173,27 +173,32 @@
         "sensitivity_1" : {
             "valid_gradient_range" : 0.35,
             "min_gradient_threshold" : 0.3,
-            "time_threshold" : 0.2
+            "time_threshold" : 0.2,
+            "alpha" : 0.5
         },
         "sensitivity_2" : {
             "valid_gradient_range" : 0.35,
             "min_gradient_threshold" : 0.3,
-            "time_threshold" : 0.2
+            "time_threshold" : 0.2,
+            "alpha" : 0.5
         },
         "sensitivity_3" : {
             "valid_gradient_range" : 0.35,
             "min_gradient_threshold" : 0.3,
-            "time_threshold" : 0.2
+            "time_threshold" : 0.2,
+            "alpha" : 0.5
         },
         "sensitivity_4" : {
             "valid_gradient_range" : 0.35,
             "min_gradient_threshold" : 0.3,
-            "time_threshold" : 0.2
+            "time_threshold" : 0.2,
+            "alpha" : 0.5
         },
         "sensitivity_5" : {
             "valid_gradient_range" : 0.35,
             "min_gradient_threshold" : 0.3,
-            "time_threshold" : 0.2
+            "time_threshold" : 0.2,
+            "alpha" : 0.5
         }
     }
 }

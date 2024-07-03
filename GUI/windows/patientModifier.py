@@ -21,13 +21,8 @@ class PatientModifier(QFrame):
         """
         super().__init__()
 
-        folder_name = os.path.basename(os.getcwd())
-        self.settings_path = 'data/settings.json' if folder_name == "GUI" else 'GUI/data/settings.json'
-        self.dataset_path = 'data/dataset.json' if folder_name == "GUI" else 'GUI/data/dataset.json'
-        
-        # for py installer only:
-        # self.settings_path = '_internal/data/settings.json'
-        # self.dataset_path = '_internal/data/dataset.json'
+        self.settings_path = 'GUI/data/settings.json'
+        self.dataset_path = 'GUI/data/dataset.json'
 
         self.patient_info_data = patient_data
         self.modify_patient_modal()
@@ -44,8 +39,7 @@ class PatientModifier(QFrame):
         modal = QDialog()
         modal.setWindowTitle("Modify Patient")
         modal.setFixedWidth(650)
-        self.folder_name = os.path.basename(os.getcwd())
-        modal.setWindowIcon(QIcon('icons/SonicWalk_logo.png' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.png'))
+        modal.setWindowIcon(QIcon('GUI/icons/SonicWalk_logo.png'))
         layout = QVBoxLayout(modal)
 
         # Add hospital details section

@@ -3,7 +3,6 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtGui import QIcon
 import sys
-# sys.path.append("GUI")
 from GUI.frames.sideMenu import SideMenu
 from GUI.pages.analysis_page import AnalysisPage
 from GUI.pages.archive_page import ArchivePage
@@ -35,15 +34,10 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("SonicWalk")
         self.resize(1100, 720)
         
-        self.folder_name = os.path.basename(os.getcwd())
-        self.setWindowIcon(QIcon('icons/SonicWalk_logo.png' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.png'))
+        self.setWindowIcon(QIcon('GUI/icons/SonicWalk_logo.png'))
 
-        self.settings_path = 'data/settings.json' if self.folder_name == "GUI" else 'GUI/data/settings.json'
-        self.dataset_path = 'data/dataset.json' if self.folder_name == "GUI" else 'GUI/data/dataset.json'
-
-        # for py installer only:
-        # self.settings_path = '_internal/data/settings.json'
-        # self.dataset_path = '_internal/data/dataset.json'
+        self.settings_path = 'GUI/data/settings.json'
+        self.dataset_path = 'GUI/data/dataset.json'
 
         # Load theme from the JSON file
         try:
@@ -91,9 +85,7 @@ class MainWindow(QMainWindow):
             # Density
             'density_scale': '0',
         }
-        css_path = "custom_css.css" if self.folder_name == "GUI" else "GUI/custom_css.css"
-        # for py installer only:
-        # css_path = "_internal/custom_css.css"
+        css_path = "GUI/custom_css.css"
         if theme is None: apply_stylesheet(self.app, theme=self.theme_name, extra=extra, invert_secondary=self.light, css_file = css_path)
         else: 
             self.light = True if "dark_" not in theme else False

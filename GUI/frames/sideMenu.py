@@ -21,10 +21,6 @@ class SideMenu(QFrame):
             - Initializes a custom side menu frame.
         """
         super().__init__()
-
-        self.folder_name = os.path.basename(os.getcwd())
-        # self.settings_path = 'data/settings.json' if folder_name == "GUI" else 'GUI/data/settings.json'
-        # self.dataset_path = 'data/dataset.json' if folder_name == "GUI" else 'GUI/data/dataset.json'
         
         self.setProperty('class', 'custom_menu')
         # initialize attributes
@@ -209,9 +205,7 @@ class SideMenu(QFrame):
         Effects:    
             - Opens the HTML documentation in a web browser
         """
-        doc_path = 'documentation.html' if self.folder_name == "GUI" else "GUI/documentation.html"
-        # for py installer only:
-        # doc_path = "_internal/documentation.html"
+        doc_path = "GUI/documentation.html"
         try:
             webbrowser.open(os.path.join(os.getcwd(), doc_path))
         except Exception as e:

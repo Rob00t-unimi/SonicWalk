@@ -57,16 +57,8 @@ import gc
 import xsensdeviceapi as xda
 import multiprocessing as mp
 import numpy as np
-# import simpleaudio as sa
 from multiprocessing.sharedctypes import RawValue, RawArray
 from threading import Lock
-# # for py installer only: 
-# from sonicwalk.plotter import Plotter
-# from sonicwalk.analyzer import Analyzer
-# from sonicwalk.sharedVariables import SharedCircularIndex
-# from sonicwalk.sharedVariables import LegDetected
-# from sonicwalk.sharedVariables import ProcessWaiting
-# from sonicwalk.sharedVariables import SharedData
 from plotter import Plotter
 from analyzer import Analyzer
 from sharedVariables import SharedCircularIndex

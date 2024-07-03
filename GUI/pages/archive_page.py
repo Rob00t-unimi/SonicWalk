@@ -28,13 +28,8 @@ class ArchivePage(QWidget):
         """
         super().__init__()
 
-        self.folder_name = os.path.basename(os.getcwd())
-        self.settings_path = 'data/settings.json' if self.folder_name == "GUI" else 'GUI/data/settings.json'
-        self.dataset_path = 'data/dataset.json' if self.folder_name == "GUI" else 'GUI/data/dataset.json'
-
-        # for py installer only:
-        # self.settings_path = '_internal/data/settings.json'
-        # self.dataset_path = '_internal/data/dataset.json'
+        self.settings_path = 'GUI/data/settings.json'
+        self.dataset_path = 'GUI/data/dataset.json'
 
         self.light = light
         self.icons_manager = icons_manager
@@ -546,9 +541,7 @@ class ArchivePage(QWidget):
             self.no_results_label.raise_()  # on top
             self.no_results_label.show()
 
-        patient_folder = os.path.join(os.getcwd(), "data", "archive", patient_id.upper()) if self.folder_name == "GUI" else os.path.join(os.getcwd(), "GUI", "data", "archive", patient_id.upper())
-        # for py installer only:
-        # patient_folder = os.path.join(os.getcwd(), "_internal", "data", "archive", patient_id.upper())
+        patient_folder = os.path.join(os.getcwd(),  "GUI", "data", "archive", patient_id.upper())
         try:
             shutil.rmtree(patient_folder)
             self.reset_patient_tables()
@@ -846,9 +839,7 @@ class ArchivePage(QWidget):
         self.set_folders_model()
 
     def set_folders_model(self):
-        self.folder_path = os.path.join(os.getcwd(), "data", "archive", self.current_patient_id) if self.folder_name == "GUI" else os.path.join(os.getcwd(), "GUI", "data", "archive", self.current_patient_id)
-        # for py installer only:
-        # self.folder_path = os.path.join(os.getcwd(), "_internal", "data", "archive", patient_id)
+        self.folder_path = os.path.join(os.getcwd(),  "GUI", "data", "archive", self.current_patient_id)
         if os.path.exists(self.folder_path):
             self.folder_model.setRootPath(self.folder_path) 
             self.listView_folders.setModel(self.folder_model)

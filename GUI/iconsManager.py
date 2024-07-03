@@ -14,16 +14,10 @@ class IconsManager:
             - initialize the object with icons paths
         """
 
-        folder_name = os.path.basename(os.getcwd())
-
         self.color = "black"
 
-        self.blackpath = "icons/black/" if folder_name == "GUI" else "GUI/icons/black/"
-        self.whitepath = "icons/white/" if folder_name == "GUI" else "GUI/icons/white/"
-
-        # # for py installer only: 
-        # self.blackpath = '_internal/icons/black/'
-        # self.whitepath = '_internal/icons/white/'
+        self.blackpath = "GUI/icons/black/"
+        self.whitepath = "GUI/icons/white/"
 
         self.trash_name = "trash.svg"
         self.link_name = "external-link.svg"
@@ -41,11 +35,7 @@ class IconsManager:
         self.settings_name = "settings.svg"
         self.stop_name = "square.svg"
 
-        self.stop_link = "icons/"+ self.stop_name if folder_name == "GUI" else "GUI/icons/" + self.stop_name
-        # for py installer only:
-        # self.stop_link = "_internal/icons/" + self.stop_name
-
-
+        self.stop_link = "GUI/icons/" + self.stop_name
         # self.set_black()
 
     def switch_icons_color(self):

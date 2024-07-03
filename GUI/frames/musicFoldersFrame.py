@@ -23,13 +23,8 @@ class MusicFolders(QWidget):
         """
         super().__init__()
 
-        folder_name = os.path.basename(os.getcwd())
-        self.settings_path = 'data/settings.json' if folder_name == "GUI" else 'GUI/data/settings.json'
-        self.dataset_path = 'data/dataset.json' if folder_name == "GUI" else 'GUI/data/dataset.json'
-
-        # for py installer only:
-        # self.settings_path = '_internal/data/settings.json'
-        # self.dataset_path = '_internal/data/dataset.json'   
+        self.settings_path = 'GUI/data/settings.json'
+        self.dataset_path = 'GUI/data/dataset.json'
 
         self.icons_manager = icons_manager
         self.firstTime = True
@@ -317,8 +312,7 @@ class NameDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Choose a Name")
-        self.folder_name = os.path.basename(os.getcwd())
-        self.setWindowIcon(QIcon('icons/SonicWalk_logo.png' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.png'))
+        self.setWindowIcon(QIcon('GUI/icons/SonicWalk_logo.png'))
         
         self.nameLineEdit = QLineEdit()
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)

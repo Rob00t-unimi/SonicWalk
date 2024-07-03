@@ -19,13 +19,8 @@ class PatientSelector(QFrame):
             - initialize the object and open the modal dialog window
         """
         super().__init__()
-        folder_name = os.path.basename(os.getcwd())
-        self.settings_path = 'data/settings.json' if folder_name == "GUI" else 'GUI/data/settings.json'
-        self.dataset_path = 'data/dataset.json' if folder_name == "GUI" else 'GUI/data/dataset.json'
-
-        # for py installer only:
-        # self.settings_path = '_internal/data/settings.json'
-        # self.dataset_path = '_internal/data/dataset.json'
+        self.settings_path = 'GUI/data/settings.json'
+        self.dataset_path = 'GUI/data/dataset.json'
 
         self.patient_info_data = [
             ("Name:", ""),
@@ -50,8 +45,7 @@ class PatientSelector(QFrame):
         self.dialog = QDialog()
         self.dialog.setFixedSize(600, 494)
         self.dialog.setWindowTitle("Select Patient")
-        self.folder_name = os.path.basename(os.getcwd())
-        self.dialog.setWindowIcon(QIcon('icons/SonicWalk_logo.png' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.png'))
+        self.dialog.setWindowIcon(QIcon('GUI/icons/SonicWalk_logo.png'))
 
         self.no_results_label = QLabel("No results found", self.dialog)
         self.no_results_label.setAlignment(Qt.AlignCenter)

@@ -90,10 +90,7 @@ class RecordingFrame(QWidget):
         # init pygame
         pygame.init()
         self.clock = pygame.time.Clock()
-        if os.path.basename(os.getcwd()) == "GUI":
-            self.indication_sounds = ["../sonicwalk/audio_samples/start_exercise.mp3", "../sonicwalk/audio_samples/feet_together.mp3", "../sonicwalk/audio_samples/right_feet_forward.mp3", "../sonicwalk/audio_samples/left_feet_forward.mp3", "../sonicwalk/audio_samples/start_movement.mp3", "../sonicwalk/audio_samples/exercise_completed.mp3"]
-        else: 
-            self.indication_sounds = ["sonicwalk/audio_samples/start_exercise.mp3", "sonicwalk/audio_samples/feet_together.mp3", "sonicwalk/audio_samples/right_feet_forward.mp3", "sonicwalk/audio_samples/left_feet_forward.mp3", "sonicwalk/audio_samples/start_movement.mp3", "sonicwalk/audio_samples/exercise_completed.mp3"]
+        self.indication_sounds = ["sonicwalk/audio_samples/start_exercise.mp3", "sonicwalk/audio_samples/feet_together.mp3", "sonicwalk/audio_samples/right_feet_forward.mp3", "sonicwalk/audio_samples/left_feet_forward.mp3", "sonicwalk/audio_samples/start_movement.mp3", "sonicwalk/audio_samples/exercise_completed.mp3"]
         self.indications_index = 0
 
         # create a timer
@@ -273,8 +270,7 @@ class RecordingFrame(QWidget):
         self.connection_msg = QMessageBox()
         self.connection_msg.setIcon(QMessageBox.Information)
         self.connection_msg.setWindowTitle("Connection...")
-        self.folder_name = os.path.basename(os.getcwd())
-        self.connection_msg.setWindowIcon(QIcon('icons/SonicWalk_logo.png' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.png'))
+        self.connection_msg.setWindowIcon(QIcon('GUI/icons/SonicWalk_logo.png'))
         self.connection_msg.setText("Please wait. We are trying to connect with the sensors...")
         self.connection_msg.setStandardButtons(QMessageBox.NoButton)
         self.connection_msg.show()
@@ -345,8 +341,7 @@ class RecordingFrame(QWidget):
                     error_msg = QMessageBox()
                     error_msg.setIcon(QMessageBox.Warning)
                     error_msg.setWindowTitle("Error")
-                    self.folder_name = os.path.basename(os.getcwd())
-                    error_msg.setWindowIcon(QIcon('icons/SonicWalk_logo.png' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.png'))
+                    error_msg.setWindowIcon(QIcon('GUI/icons/SonicWalk_logo.png'))
                     msg = (str(result)).replace("Aborting.", "") if "Aborting." in str(result) else str(result)
                     error_msg.setText(msg + " Do you want to try again?")
                     error_msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
@@ -444,8 +439,7 @@ class RecordingFrame(QWidget):
         sample_error_msg = QMessageBox()
         sample_error_msg.setIcon(QMessageBox.Critical)
         sample_error_msg.setWindowTitle("Error")
-        self.folder_name = os.path.basename(os.getcwd())
-        sample_error_msg.setWindowIcon(QIcon('icons/SonicWalk_logo.png' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.png'))
+        sample_error_msg.setWindowIcon(QIcon('GUI/icons/SonicWalk_logo.png'))
         sample_error_msg.setText("Failed to load music samples. Please ensure that the provided path is correct and that the files are in either WAV or MP3 format.")
         sample_error_msg.setStandardButtons(QMessageBox.Ok)
         sample_error_msg.exec_()
@@ -507,8 +501,7 @@ class RecordingFrame(QWidget):
         confirm_msg = QMessageBox()
         confirm_msg.setIcon(QMessageBox.Question)
         confirm_msg.setWindowTitle("Confirm Save")
-        self.folder_name = os.path.basename(os.getcwd())
-        confirm_msg.setWindowIcon(QIcon('icons/SonicWalk_logo.png' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.png'))
+        confirm_msg.setWindowIcon(QIcon('GUI/icons/SonicWalk_logo.png'))
         confirm_msg.setText("Do you want to save the recording?")
         confirm_msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
 
@@ -521,8 +514,7 @@ class RecordingFrame(QWidget):
 
             dialog = QDialog()
             dialog.setWindowTitle("Exercise Information")
-            self.folder_name = os.path.basename(os.getcwd())
-            dialog.setWindowIcon(QIcon('icons/SonicWalk_logo.png' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.png'))
+            dialog.setWindowIcon(QIcon('GUI/icons/SonicWalk_logo.png'))
 
             layout = QVBoxLayout()
 
@@ -608,8 +600,7 @@ class RecordingFrame(QWidget):
                 msg = QMessageBox()
                 msg.setIconPixmap(QPixmap("icons/checkmark.png").scaledToWidth(50))
                 msg.setWindowTitle("Recording Saved")
-                self.folder_name = os.path.basename(os.getcwd())
-                msg.setWindowIcon(QIcon('icons/SonicWalk_logo.png' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.png'))
+                msg.setWindowIcon(QIcon('GUI/icons/SonicWalk_logo.png'))
                 msg.setText("Your recording has been saved successfully.")
                 msg.setStandardButtons(QMessageBox.Ok)
         
@@ -623,8 +614,7 @@ class RecordingFrame(QWidget):
                 error_msg = QMessageBox()
                 error_msg.setIcon(QMessageBox.Critical)
                 error_msg.setWindowTitle("Error")
-                self.folder_name = os.path.basename(os.getcwd())
-                error_msg.setWindowIcon(QIcon('icons/SonicWalk_logo.png' if self.folder_name == "GUI" else 'GUI/icons/SonicWalk_logo.png'))
+                error_msg.setWindowIcon(QIcon('GUI/icons/SonicWalk_logo.png'))
                 error_msg.setText(f"An error occurred while saving the recording: {str(e)}")
                 error_msg.setStandardButtons(QMessageBox.Ok)
                 

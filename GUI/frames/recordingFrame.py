@@ -581,7 +581,10 @@ class RecordingFrame(QWidget):
                 # Creates a unique filename for the recording
                 today_date = datetime.today().strftime('%Y-%m-%d')
                 parent_dir = os.path.dirname(os.path.abspath(__file__))
-                directory_path = os.path.join(parent_dir.replace("frames",""), f"data/archive/{patient_id}")
+                if "_internal" in parent_dir:
+                    parent_dir = parent_dir.split("_internal")[0] + "GUI/"
+                else: parent_dir = parent_dir.replace("frames","")
+                directory_path = os.path.join(parent_dir, f"data/archive/{patient_id}")
                 os.makedirs(directory_path, exist_ok=True)  # create directory if it doesn't exist
                 session_number_str = str(session_number).zfill(2)
                 session_dir = os.path.join(directory_path, f"{today_date}_session_{session_number_str}")

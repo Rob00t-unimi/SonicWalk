@@ -48,8 +48,8 @@ class PatientModifier(QFrame):
         hospital_section.setLayout(hospital_layout)
 
         hospital_fields = [
-            ("Hospital:", QLineEdit(self.patient_info_data["Hospital"])),  # ospedale
-            ("Group:", QComboBox())       # ospedale
+            ("Hospital:", QLineEdit(self.patient_info_data["Hospital"])),
+            ("Group:", QComboBox())
         ]
         
         # Populate comboboxes with options
@@ -60,7 +60,7 @@ class PatientModifier(QFrame):
         for label, widget in hospital_fields:
             row = QHBoxLayout()
             label_widget = QLabel(label)
-            label_widget.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # Allineamento verticale per la label
+            label_widget.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             row.addWidget(label_widget)
             row.addWidget(widget)
             hospital_layout.addRow(row)

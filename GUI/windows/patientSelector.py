@@ -4,7 +4,6 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 import json
 from datetime import datetime, date
-import os
 
 class PatientSelector(QFrame):
     """

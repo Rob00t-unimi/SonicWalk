@@ -1,7 +1,6 @@
 import json
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt 
-import sys
 import os
 
 class ExerciseFrame(QFrame):
@@ -182,12 +181,9 @@ class ExerciseFrame(QFrame):
                     if patient["ID"] == patientId:
                         self.patient_info = patient
                         self.load_sensitivity()
-                        # self.bpm = patient[exercise + "_bpm"]
                         break
             except:
                 print("Error: impossible to load patient data")
-
-        # self.bpm_slider.setValue(self.bpm)
 
     def load_sensitivity(self):
         text = self.exercise_selector.currentText()
@@ -221,7 +217,6 @@ class ExerciseFrame(QFrame):
                 for existing_patient in data:
                     if existing_patient["ID"] == self.patient_info["ID"]:
                         existing_patient.update(self.patient_info)
-                        # print(self.patient_info)
                         break
             except:
                 print("Error: impossible to load patient data")

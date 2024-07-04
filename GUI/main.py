@@ -9,7 +9,6 @@ from GUI.pages.archive_page import ArchivePage
 from GUI.pages.settings_page import SettingsPage
 from GUI.pages.statistics_page import StatisticsPage
 from GUI.iconsManager import IconsManager
-import os
 from qt_material import apply_stylesheet, list_themes
 
 icons_manager = IconsManager()
@@ -116,11 +115,9 @@ class MainWindow(QMainWindow):
         """
         if self.light: icons_manager.set_black()
         else: icons_manager.set_white()
-        # print("finding children...")
         widgets = self.findWidgets("icon_name")
         for widget in widgets:
             name = widget.property("icon_name")
-            # print(name)
             if name == "sun":
                 if self.light:
                     widget.setProperty("icon_name", "moon")

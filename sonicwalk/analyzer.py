@@ -20,7 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# import simpleaudio
 import re
 import pygame
 import time
@@ -45,7 +44,6 @@ class Analyzer():
         self.__swingPhase = False
         self.__active = False
         self.__completeMovements = 0    # ex. steps
-        self.__trasholdRange = 3.0
         self.__legDetected = False
         self.__foundedPeak = False
         self.__pos = True
@@ -53,7 +51,6 @@ class Analyzer():
         self.__firstpeak = False
 
         self.__gradientThreshold = 0.3
-        self.__gradientHistory = np.full(self.__history_sz, 0.6, dtype=np.float64)
 
         self.__previousWindow = None
         self.__window = None
@@ -141,8 +138,6 @@ class Analyzer():
         """
             It play a sample and increment the step counter
         """
-        # _ = self.__samples[self.__sharedIndex.value()].play()     # with simpleaudio
-
         sample = self.__samples[self.__sharedIndex.value()]
         pygame.mixer.Sound(sample).play()
         
@@ -167,32 +162,31 @@ class Analyzer():
             Using this function allows the determination of a positive or negative peak with a single window delay.
         """
 
-        # Questo approccio consente di identificare la presenza di un picco in una finestra al tempo di quella successiva
-        # Per la rilevazione del picco si confrontano i massimi o i minimi delle finestre consentendo cosi di abbattere il rumore
-        # Infatti confrontare direttamente 3 campioni anzichè le finestre potrebbe portare ad identificazioni errate 
-        # per via di oscillazioni errate nei valori causate dal rumore.
+        # This approach allows for identifying the presence of a peak within a time window of the subsequent one.
+        # Peak detection involves comparing the maximums or minimums of the windows, thus helping to reduce noise.
+        # Indeed, directly comparing 3 samples instead of windows could lead to incorrect identifications 
+        # due to erroneous value oscillations caused by noise.
 
-                # per via della sovrapposizione delle finestre potremmo non rilevare i picchi correttamente, poichè
-                # un massimo in una finestra potrebbe ripresentarsi in quella successiva
-                # per questo motivo modifichiamo LEGGERMENTE i valori delle finestre smussandoli con un filtro gaussiano
-                # questo ci consente di abbattere ulteriore rumore e anche di migliorare la rilevazione 
+            # Due to window overlap, we might not detect peaks correctly, as a maximum in one window could reappear in the next.
+            # For this reason, we SLIGHTLY modify the window values by smoothing them with a Gaussian filter.
+            # This allows us to further reduce noise and improve peak detection.
 
-                # N.B
-                # con un filtro gaussiano aggressivo invece siccome è applicato alle finestre genereremmo ulteriori picchi dove non ci sono
+            # Note:
+            # Using an aggressive Gaussian filter applied to windows could create additional peaks where none exist.
 
-                # window = gaussian_filter1d(window, sigma=0.6)
-                # previous_window = gaussian_filter1d(previous_window, sigma=0.6)
-                # current_window = gaussian_filter1d(current_window, sigma=0.6)
+            # window = gaussian_filter1d(window, sigma=0.6)
+            # previous_window = gaussian_filter1d(previous_window, sigma=0.6)
+            # current_window = gaussian_filter1d(current_window, sigma=0.6)
 
                 
         if not minimum:
             if np.max(window) > np.max(previous_window) and np.max(window) > np.max(current_window):
-                # il picco è in window
+                # peak into window
                 if (positive is None) or (np.max(window) >= 0 and positive) or (np.max(window) < 0 and not positive):
                     return True
         else:
             if np.min(window) < np.min(previous_window) and np.min(window) < np.min(current_window):
-                # il minimo è in window
+                # minimum into window
                 if (positive is None) or (np.min(window) >= 0 and positive) or (np.min(window) < 0 and not positive):
                     return True
         return False
@@ -213,18 +207,18 @@ class Analyzer():
             by comparing the maximum and minimum values of the current window with those of the previous window.
         """
 
-        # Questo approccio consente di identificare la fase di salita o discesa tra 2 finestre
-        # Per l'identificazione si confrontano i massimi o i minimi delle finestre consentendo cosi di abbattere il rumore
+        # This approach allows identifying the rising or falling phase between two windows.
+        # Identification involves comparing the maximums or minimums of the windows, thus helping to reduce noise.
 
         if increasing_phase:
             if np.max(current_window) > np.max(previous_window):
-                # salita
+                # Rising phase
                 return True
             else:
                 return False
         else:
             if np.min(current_window) <= np.min(previous_window):
-                # discesa
+                # Falling phase
                 return True
             else:
                 return False
@@ -275,17 +269,11 @@ class Analyzer():
                 EMA (Exponential Moving Average)
         """
 
-        # alfa compreso tra 0 e 1 
-        # alfa minore da più peso alla media vecchia
-        # alfa maggiore da più peso alla media nuova
-        
-        # self.__gradientHistory[1:] = self.__gradientHistory[:-1]
-        # self.__gradientHistory[0] = newGradient
+        # Alpha ranges between 0 and 1.
+        # A smaller alpha gives more weight to the old average.
+        # A larger alpha gives more weight to the new average.
 
         # EMA (Exponential Moving Average)
-        # Nella prima posizione della history ho il valore più recente, nell'ultima il più vecchio
-        # mean = np.mean(self.__gradientHistory)
-        # newMean = (alpha * mean) + ((1-alpha)*self.__gradientThreshold)
         newMean = (alpha * newGradient) + ((1-alpha)*self.__gradientThreshold)
         self.__gradientThreshold =  newMean if newMean > min_value else min_value
 
@@ -301,11 +289,6 @@ class Analyzer():
         validRange = self.__parameters["walk"][f"sensitivity_{self.__sensitivity}"]["validRange"]
         min_threshold = self.__parameters["walk"][f"sensitivity_{self.__sensitivity}"]["min_threshold"]
         time_threshold =self.__parameters["walk"][f"sensitivity_{self.__sensitivity}"]["time_threshold"] # seconds
-
-        # print("DISPLACEMENT: " + str(displacement))
-        # print("VALIDRANGE: " + str(validRange))
-        # print("TIME_THRESHOLD: " + str(time_threshold))
-        # print("MIN_THRESHOLD:"+str(min_threshold))
       
         #TEST: subtract a certain angle to trigger sound earlier in the cycle
         self.__pitch = self.__pitch - displacement
@@ -349,28 +332,29 @@ class Analyzer():
 
     ################################ MARCH DETECTION ======================================================== && Rob ========
         
-    ### Supporta:
-    #           - Marcia sul posto (Ginocchia alte - High knees march) con sensori sulle caviglie
-    #           - Marcia sul posto (Ginocchia alte - High knees march) con sensori sulle cosce
-    #           - Macia sul posto (piedi indietro - back kicks) sensori sulle caviglie
-            
-    ### ALGORITMO
-            
-        # Approccio 1   (FAIL)
-            # inizialmente ho pensato di ribaltare il segnale e cercare i picchi con una threshold adattiva, quando validavo un picco cercavo il primo campione in un range vicino a zero per far suonare, quando lo trovavo ripartivo nel cercare un picco valido
+    ### Supports:
+        # - High knees march with ankle sensors
+        # - High knees march with thigh sensors
+        # - Back kicks with ankle sensors
 
-        # Approccio Finale
-            # Tutti e 3 i segnali hanno solo picchi  molto alti (solo positivi o solo negativi) e lontani dal rumore, quindi non mi serve una threshold dinamica.
-            # Traslo in basso in modo da negativizzare quasi tutto il rumore (la traslazione è di fatto una threshold, inoltre permette di anticipare gli zero crossing)
-                    # con una traslazione di 20 siamo sicuri che non ci sarà rumore
-                    # con una traslazione di 10 siamo quasi sicuri che non ci sarà rumore
-                    # con una traslazione di 5 siamo un po' meno sicuri e e meno in anticipo ma rileviamo la marcia con passi molto piccoli
-            
-            # Dopo la traslazone cerco gli zero crossing opposti:
-                # Quando trovo uno zero crossing negativo significa che c'è stato un picco sopra il displacement (threshold) quindi il picco è valido e suono
-                # Posso passare alla ricerca di uno zero crossing positivo, quando lo trovo torno alla ricerca di uno zero crossing negativo
         
-            # Se il segnale ha picchi positivi va bene, se li ha negativi lo ribalto
+    ### ALGORITHM
+
+    #### Approach 1 (FAIL)
+    # - Initially, I tried inverting the signal and looking for peaks with an adaptive threshold. When validating a peak, I searched for the first sample within a range near zero to trigger a sound. Once found, I resumed searching for valid peaks.
+
+    # #### Final Approach
+    # - All three signals have very high peaks (either exclusively positive or negative) and are far from noise, so I do not need a dynamic threshold.
+    # - I shift the signal downwards to mostly negate all noise (this shift acts as a threshold and anticipates zero crossings):
+    #   - A shift of 20 ensures there is no noise.
+    #   - A shift of 10 almost guarantees no noise.
+    #   - A shift of 5 is less certain and less anticipatory, but detects walking with very small steps.
+
+    # - After shifting, I look for opposite zero crossings:
+    #   - Finding a negative zero crossing indicates a peak above the displacement (threshold), making the peak valid and triggering a sound.
+    #   - I then search for a positive zero crossing and return to searching for a negative zero crossing.
+
+    # - The signal has negative peaks so i invert it.
                 
 
     def __detectMarch(self):
@@ -412,36 +396,32 @@ class Analyzer():
     ################################ LEG DETECTION ======================================================== && Rob ========
             
 
-    # DISTINGUERE AUTOMATICAMENTE LE GAMBE
+    # AUTO leg DETECTION
             
     def detectLeg(self, displacement = None):
         
         # IDEA:
-        # Quando si avvia un esercizio, di solito si comincia con la gamba che fa il passo in avanti
-        # Idealmente questa gamba attraverserà uno zero crossing positivo per prima
-        # Tuttavia, a causa del piegamento del ginocchio, in pratica si verifica prima uno zero crossing negativo.
-        
-        # ALGORITMO:
-        # L'algoritmo sfrutta l'idea di variabili condivise tra processi, protette dai lock.
-        # I processi sono sincronizzati tramite una variabile condivisa all'avvio. 
-        # Il primo processo che attraversa lo zero crossing lo comunica all'altro tramite un'altra variabile condivisa, i processi sapranno cosi distinguersi
-        
-        # A causa del rumore, potrebbero verificarsi zero crossing inaspettati. L'algoritmo affronta questa eventualità in questo modo:
-            # 1: Filtra la finestra con un filtro gaussiano per ridurre il rumore e appiattire il segnale. (molto importante all'inizio quando i 2 segnali sono entrambi vicini a zero)
-            # 2: Trasla verso il basso entrambi i segnali per ritardare il rilevamento dello zero crossing positivo.
-            #    per via delle differenze soggettive intrinseche nei segnali analizzati, il segnale di cui non deve essere rilevato lo zero crossing ha una campana più ampia, quindi 
-            #    a parità di displacement viene ritardato ancora di più e questo torna a nostro vantaggio (inizialmente i processi non iniziavano in sync)
-            # 3: Quando viene trovato lo zero crossing positivo, lo si considera valido solo se il segnale ha registrato un picco negativo inferiore di almeno 0.1 gradi rispetto al displacement
-            #    Questo perché per i movimenti "naturali" ci sarà sempre un minimo piegamento del ginocchio. 
-            #    Per l'altro piede invece il rumore che viene appiattito difficilmente (eccetto movimenti) sarà più basso di 0.1 gradi del displacement e in concomitanza ranggiungerà prima lo zero crossing positivo
-            #    Per l'altro piede (eccetto movimenti), è improbabile che il rumore, che viene appiattito sia inferiore di 0.1 gradi rispetto allo spostamento e che successivamente riuscirà anche a raggiungere per primo
-            #    lo zero crossing positivo
+        # When starting an exercise, typically one begins with the leg stepping forward. Ideally, this leg will cross a positive zero crossing first.
+        # However, due to knee bending, a negative zero crossing typically occurs first in practice.
 
+        # ALGORITHM:
+        # The algorithm utilizes the concept of shared variables between processes, protected by locks.
+        # Processes are synchronized using a shared variable at startup.
+        # The first process to cross the zero crossing communicates this to the other process via another shared variable, allowing processes to distinguish themselves.
+
+        # Due to noise, unexpected zero crossings may occur. The algorithm addresses this as follows:
+        # 1. Gaussian Filtering: Filters the window with a Gaussian filter to reduce noise and flatten the signal (critical at the start when both signals are close to zero).
+        # 2. Signal Shifting: Shifts both signals downward to delay the detection of the positive zero crossing.
+        #    Due to inherent subjective differences in the analyzed signals, the signal that should not detect the zero crossing has a broader bell curve.
+        #    Therefore, with the same displacement, it is delayed even more, which works to our advantage (initially, processes did not start in sync).
+        # 3. Validating Positive Zero Crossing: When a positive zero crossing is found, it is considered valid only if the signal has recorded a negative peak at least 0.1 degrees lower than the displacement.
+        #    This accounts for the natural knee bending in "natural" movements. For the other foot, noise that is flattened (except for movements) will be lower than 0.1 degrees of displacement and will reach the positive zero crossing first.
+        #    For the other foot (except for movements), it is unlikely that the noise, which is flattened, will be lower than 0.1 degrees relative to the displacement and that it will subsequently reach the positive zero crossing first.
                                         
         if displacement is not None:
                   
-            pitch =  self.__pitch - displacement    # aumentando il valore sottratto si aumenta la precisione nella rilevazione tuttavia aumenta l'ampiezza del passo richiesto
-        else:                                       # diminuendo si perde una corretta rilevazione
+            pitch =  self.__pitch - displacement    # Increasing the subtracted value increases detection precision but requires larger step amplitude
+        else:                                       #  Decreasing it compromises accurate detection.
             pitch = self.__pitch
 
         if pitch is not None: pitch = gaussian_filter1d(pitch, sigma=1)
@@ -462,7 +442,7 @@ class Analyzer():
 
     def __detectDoubleStep(self):
 
-        # Le due gambe hanno segnali differenti che quindi devono essere distinti e analizzati in modo diverso
+        # The two legs have different signals that therefore need to be distinguished and analyzed differently.
         
         if self.__endController() : return
         self.__nextWindow()
@@ -492,155 +472,145 @@ class Analyzer():
         self.__previousWindow = self.__window
         self.__window = self.__pitch
         
-    # RILEVAZIONE MOVIMENTO GAMBA "CHE SI MOUOVE"
     def stepLeg(self):
             
-            #TRASH
-            # IDEA:
-            # La gamba in movimento genera un doppio picco positivo seguito da un doppio minimo negativo, e così via.
-            # Siamo interessati solo quando il piede tocca terra, quindi per ogni coppia conta solo il primo dei due picchi (o minimi).
-            # Quando rilevo un picco positivo, suono, poi cerco il secondo picco. Quando l'ho trovato, cambio la ricerca in un minimo negativo, e viceversa.
+        # OLD:
+        # The moving leg generates a double positive peak followed by a double negative trough, and so on.
+        # We are only interested when the foot touches the ground, so for each pair, only the first of the two peaks (or troughs) matters.
+        # When I detect a positive peak, I trigger a sound, then look for the second peak. Once found, I switch the search to a negative trough, and vice versa.
 
-            # NEW
-            # Rilevo il picco positivo, se entro 0.3 secondi non c'è un minimo positivo suono
-            # se trovo un minimo positivo prima dei 0.3 secondi suono
-            # cerco un nuovo picco positivo, quando lo trovo 
-            # cerco un minimo negativo, se entro 0.4 secondi non c'è un massimo negativo suono
-            # se trovo un massimo negativo prima dei 0.4 secondi suono
-            # cerco un nuovo minimo negativo, quando lo trovo reitero la stessa procedura
+        # NEW:
+        # I detect the positive peak, check if it's valid with a dynamic threshold. If within 0.3 seconds there's no positive trough, I trigger a sound.
+        # If I find a positive trough before 0.3 seconds, I trigger a sound.
+        # I look for a new positive peak, once found,
+        # I search for a negative trough, check if it's valid with a dynamic threshold. If within 0.4 seconds there's no negative peak, I trigger a sound.
+        # If I find a negative peak before 0.4 seconds, I trigger a sound.
+        # I look for a new negative trough, once found, repeat the same procedure.
 
+        if self.__endController() : return
+        self.__nextWindow()
 
-            if self.__endController() : return
-            self.__nextWindow()
-
-            def control_if_newWindow():
-                # If the new window is not completely new then add the new part into self.__window and do nothing.
-                for i, item in enumerate(self.__window):
-                    for i2, item2 in enumerate(self.__pitch):
-                        if item == item2:
-                            if np.array_equal(self.__window[i:], self.__pitch[:len(self.__window)-i]): 
-                                self.__pitch = self.__pitch[len(self.__window)-i:]
-                                return
-            
-            # If the first 2 windows haven't arrived yet    
-            if self.__previousWindow is None and self.__window is None: 
-                self._updateWindows() 
-                return
-            elif self.__previousWindow is None:
-                self.__previousWindow = self.__window
-                control_if_newWindow()
-                if self.__pitch.size == 0: return
-                self.__window = self.__pitch
-                return
-            
-            # control if new window contains new informations else return
+        def control_if_newWindow():
+            # If the new window is not completely new then add the new part into self.__window and do nothing.
+            for i, item in enumerate(self.__window):
+                for i2, item2 in enumerate(self.__pitch):
+                    if item == item2:
+                        if np.array_equal(self.__window[i:], self.__pitch[:len(self.__window)-i]): 
+                            self.__pitch = self.__pitch[len(self.__window)-i:]
+                            return
+        
+        # If the first 2 windows haven't arrived yet    
+        if self.__previousWindow is None and self.__window is None: 
+            self._updateWindows() 
+            return
+        elif self.__previousWindow is None:
+            self.__previousWindow = self.__window
             control_if_newWindow()
             if self.__pitch.size == 0: return
+            self.__window = self.__pitch
+            return
+        
+        # control if new window contains new informations else return
+        control_if_newWindow()
+        if self.__pitch.size == 0: return
 
-            # initialize the windows
-            pitch = self.__pitch
-            previous = self.__previousWindow
-            window = self.__window
+        # initialize the windows
+        pitch = self.__pitch
+        previous = self.__previousWindow
+        window = self.__window
 
-            max_time_wait = 0.4 if not self.__pos else 0.3  # max wait time before play sound
-            displacement = 5 # solo se cerco massimi negativi e minimi positivi
-            time_threshold = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["time_threshold"]   # time threshold between peaks
-            min_peak_threshold = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["min_peak_threshold"]    # abs sui massimi positivi e minimi negativi
-            validRange = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["validRange"]
+        max_time_wait = 0.4 if not self.__pos else 0.3  # max wait time before play sound
+        displacement = 5 # Only when searching for negative peaks and positive troughs
+        time_threshold = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["time_threshold"]   # time threshold between peaks
+        min_peak_threshold = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["min_peak_threshold"]    # Absolute value for positive peaks and negative troughs
+        validRange = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["validRange"]
 
-            if time.time() - self.__timestamp >= max_time_wait and self.__firstpeak and not self.__foundedPeak:
-                # sound here after a delay
-                self.__interestingPoints.append(self.__currentGlobalIndex)
-                # play sound and increment the movement counter
-                if self.__sound: self._playSample()
-                # print("AFTER DELAY")
-                # set time for bpm estimator
-                if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
-                self.__foundedPeak = True
-                self.__findMininmum = not self.__findMininmum
-                self._updateWindows() 
-                self.__timestamp = time.time()
-                return
-
-            # Remove values above or below zero
-            if self.__findMininmum == self.__pos and self.__pos == True:              
-                pitch = pitch + displacement               # traslo in alto quando cerco minimi positivi, per assicurarmi di prenderli tutti
-                previous = previous + displacement         # al contratio non serve traslare perchè andando indietro non arrivo mai a 0 (perderei l'equilibrio)
-                window = window + displacement
-            pitch[pitch <= 0 if self.__pos else pitch >= 0] = 0
-            previous[previous <= 0 if self.__pos else previous >= 0] = 0
-            window[window <= 0 if self.__pos else window >= 0] = 0
-
-            findedPeak = self.peakFinder(previous_window=previous, window=window, current_window=pitch, minimum = self.__findMininmum, positive=self.__pos) # if findMininmum is true search mininmum else search peaks, positive indicates if search is on positive or negative part of the plan
-
-            # If a peak or a minimum has been found, check if it is valid
-            if findedPeak:
-                peak = abs(np.max(window)) if not self.__findMininmum else (abs(np.min(window)))
-                # self.__interestingPoints.append(self.__currentGlobalIndex)
-                elapsed_time = time.time() - self.__timestamp
-                thresh = 0 if self.__findMininmum == self.__pos else self.__threshold - validRange
-                if elapsed_time > time_threshold and peak > thresh:
-                    self.__timestamp = time.time()
-                    if self.__findMininmum != self.__pos: 
-                        # aggiorna la soglia 
-                        # print(f"THRESHOLD: {self.__threshold}")
-                        self.__peakHistory[self.__completeMovements % self.__history_sz] = peak
-                        newthresh = np.min(self.__peakHistory)
-                        self.__threshold = newthresh if newthresh > min_peak_threshold else min_peak_threshold
-                        
-                    # findMininmum starts false
-                    # firstpeak starts false
-                    # pos starts true
-                    # foundedPeak starts false
-
-                    if not self.__firstpeak :   # if there is no first peak - this is the first
-                        print("max pos") if self.__findMininmum == False else print("min neg")
-                        self.__findMininmum = not self.__findMininmum    # set search minimum
-                        self.__firstpeak = True  # set first peak finded
-                        # self.__interestingPoints.append(self.__currentGlobalIndex)
-
-
-                    elif not self.__foundedPeak:   # if there is no interesting peak - this it the interesting peak
-                        print("max neg") if self.__findMininmum == False else print("min pos")
-                        self.__foundedPeak = True  # set the interesting peak finded
-                        self.__findMininmum = not self.__findMininmum   # set search peak  
-
-                        # sound here could be too late, if it arrives after 0.4 seconds the sound is already reproduced and this part skipped
-                        self.__interestingPoints.append(self.__currentGlobalIndex)
-                        # play sound and increment the movement counter
-                        if self.__sound: self._playSample()
-                        # print("BEFORE DELAY")
-                        # set time for bpm estimator
-                        if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
-
-                    else:   # if there is the first peak and the interesting peak - this is the last peak
-                        print("max pos 2") if self.__findMininmum == False else print("min neg 2")
-                        self.__pos = not self.__pos # switch search
-                        self.__findMininmum = not self.__findMininmum   # set search minimum
-                        self.__foundedPeak = False  # reset interesting peak
-                        self.__firstpeak = False    # reset first peak
-                        # self.__interestingPoints.append(self.__currentGlobalIndex)
-                        
-            # update windows
+        if time.time() - self.__timestamp >= max_time_wait and self.__firstpeak and not self.__foundedPeak:
+            # sound here after a delay
+            self.__interestingPoints.append(self.__currentGlobalIndex)
+            # play sound and increment the movement counter
+            if self.__sound: self._playSample()
+            # print("AFTER DELAY")
+            # set time for bpm estimator
+            if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
+            self.__foundedPeak = True
+            self.__findMininmum = not self.__findMininmum
             self._updateWindows() 
+            self.__timestamp = time.time()
+            return
 
+        # Remove values above or below zero
+        if self.__findMininmum == self.__pos and self.__pos == True:              
+            pitch = pitch + displacement               # Shift upwards when looking for positive troughs, to ensure capturing all of them
+            previous = previous + displacement         # Conversely, there's no need to shift because moving backwards never reaches zero (risking balance loss)
+            window = window + displacement
+        pitch[pitch <= 0 if self.__pos else pitch >= 0] = 0
+        previous[previous <= 0 if self.__pos else previous >= 0] = 0
+        window[window <= 0 if self.__pos else window >= 0] = 0
 
+        findedPeak = self.peakFinder(previous_window=previous, window=window, current_window=pitch, minimum = self.__findMininmum, positive=self.__pos) # if findMininmum is true search mininmum else search peaks, positive indicates if search is on positive or negative part of the plan
 
-#   --------------------------------------------------------------- RIVEDERE DA QUI
+        # If a peak or a minimum has been found, check if it is valid
+        if findedPeak:
+            peak = abs(np.max(window)) if not self.__findMininmum else (abs(np.min(window)))
+            # self.__interestingPoints.append(self.__currentGlobalIndex)
+            elapsed_time = time.time() - self.__timestamp
+            thresh = 0 if self.__findMininmum == self.__pos else self.__threshold - validRange
+            if elapsed_time > time_threshold and peak > thresh:
+                self.__timestamp = time.time()
+                if self.__findMininmum != self.__pos: 
+                    # update threshold 
+                    self.__peakHistory[self.__completeMovements % self.__history_sz] = peak
+                    newthresh = np.min(self.__peakHistory)
+                    self.__threshold = newthresh if newthresh > min_peak_threshold else min_peak_threshold
+                    
+                # findMininmum starts false
+                # firstpeak starts false
+                # pos starts true
+                # foundedPeak starts false
+
+                if not self.__firstpeak :   # if there is no first peak - this is the first
+                    print("max pos") if self.__findMininmum == False else print("min neg")
+                    self.__findMininmum = not self.__findMininmum    # set search minimum
+                    self.__firstpeak = True  # set first peak finded
+                    # self.__interestingPoints.append(self.__currentGlobalIndex)
+
+                elif not self.__foundedPeak:   # if there is no interesting peak - this it the interesting peak
+                    print("max neg") if self.__findMininmum == False else print("min pos")
+                    self.__foundedPeak = True  # set the interesting peak finded
+                    self.__findMininmum = not self.__findMininmum   # set search peak  
+
+                    # sound here could be too late, if it arrives after 0.4 seconds the sound is already reproduced and this part skipped
+                    self.__interestingPoints.append(self.__currentGlobalIndex)
+                    # play sound and increment the movement counter
+                    if self.__sound: self._playSample()
+                    # print("BEFORE DELAY")
+                    # set time for bpm estimator
+                    if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
+
+                else:   # if there is the first peak and the interesting peak - this is the last peak
+                    print("max pos 2") if self.__findMininmum == False else print("min neg 2")
+                    self.__pos = not self.__pos # switch search
+                    self.__findMininmum = not self.__findMininmum   # set search minimum
+                    self.__foundedPeak = False  # reset interesting peak
+                    self.__firstpeak = False    # reset first peak
+                    # self.__interestingPoints.append(self.__currentGlobalIndex)
+                    
+        # update windows
+        self._updateWindows() 
             
 
-    # RILEVAZIONE MOVIMENTO GAMBA "FERMA"
     def otherLeg(self):
 
-        ## questa gamba ha un'andamenso tipo sinusoidale quindi mi interessano gli zero crossing
-        # in questo caso però mi interessano entrambi gli zero crossing che si verificano uno prima e uno dopo il picco
-        # quindi cerco uno zero crossing positivo, faccio suonare
-        # cerco uno zero crossing negativo, faccio suonare
-        # e cosi via...
+        ## This leg has a sinusoidal-like pattern, so I'm interested in zero crossings.
+        # In this case, however, I'm interested in both zero crossings that occur before and after the peak.
+        # Therefore, I look for a positive zero crossing, trigger a sound,
+        # look for a negative zero crossing, trigger a sound,
+        # and so on...
 
-        # per non rilevare zero crossing troppo improvvisi dati da variazioni veloci inaspettate o
-        # soprattutto dal piegamento del ginocchio, uso una threshold adattiva sul gradiete (pendenza) degli zero crossing
-        # quando la pendenza supera la threshold lo zero crossing non è valido
+        # To avoid detecting too sudden zero crossings caused by unexpected rapid changes or
+        # especially by knee bending, I use an adaptive threshold on the gradient (slope) of the zero crossings.
+        # When the slope exceeds the threshold, the zero crossing is not valid.
         
         if self.__endController() : return
         self.__nextWindow()
@@ -651,29 +621,15 @@ class Analyzer():
         time_threshold = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["time_threshold"] # seconds   # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
         min_gradient_threshold = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
         alpha = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["alpha"]
-  
-        # THIS VALUES NOT GOOD
-        # if self.__sensitivity == 1: 
-        #     min_gradient_threshold = 0.6
-        #     valid_gradient_range = 0.2
-        # elif self.__sensitivity == 2: 
-        #     min_gradient_threshold = 0.5
-        #     valid_gradient_range = 0.3
-        # elif self.__sensitivity == 4: 
-        #     min_gradient_threshold = 0.3
-        #     valid_gradient_range = 0.45
-        # elif self.__sensitivity == 5: 
-        #     min_gradient_threshold = 0.2
-        #     valid_gradient_range = 0.55
 
         pitch = (self.__pitch + displacement0) if not self.__pos else (self.__pitch + displacement1)
         # pitch = (self.__pitch - 1) if not self.__pos else (self.__pitch + 2)      # da positivo a negativo è più veloce quindi non anticipo, da negativo a positivo è più lento e anticipo
 
-        # ricerca di zero crossing positivo o negativo entro la soglia
+        # Search for positive or negative zero crossing within the threshold
         positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+valid_gradient_range)     # + 0.3 per permettere alla soglia anche di salire
         if positiveZc is not None and ((positiveZc.founded and self.__pos) or (not positiveZc.founded and not self.__pos)):
             elapsed_time = time.time() - self.__timestamp
-            if elapsed_time > time_threshold:    # se self.__pos è True ho già trovaro un picco quindi lo Zc è valido    
+            if elapsed_time > time_threshold:    # If self.__pos is True, I have already found a peak, so the zero crossing is valid
                 self.__interestingPoints.append(self.__currentGlobalIndex)
                 self.__pos = not self.__pos     # switch research of zero crossing type
                 self.__timestamp = time.time()  # update time stamp
@@ -692,11 +648,12 @@ class Analyzer():
 
 
     def __detectSwing(self):
-        # le due gambe fanno cose diverse ma simili.
-        # una gamba fa quasi solo angoli negativi e ci interessa rilevare quando si avvicina a zero (o zero crossing positivi)
-        # l'altra gamba fa quasi solo angoli positivi e ci interessa rilevare quando si avvicina a zero (o zero crossing negativi)
-        # sia che si inizi con la gamba andando avanti che andando indietro, la gamba avanti è la prima che fa zero crossing positivo
-        # quindi uso lo stesso metodo di riconoscimento di doubleStepAnalyzer
+    
+        # The two legs perform different but similar actions.
+        # One leg mostly produces negative angles, and we are interested in detecting when it approaches zero (or positive zero crossings).
+        # The other leg mostly produces positive angles, and we are interested in detecting when it approaches zero (or negative zero crossings).
+        # Whether starting with the leg moving forward or backward, the forward leg is the first to reach a positive zero crossing.
+        # Therefore, I use the same method as the doubleStepAnalyzer for recognition.
 
         if self.__endController() : return
         self.__nextWindow()
@@ -707,7 +664,7 @@ class Analyzer():
             print("AUTO DETECTION...")
             # AUTO DETECTION
             if self.__sharedLegDetected.get() == False:
-                self.detectLeg(displacement=displacement) # se il displacement è alto la piega del ginocchio deve essere più ampia, se è basso è meno
+                self.detectLeg(displacement=displacement) # If the displacement is high, the knee bend should be wider; if it's low, it should be less
 
             if self.__sharedLegDetected.get() == True : 
                 if self.__legDetected == False:
@@ -716,40 +673,40 @@ class Analyzer():
                     self.swingFunction(forward=True)
         else:
             if self.__selectedLeg is not None:
-                # self.__selectedLeg = True se la gamba avanti è la destra False se è la sinistra
+                # self.__selectedLeg = True if the front leg is the right one, False if it's the left one
                 self.swingFunction(forward=self.__selectedLeg)
     
 
-    # potrebbe verificarsi che gli angoli negativi sono proporzionlmente più bassi rispetto ai positivi quindi si dovrebbero adottare traslazioni differenti
-    # la differenza di traslazioni è data dagli angoli che fanno i piedi generalmente, gli angoli di norma variano, 
-    # il piede indietro punta in fuori
-    # il piede avanti punta avanti
+    # Negative angles might proportionally be lower than positive ones, so different shifts should be adopted.
+    # The difference in shifts is determined by the angles typically made by the feet, which usually vary.
+    # The back foot points outward, while the front foot points forward.
                 
-    # rimane il problema della piegatura del ginocchio che si può risolvere con la threshold sul gradiente
+    # The problem of knee bending remains can be addressed with the gradient threshold.
+
     def swingFunction(self, forward = True):
 
         # Backward leg:
-        # i picchi sono quasi sempre sopra -10 (15) e i minimi quasi sempre sotto -10 (15)
+        # Peaks are almost always above -10 (15) and troughs almost always below -10 (15).
         # Forward leg:
-        # i picchi sono quasi sempre sopra 10 e i minimi quasi sempre sotto 10
+        # Peaks are almost always above 10 and troughs almost always below 10.
 
-        # questo mi consente di traslare i segnali di 10 ° e - 10 °
+        # This allows me to shift the signals by 10° and -10° respectively.
 
         # standard values
-        displacement0 = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["displacement0"]  # -10 per la gamba davanti dato che fa angoli positivi che scendono anche fino a 0
-        displacement1 = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["displacement1"]  # 15 per la gamba dietro dato che fa angoli negativi che salgono vicino a -5
-        valid_gradient_range = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["valid_gradient_range"] # per permettere alla soglia anche di salire
-        time_threshold = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["time_threshold"] # seconds   # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
+        displacement0 = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["displacement0"]  # -10 for the front leg since it makes positive angles that descend to 0
+        displacement1 = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["displacement1"]  # 15 for the back leg since it makes negative angles that rise close to -5
+        valid_gradient_range = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["valid_gradient_range"]  # to allow the threshold to rise as well
+        time_threshold = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["time_threshold"]  # seconds   # with a high time threshold, we avoid registering Zc due to knee bending
         min_gradient_threshold = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
         alpha = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["alpha"]
 
         pitch = (self.__pitch + displacement0) if forward else (self.__pitch + displacement1)
 
-        # ricerca di zero crossing
+        # Zero crossing search
         positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+valid_gradient_range)
         if positiveZc is not None and (positiveZc.founded != forward):
             elapsed_time = time.time() - self.__timestamp
-            if elapsed_time > time_threshold:    # se self.__pos è True ho già trovaro un picco quindi lo Zc è valido         
+            if elapsed_time > time_threshold:    # If self.__pos is True, I have already found a peak, so the zero crossing is valid         
                 self.__timestamp = time.time()  # update time stamp
                 # play sound and increment the movement counter
                 if self.__sound: self._playSample()
@@ -795,7 +752,7 @@ class Analyzer():
 
         # 0 --> walking
         # 1 --> Walking in place and Marching
-        # 2 --> Walking in place (con sensori sulle cosce)
+        # 2 --> Walking in place (with sensors on the thighs)
         # 3 --> Swing
         # 4 --> Double step
 

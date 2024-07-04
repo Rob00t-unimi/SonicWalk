@@ -1,5 +1,4 @@
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QSizePolicy, QAbstractItemView, QHeaderView, QLabel
-from PyQt5 import QtGui
+from PyQt5.QtWidgets import QTableWidget, QSizePolicy, QAbstractItemView, QHeaderView, QLabel
 
 
 class PatientTable(QTableWidget):

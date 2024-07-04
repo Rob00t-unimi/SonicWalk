@@ -14,8 +14,6 @@ from sonicwalk.sharedVariables import SharedData
 import time
 from PyQt5.QtCore import QThread
 
-# bisogna gestire e recuperare l'eccezione nel caso non sia inserito il dongle
-
 class AnalysisPage(QWidget):
     """
     Page for registering, managing, and analyzing rehabilitative exercises for patients.

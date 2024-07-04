@@ -61,7 +61,6 @@ class RecordingFrame(QWidget):
         self.patient_info_data = None
         self.calculateBpm = True
         self.bpm = None
-        # self.mtw_run_finished = mtw_run_finished
 
         self.getMusicModality = getMusicModality
         self.getMusicPath = getMusicPath
@@ -243,7 +242,6 @@ class RecordingFrame(QWidget):
         self.selectedMusic = self.getMusicPath()
         self.selectedExercise = self.getExerciseNumber()
         self.sensitivity = self.getsensitivity()
-        # self.calculateBpm = True if self.modality == 0 else False
         self.sound = False if self.modality !=2 else True
 
         # set the execution state on false

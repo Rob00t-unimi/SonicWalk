@@ -72,20 +72,20 @@ class ProcessWaiting():
 
     def _first(self):
         self.firstProcessStart.set()
-        # una volta emesso il primo segnale imposto l'attesa del secondo
+        # Once the first signal is emitted, I set the waiting period for the second one
         self.secondProcessStart.wait()
-        # una volta emesso il secondo segnale ripulisco entrambi i segnali
+        # Once the second signal is emitted, I clean up both signals
         self.secondProcessStart.clear()
         self.firstProcessStart.clear()
 
-    def start(self):    # chiamata da uno dei 2 processi
+    def start(self):    # Triggered by one of the 2 processes
         
-        # se è il secondo processo a chiamare start il primo segnale è già stato emesso quindi emetto il secondo segnale e termino
+        # If the second process calls start, the first signal has already been emitted, so I emit the second signal and terminate
         if self.firstProcessStart.is_set():
             with self.secondLock:
                 self._second()
 
-        # se è il primo il primo processo a chiamare start il primo segnale non è stato emesso quindi lo emetto
+        # If the first process calls start, the first signal has not been emitted yet, so I emit it
         else:
             with self.firstLock:
                 self._first()

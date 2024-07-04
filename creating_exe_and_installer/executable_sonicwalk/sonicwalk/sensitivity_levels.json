@@ -5,36 +5,36 @@
             "validRange" : 3.0,
             "min_threshold" : 9.0,
             "time_threshold" : 0.1
-            // scendo di 5 + threshold minima di 9 - 3 = 11
+            // I decrease by 5 + minimum threshold of 9 - 3 = 11"
         },
         "sensitivity_2" : {
             "displacement" : 5,
             "validRange" : 3.0,
             "min_threshold" : 7.0,
             "time_threshold" : 0.1
-            // scendo di 5 + threshold minima di 7 - 3 = 9
+            // I decrease by 5 + minimum threshold of 7 - 3 = 9
         },
         "sensitivity_3" : {
             "displacement" : 5,
             "validRange" : 3.0,
             "min_threshold" : 5.0,
             "time_threshold" : 0.1        
-            // scendo di 5 + threshold minima di 5 - 3 = 7
+            // I decrease by 5 + minimum threshold of 5 - 3 = 7
         },
         "sensitivity_4" : {
             "displacement" : 5,
             "validRange" : 3.0,
             "min_threshold" : 3.0,
             "time_threshold" : 0.1
-            // scendo di 5 + threshold minima di 3 - 3 = 5
+            // I decrease by 5 + minimum threshold of 3 - 3 = 5
         },
         "sensitivity_5" : {
-            // ritardo di 2.5 gradi
+            // delay of 2.5 degrees
             "displacement" : 2.5, 
             "validRange" : 2.5,
             "min_threshold" : 3,
             "time_threshold" : 0.1
-            // scendo di 2.5 + threshold minima di 3 - 3 = 2.5
+            // I decrease by 2.5 + minimum threshold of 3 - 3 = 2.5
         }
     },
     "march" : {
@@ -74,7 +74,7 @@
             }
         },
         "step_leg" : {
-            // se time_threshold viene impostato >= 0.3 o 0.4 il segnale sonoro viene riprodotto sempre a 0.3 o 0.4 secondi fissi dal rilevamento di un picco
+            // If time_threshold is set to >= 0.3 or 0.4, the sound signal is always played at fixed 0.3 or 0.4 seconds after detecting a peak
 
             "sensitivity_1" : {
                 "min_peak_threshold" : 10,
@@ -111,10 +111,10 @@
             "sensitivity_1" : {
                 "displacement" : 5,
                 "valid_gradient_range" : 0.65, 
-                //aumentando la sensibilità aumenta ciò che accetto sicuramente e quindi diminuisco il range
+                //Increasing sensitivity increases what I definitely accept, thus reducing the range
                 "min_gradient_threshold" : 0.17, 
-                // implica che accetta di default solo passi lenti
-                // tan(10°) = 0.17 - quindi accetto sempre tutto ciò che sta sotto 0.17
+                // It implies that by default, it accepts only slow steps
+                // tan(10°) = 0.17 - So I always accept everything that is below 0.17
                 "time_threshold" : 0.12,
                 "alpha" : 0.6
             },
@@ -144,9 +144,9 @@
             "sensitivity_5" : {
                 "displacement" : 4,
                 "valid_gradient_range" : 0.2,
-                // cresce lentamente - range di accettazione più piccolo
+                // It grows slowly - smaller acceptance range
                 "min_gradient_threshold" : 1,
-                // accetta di default quasi tutti i passi anche veloci (in questo caso veloci = brevi)
+                // It defaults to accepting almost all steps, even fast ones (in this case, fast = short)
                 // tan(45°) = 1
                 "time_threshold" : 0.12,
                 "alpha" : 0.5
@@ -176,10 +176,10 @@
             "displacement0" : -15,
             "displacement1" : 20,
             "valid_gradient_range" : 0.65, 
-            //aumentando la sensibilità aumenta ciò che accetto sicuramente e quindi diminuisco il range
+            //Increasing sensitivity increases what I definitely accept, thus reducing the range
             "min_gradient_threshold" : 0.17, 
-            // implica che accetta di default solo passi lenti
-            // tan(10°) = 0.17 - quindi accetto sempre tutto ciò che sta sotto 0.17
+            // It implies that by default, it accepts only slow steps
+            // tan(10°) = 0.17 - So I always accept everything that is below 0.17
             "time_threshold" : 0.15,
             "alpha" : 0.6
         },
@@ -193,9 +193,9 @@
             "alpha" : 0.6
         },
         "sensitivity_3" : {
-            // -10 per la gamba davanti dato che fa angoli positivi che scendono anche fino a 0
+            // -10 for the front leg because it makes positive angles that descend even to 0
             "displacement0" : -10,
-            // 15 per la gamba dietro dato che fa angoli negativi che salgono vicino a -5
+            // 15 for the rear leg because it makes negative angles that rise close to -5
             "displacement1" : 15,
             "valid_gradient_range" : 0.3,
             "min_gradient_threshold" : 0.577,
@@ -204,7 +204,7 @@
             "alpha" : 0.6
         },
         "sensitivity_4" : {
-            // all'accorciarsi dei passi la distanza da zero diventa piu simile sia per negativo che per positivo
+            // As steps shorten, the distance from zero becomes more similar for both negative and positive values
             "displacement0" : -10,
             "displacement1" : 10,
             "valid_gradient_range" : 0.25,
@@ -216,9 +216,9 @@
             "displacement0" : -9,
             "displacement1" : 9,
             "valid_gradient_range" : 0.25,
-            // cresce lentamente - range di accettazione più piccolo
+            // It increases slowly - smaller acceptance range
             "min_gradient_threshold" : 1.19,
-            // accetta di default quasi tutti i passi anche veloci (in questo caso veloci = brevi)
+            // It defaults to accepting nearly all steps, even fast ones (in this case, fast = short)
             // tan(50°) = 1.19
             "time_threshold" : 0.12,
             "alpha" : 0.5

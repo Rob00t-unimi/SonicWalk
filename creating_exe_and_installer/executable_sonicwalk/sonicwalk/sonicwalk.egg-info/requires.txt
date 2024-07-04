@@ -1,0 +1,4 @@
+matplotlib>=3.8.2
+numpy>=1.26.3
+simpleaudio>=1.0.4
+xsensdeviceapi==2022.0.0

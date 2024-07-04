@@ -107,7 +107,10 @@ The Recorded data returned by the `mtwRecord` function includes several componen
 
 # Installation
 ## Simplified Installation (Executable Package)
-.exe coming soon
+Only for windows:
+
+Go to [dist folder](https://github.com/Rob00t-unimi/SonicWalk/tree/master/dist), download and run SonicWalk_app-installer.exe
+
 ## Detailed Installation (Python Environment Setup)
 ### Requires and dependencies installation
 Python version 3.9 is required, (it is recommended to create a conda virtual environment using the python version 3.9)\
@@ -116,11 +119,11 @@ Installing the *xsensdeviceapi* dependency:
 Windows:
 
 ```
-pip install wheels/xsensdeviceapi-2022.2.0-cp39-none-win_amd64.whl
+pip install xsense_wheels/xsensdeviceapi-2022.2.0-cp39-none-win_amd64.whl
 ```
 Linux:
 ```
-pip install wheels/xsensdeviceapi-2022.0.0-cp39-none-linux_x86_64.whl
+pip install xsense_wheels/xsensdeviceapi-2022.0.0-cp39-none-linux_x86_64.whl
 ```
 #### Installation of the simple Python interface Dependencies
 - matplotlib

@@ -273,7 +273,8 @@
         <h1 id="installation" style="text-align: center; padding: 8vh">Installation</h1>
         
         <h2 id="semplified-installation">Simplified Installation (Executable Package)</h2>
-        ...
+        Only for Windows:
+        Go to <a href="https://github.com/Rob00t-unimi/SonicWalk/tree/master/dist">dist folder</a>, download and run SonicWalk_app-installer.exe
     
         <h2 id="detailed-installation">Detailed Installation (Python Environment Setup)</h2>
         
@@ -281,10 +282,10 @@
         <p>Python version 3.9 is required (it is recommended to create a conda virtual environment using the python version 3.9). Installing the <em>xsensdeviceapi</em> dependency:</p>
         
         <p>Windows:</p>
-        <pre><code>pip install wheels/xsensdeviceapi-2022.2.0-cp39-none-win_amd64.whl</code></pre>
+        <pre><code>pip install xsense_wheels/xsensdeviceapi-2022.2.0-cp39-none-win_amd64.whl</code></pre>
         
         <p>Linux:</p>
-        <pre><code>pip install wheels/xsensdeviceapi-2022.0.0-cp39-none-linux_x86_64.whl</code></pre>
+        <pre><code>pip install xsense_wheels/xsensdeviceapi-2022.0.0-cp39-none-linux_x86_64.whl</code></pre>
         
         <h3 id="installation-of-interface-dependencies-only">Installation of the simple Python interface Dependencies</h3>
         <ul>
@@ -317,7 +318,7 @@
     <div id="pdfContainer"></div>
     
     <script>
-        var pdf_path = "../report/doc_analysis.pdf";
+        var pdf_path = "../interface_report/doc_analysis.pdf";
     
         var iframe = document.createElement('iframe');
         iframe.style.width = '100%';

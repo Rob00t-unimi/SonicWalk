@@ -1,0 +1,227 @@
+{
+    "walk" : {
+        "sensitivity_1" : {
+            "displacement" : 5,
+            "validRange" : 3.0,
+            "min_threshold" : 9.0,
+            "time_threshold" : 0.1
+            // scendo di 5 + threshold minima di 9 - 3 = 11
+        },
+        "sensitivity_2" : {
+            "displacement" : 5,
+            "validRange" : 3.0,
+            "min_threshold" : 7.0,
+            "time_threshold" : 0.1
+            // scendo di 5 + threshold minima di 7 - 3 = 9
+        },
+        "sensitivity_3" : {
+            "displacement" : 5,
+            "validRange" : 3.0,
+            "min_threshold" : 5.0,
+            "time_threshold" : 0.1        
+            // scendo di 5 + threshold minima di 5 - 3 = 7
+        },
+        "sensitivity_4" : {
+            "displacement" : 5,
+            "validRange" : 3.0,
+            "min_threshold" : 3.0,
+            "time_threshold" : 0.1
+            // scendo di 5 + threshold minima di 3 - 3 = 5
+        },
+        "sensitivity_5" : {
+            // ritardo di 2.5 gradi
+            "displacement" : 2.5, 
+            "validRange" : 2.5,
+            "min_threshold" : 3,
+            "time_threshold" : 0.1
+            // scendo di 2.5 + threshold minima di 3 - 3 = 2.5
+        }
+    },
+    "march" : {
+        "sensitivity_1" : {
+            "threshold" : 20
+        },
+        "sensitivity_2" : {
+            "threshold" : 16
+        },
+        "sensitivity_3" : {
+            "threshold" : 12
+        },
+        "sensitivity_4" : {
+            "threshold" : 8
+        },
+        "sensitivity_5" : {
+            "threshold" : 3
+        }
+    },
+    "double_step" : {
+        "leg_detection" : {
+            // not tested
+            "sensitivity_1" : {
+                "displacement" : 10
+            },
+            "sensitivity_2" : {
+                "displacement" : 8
+            },
+            "sensitivity_3" : {
+                "displacement" : 5
+            },
+            "sensitivity_4" : {
+                "displacement" : 4
+            },
+            "sensitivity_5" : {
+                "displacement" : 2
+            }
+        },
+        "step_leg" : {
+            // se time_threshold viene impostato >= 0.3 o 0.4 il segnale sonoro viene riprodotto sempre a 0.3 o 0.4 secondi fissi dal rilevamento di un picco
+
+            "sensitivity_1" : {
+                "min_peak_threshold" : 10,
+                "validRange" : 3.0,
+                "time_threshold" : 0.1
+                // 10 - 3 = 7
+            },
+            "sensitivity_2" : {
+                "min_peak_threshold" : 8,
+                "validRange" : 3.0,
+                "time_threshold" : 0.1
+                // 8 - 3 = 5
+            },
+            "sensitivity_3" : {
+                "min_peak_threshold" : 6,
+                "validRange" : 3.0,
+                "time_threshold" : 0.1
+                // 6 - 3 = 3
+            },
+            "sensitivity_4" : {
+                "min_peak_threshold" : 5,
+                "validRange" : 3.0,
+                "time_threshold" : 0.1
+                // 5 - 3 = 2
+            },
+            "sensitivity_5" : {
+                "min_peak_threshold" : 4,
+                "validRange" : 3.0,
+                "time_threshold" : 0.1
+                // 4 - 3 = 1
+            }
+        },
+        "other_leg" : {
+            "sensitivity_1" : {
+                "displacement" : 5,
+                "valid_gradient_range" : 0.65, 
+                //aumentando la sensibilità aumenta ciò che accetto sicuramente e quindi diminuisco il range
+                "min_gradient_threshold" : 0.17, 
+                // implica che accetta di default solo passi lenti
+                // tan(10°) = 0.17 - quindi accetto sempre tutto ciò che sta sotto 0.17
+                "time_threshold" : 0.12,
+                "alpha" : 0.6
+            },
+            "sensitivity_2" : {
+                "displacement" : 5,
+                "valid_gradient_range" : 0.45,
+                "min_gradient_threshold" : 0.36,
+                // tan(20°) = 0.36
+                "time_threshold" : 0.12,
+                "alpha" : 0.6
+            },
+            "sensitivity_3" : {
+                "displacement" : 5,
+                "valid_gradient_range" : 0.3,
+                "min_gradient_threshold" : 0.577,
+                // tan(30°) = 0.577
+                "time_threshold" : 0.12,
+                "alpha" : 0.6
+            },
+            "sensitivity_4" : {
+                "displacement" : 5,
+                "valid_gradient_range" : 0.2,
+                "min_gradient_threshold" : 0.75,
+                "time_threshold" : 0.12,
+                "alpha" : 0.6
+            },
+            "sensitivity_5" : {
+                "displacement" : 4,
+                "valid_gradient_range" : 0.2,
+                // cresce lentamente - range di accettazione più piccolo
+                "min_gradient_threshold" : 1,
+                // accetta di default quasi tutti i passi anche veloci (in questo caso veloci = brevi)
+                // tan(45°) = 1
+                "time_threshold" : 0.12,
+                "alpha" : 0.5
+            }
+        }
+    },
+    "swing" : {
+        "leg_detection" : {
+            // not tested
+            "sensitivity_1" : {
+                "displacement" : 15
+            },
+            "sensitivity_2" : {
+                "displacement" : 12
+            },
+            "sensitivity_3" : {
+                "displacement" : 10
+            },
+            "sensitivity_4" : {
+                "displacement" : 8
+            },
+            "sensitivity_5" : {
+                "displacement" : 5
+            }
+        },        
+        "sensitivity_1" : {
+            "displacement0" : -15,
+            "displacement1" : 20,
+            "valid_gradient_range" : 0.65, 
+            //aumentando la sensibilità aumenta ciò che accetto sicuramente e quindi diminuisco il range
+            "min_gradient_threshold" : 0.17, 
+            // implica che accetta di default solo passi lenti
+            // tan(10°) = 0.17 - quindi accetto sempre tutto ciò che sta sotto 0.17
+            "time_threshold" : 0.15,
+            "alpha" : 0.6
+        },
+        "sensitivity_2" : {
+            "displacement0" : -15,
+            "displacement1" : 20,
+            "valid_gradient_range" : 0.45,
+            "min_gradient_threshold" : 0.36,
+            // tan(20°) = 0.36
+            "time_threshold" : 0.15,
+            "alpha" : 0.6
+        },
+        "sensitivity_3" : {
+            // -10 per la gamba davanti dato che fa angoli positivi che scendono anche fino a 0
+            "displacement0" : -10,
+            // 15 per la gamba dietro dato che fa angoli negativi che salgono vicino a -5
+            "displacement1" : 15,
+            "valid_gradient_range" : 0.3,
+            "min_gradient_threshold" : 0.577,
+            // tan(30°) = 0.577
+            "time_threshold" : 0.15,
+            "alpha" : 0.6
+        },
+        "sensitivity_4" : {
+            // all'accorciarsi dei passi la distanza da zero diventa piu simile sia per negativo che per positivo
+            "displacement0" : -10,
+            "displacement1" : 10,
+            "valid_gradient_range" : 0.25,
+            "min_gradient_threshold" : 0.75,
+            "time_threshold" : 0.13,
+            "alpha" : 0.6
+        },
+        "sensitivity_5" : {
+            "displacement0" : -9,
+            "displacement1" : 9,
+            "valid_gradient_range" : 0.25,
+            // cresce lentamente - range di accettazione più piccolo
+            "min_gradient_threshold" : 1.19,
+            // accetta di default quasi tutti i passi anche veloci (in questo caso veloci = brevi)
+            // tan(50°) = 1.19
+            "time_threshold" : 0.12,
+            "alpha" : 0.5
+        }
+    }
+}

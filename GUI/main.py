@@ -291,6 +291,13 @@ class MainWindow(QMainWindow):
 
 def run_main():
     app = QApplication(sys.argv)
+    opening_msg = QMessageBox()
+    opening_msg.setWindowTitle("SonicWalk")
+    opening_msg.setWindowIcon(QIcon('GUI/icons/SonicWalk_logo.png'))
+    opening_msg.setText("Welcome, we are launching SonicWalk..   ")
+    opening_msg.setStandardButtons(QMessageBox.NoButton)
+    opening_msg.show()
     window = MainWindow(app)
     window.show()
+    opening_msg.reject()
     sys.exit(app.exec_())

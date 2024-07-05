@@ -297,7 +297,7 @@ class RecordingFrame(QWidget):
         """
         
         if self.record_thread.is_alive():
-
+                
             if not pygame.mixer.get_busy():
                 indication = pygame.mixer.Sound(self.indication_sounds[self.indications_index])
                 if not self.execution:

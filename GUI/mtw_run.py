@@ -27,6 +27,7 @@ class MtwThread(threading.Thread):
         """
         super().__init__()
         self.Duration = Duration
+        print("duration: " + str(self.Duration))
         self.MusicSamplesPath = MusicSamplesPath
         self.Exercise = Exercise
         self.selectedLeg = selectedLeg

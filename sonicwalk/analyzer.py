@@ -104,6 +104,8 @@ class Analyzer():
     def runAnalysis(self, method = None):
         if method is not None:
             while self.__active:
+                if self.__endController() : return
+                self.__nextWindow()
                 #allow other processes to run (wait 3ms)
                 #one packet is produced roughly every 8.33ms
                 method()
@@ -282,9 +284,6 @@ class Analyzer():
         
     def __detectStep(self):
 
-        if self.__endController() : return
-        self.__nextWindow()
-
         displacement = self.__parameters["walk"][f"sensitivity_{self.__sensitivity}"]["displacement"]
         validRange = self.__parameters["walk"][f"sensitivity_{self.__sensitivity}"]["validRange"]
         min_threshold = self.__parameters["walk"][f"sensitivity_{self.__sensitivity}"]["min_threshold"]
@@ -358,10 +357,6 @@ class Analyzer():
                 
 
     def __detectMarch(self):
-
-        # Initialization
-        if self.__endController() : return
-        self.__nextWindow()
 
         # Window manipulation
         if (self.__exType == 1):
@@ -443,9 +438,6 @@ class Analyzer():
     def __detectDoubleStep(self):
 
         # The two legs have different signals that therefore need to be distinguished and analyzed differently.
-        
-        if self.__endController() : return
-        self.__nextWindow()
 
         displacement = self.__parameters["double_step"]["leg_detection"][f"sensitivity_{self.__sensitivity}"]["displacement"]
 
@@ -486,9 +478,6 @@ class Analyzer():
         # I search for a negative trough, check if it's valid with a dynamic threshold. If within 0.4 seconds there's no negative peak, I trigger a sound.
         # If I find a negative peak before 0.4 seconds, I trigger a sound.
         # I look for a new negative trough, once found, repeat the same procedure.
-
-        if self.__endController() : return
-        self.__nextWindow()
 
         def control_if_newWindow():
             # If the new window is not completely new then add the new part into self.__window and do nothing.
@@ -611,9 +600,6 @@ class Analyzer():
         # To avoid detecting too sudden zero crossings caused by unexpected rapid changes or
         # especially by knee bending, I use an adaptive threshold on the gradient (slope) of the zero crossings.
         # When the slope exceeds the threshold, the zero crossing is not valid.
-        
-        if self.__endController() : return
-        self.__nextWindow()
 
         displacement1 = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["displacement"]
         displacement0 = - displacement1
@@ -654,9 +640,6 @@ class Analyzer():
         # The other leg mostly produces positive angles, and we are interested in detecting when it approaches zero (or negative zero crossings).
         # Whether starting with the leg moving forward or backward, the forward leg is the first to reach a positive zero crossing.
         # Therefore, I use the same method as the doubleStepAnalyzer for recognition.
-
-        if self.__endController() : return
-        self.__nextWindow()
 
         displacement = self.__parameters["swing"]["leg_detection"][f"sensitivity_{self.__sensitivity}"]["displacement"]
 

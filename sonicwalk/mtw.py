@@ -178,6 +178,7 @@ class MtwAwinda(object):
         self.__eulerData = np.zeros((2, self.__maxNumberofCoords), dtype=np.float64) #we have only two Mtw devices
         self.__index = np.zeros(2, dtype=np.uint32)
         self.__recordingStopped = False
+        self.__cleanCalled = False
 
 
     def __enter__(self):
@@ -247,9 +248,11 @@ class MtwAwinda(object):
                 raise RuntimeError("Failed to set radio channel. Aborting")
             
             print("Waiting for MTWs to wirelessly connect...")
+            time0 = time.time()
             self.connectedMTWCount = len(self.masterCallback.getWirelessMTWs())
             while self.connectedMTWCount < 2:
                 xda.msleep(100)
+                if (time.time() - time0) > 30: raise RuntimeError("There have been communication issues between the USB dongle and the sensors. If necessary, moving or restarting the sensors.")
                 while True:
                     nextCount = len(self.masterCallback.getWirelessMTWs())
                     if nextCount != self.connectedMTWCount:
@@ -286,19 +289,16 @@ class MtwAwinda(object):
             if not self.masterDevice.gotoMeasurement():
                 raise RuntimeError("Could not put device into measurement mode. Aborting.")
 
-
             return self
 
-        except RuntimeError as error:
+        except (RuntimeError, Exception) as error:
             print(error)
+            self.__clean()
             raise error
             # sys.exit(1)
-        except Exception as error:
-            print(error)
-            raise error
-            # sys.exit(1)
-        else:
-            print("Successful init.")
+            
+        # else:
+        #     print("Successful init.")
     
     def __getEuler(self):
         """Get data from callback buffers, 
@@ -326,14 +326,11 @@ class MtwAwinda(object):
 
             return avail
     
-        except RuntimeError as error:
+        except (RuntimeError, Exception) as error:
             print(error)
-            # sys.exit(1)
+            self.__clean()
             raise error
-        except Exception as error:
-            print(error)
             # sys.exit(1)
-            raise error
 
     def __cleanBuffer(self):
         self.__eulerData = np.zeros((2, self.__maxNumberofCoords), dtype=np.float64)
@@ -353,18 +350,17 @@ class MtwAwinda(object):
                 # if f.lower().endswith(".wav"):
                     # samples.append(sa.WaveObject.from_wave_file(f))
                     samples.append(f)
+            if len(samples) == 0:
+                print("No wav or mp3 file was found at given pathname...Aborting. Check file extensions")
+                raise Exception("No wav or mp3 file was found at given pathname.")        
         except:
             print("samples could not be loaded...Aborting. Check pathname syntax")
-            # sys.exit(1)
+            self.__clean()
             raise Exception("samples could not be loaded.")
-        else:
-            print("...wave samples loaded successfully")
-
-        if not samples:
-            print("No wav or mp3 file was found at given pathname...Aborting. Check file extensions")
             # sys.exit(1)
-            raise Exception("No wav or mp3 file was found at given pathname.")
-    
+        else:
+            print("...samples loaded successfully")
+
         return samples 
 
     def __resetOrientation(self):
@@ -373,14 +369,11 @@ class MtwAwinda(object):
             print("Scheduling Orientation reset...")
             for i in range(len(self.mtwDevices)):
                 self.mtwDevices[i].resetOrientation(xda.XRM_Inclination)
-        except RuntimeError as error:
+        except (RuntimeError, Exception) as error:
             print(error)
-            # sys.exit(1)
+            self.__clean()
             raise error
-        except Exception as error:
-            print(error)
             # sys.exit(1)
-            raise error
         else:
             print("...Orientation reset successfully scheduled")
 
@@ -400,174 +393,182 @@ class MtwAwinda(object):
         if auto_detectLegs = True it automatically detect backward and forward legs
         sensitivityLev is a level of sensitivity in range 1 to 5
         """
-
-        if not isinstance(duration, int) or duration <= 10:
-            raise ValueError("duration must be a positive integer (> 10) indicating the number of seconds")
-        
-        def write_shared(data0, data1, index0, index1, coords, terminate=False):
-            #write coordinates to shared memory
-            if terminate:
-                data0[index0.value] = 1000
-                data1[index1.value] = 1000
-            else:
-                #coords contains pitch for both dx and sx sensors
-                if coords[0] != 0:
-                    data0[index0.value] = coords[0]
-                    index0.value = (index0.value + 1) % 1000
-                if coords[1] != 0:
-                    data1[index1.value] = coords[1]
-                    index1.value = (index1.value + 1) % 1000
-
-        self.__cleanBuffer()
-
-        if shared_data is None:
-            # print("in mtw shared data is none")
-            #Declare and initialize unsynchronized shared memory (not lock protected)
-            shared_data = SharedData()
-
-        interestingPoints0 = RawArray('d', 1000)
-        interestingPoints1 = RawArray('d', 1000)
-
-        betweenStepsTimes0 = RawArray('d', 1000)
-        betweenStepsTimes1 = RawArray('d', 1000)
-
-        if any((plot, analyze)):
-
-            if plot:
-                plotter = Plotter()
-                plotter_process = mp.Process(target=plotter, args=(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1), daemon=True)
-                plotter_process.start()
-                
-            if analyze:
-                #samples are loaded only if analyzer is has to spawn
-                samples = self.__loadSamples(sound)
-                if samples is not None: sharedIndex = SharedCircularIndex(len(samples))
-                else: sharedIndex = None
-                analyzer0 = Analyzer()
-                analyzer1 = Analyzer()
-                sharedLegBool = LegDetected() 
-                sharedSyncronizer = ProcessWaiting()
-                # First id device assumed as right leg, is related with data0, so with analyzer_process0
-                # Second id device assumed as left leg is related with data1, so with analyzer_process1
-                analyzer_process0 = mp.Process(target=analyzer0, name="analyzer0", args=(shared_data.data0, shared_data.index0, 0, sharedIndex, samples, exType, sensitivityLev, auto_detectLegs, selectedLeg, sharedLegBool, sharedSyncronizer.start, interestingPoints0, betweenStepsTimes0, calculateBpm, sound), daemon=True)
-                analyzer_process1 = mp.Process(target=analyzer1, name="analyzer1", args=(shared_data.data1, shared_data.index1, 1, sharedIndex, samples, exType, sensitivityLev, auto_detectLegs, not selectedLeg, sharedLegBool, sharedSyncronizer.start, interestingPoints1, betweenStepsTimes1, calculateBpm, sound), daemon=True)
-                analyzer_process0.start()
-                analyzer_process1.start()
-                #delete local version of samples 
-                # del samples
-                # gc.collect()
+        try:
+            if not isinstance(duration, int) or duration <= 10:
+                raise ValueError("duration must be a positive integer (> 10) indicating the number of seconds")
             
-            time.sleep(1) #wait one second before starting orientation reset and to allow processes to properly start
-            time.sleep(2)
-            self.__resetOrientation()
-
-            try:
-                if setStart is not None: setStart()
-            except:
-                raise RuntimeError("Impossible to call setStart function")
-            
-            print("Recording started..." + str(time.time()))
-            os = platform.system()
-
-            startTime = xda.XsTimeStamp_nowMs()
-            prev_data_time = time.time()
-            prev_data = None
-            while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
-                if self.__recordingStopped:
-                    self.__recordingStopped = False 
-                    if analyze:
-                        if analyzer_process0.is_alive(): analyzer_process0.terminate()
-                        if analyzer_process1.is_alive(): analyzer_process1.terminate()
-                    if plot and plotter_process.is_alive(): plotter_process.terminate()
-                    return None
-                avail = self.__getEuler()
-
-                # if there are the same data related of a sensor for 2 seconds, the sensor is unavailable, raise exception
-                if time.time()-prev_data_time >= 2:
-                    prev_data_time = time.time()
-                    if prev_data is not None:
-                        coords = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
-                        if prev_data[0] == coords[0] or prev_data[1] == coords[1]:
-                            raise Exception("Error: Unable to record both sensors data, one of the sensors failed. Pleare reboot the sensors.")
-                    prev_data = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
-
-                if any(avail):
-                    # print("new data available at time: " + str(time.time()))
-                    coords = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
-                    coords = [a*b for a,b in zip(coords,avail)] #send only new data
-                    write_shared(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1, coords)
-                #allow other processes to run
-                #sleep 3ms (a new packet is received roughly every 8.33ms)
-                
-                xda.msleep(0) if os =="Windows" else xda.msleep(3)
-
-            write_shared(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1, None, terminate=True)
-            
-            if plot:
-                plotter_process.join()
-                
-            if analyze:
-                analyzer_process0.join()
-                analyzer_process1.join()
-                #result of step counting is written into shared memory
-                print("Total number of steps: {:d}".format(int(shared_data.data0[shared_data.index0.value-1]) + int(shared_data.data1[shared_data.index1.value-1])))
-
-        else:
-            #record the data and return it without analisys
-            startTime = xda.XsTimeStamp_nowMs()
-            while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
-                _ = self.__getEuler() #fills object buffer with data from Mtw devices
-
-        # clean raw arrays from data after termination value
-        def extractData(rawArray):
-            array = []
-            for data in rawArray:
-                if data != (-2000):  # end value
-                    array.append(data)
+            def write_shared(data0, data1, index0, index1, coords, terminate=False):
+                #write coordinates to shared memory
+                if terminate:
+                    data0[index0.value] = 1000
+                    data1[index1.value] = 1000
                 else:
-                    break
-            return np.array(array)
-        
-        def removeOutliers(np_arr):
-            # Z score method
-            if np_arr.size == 0: return np_arr
+                    #coords contains pitch for both dx and sx sensors
+                    if coords[0] != 0:
+                        data0[index0.value] = coords[0]
+                        index0.value = (index0.value + 1) % 1000
+                    if coords[1] != 0:
+                        data1[index1.value] = coords[1]
+                        index1.value = (index1.value + 1) % 1000
 
-            print(np_arr)
-            mean_elapsed_time = np.mean(np_arr) # mean
-            std_dev_elapsed_time = np.std(np_arr)   # standard deviation
-            if std_dev_elapsed_time == 0 or np.isnan(std_dev_elapsed_time): return np_arr
+            self.__cleanBuffer()
 
-            z_scores = [(time - mean_elapsed_time) / std_dev_elapsed_time for time in np_arr]
-            z_score_threshold = 3
-            outliers_indices = [i for i, z_score in enumerate(z_scores) if abs(z_score) > z_score_threshold]
-            filtered_elapsed_times = np.delete(np_arr, outliers_indices)
-            print(filtered_elapsed_times)
-            if filtered_elapsed_times.size == 0: return np_arr
+            if shared_data is None:
+                # print("in mtw shared data is none")
+                #Declare and initialize unsynchronized shared memory (not lock protected)
+                shared_data = SharedData()
 
-            return filtered_elapsed_times
+            interestingPoints0 = RawArray('d', 1000)
+            interestingPoints1 = RawArray('d', 1000)
 
-        if analyze:
-            # create bidimentional array of interesting points
-            points0 = extractData(interestingPoints0)
-            points1 = extractData(interestingPoints1)
-            interestingPoints = [points0, points1]      
+            betweenStepsTimes0 = RawArray('d', 1000)
+            betweenStepsTimes1 = RawArray('d', 1000)
 
-            if calculateBpm:
-                # convert timestamps to bpm value
-                times0 = np.concatenate((extractData(betweenStepsTimes0), extractData(betweenStepsTimes1)))
-                if times0.size != 0:
-                    elapsed_times = removeOutliers(np.diff(np.sort(times0))) # sort, calculate differences, remove outliers by z-score
-                    if elapsed_times.size != 0:
-                        mediumTimeValue = np.mean(elapsed_times) / 60 # Mean in minutes
-                        bpmTimeValue = 1 / mediumTimeValue if mediumTimeValue != 0 else False   # Calculate bpm
+            if any((plot, analyze)):
+
+                if plot:
+                    plotter = Plotter()
+                    plotter_process = mp.Process(target=plotter, args=(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1), daemon=True)
+                    plotter_process.start()
+                    
+                if analyze:
+                    #samples are loaded only if analyzer is has to spawn
+                    samples = self.__loadSamples(sound)
+                    if samples is not None: sharedIndex = SharedCircularIndex(len(samples))
+                    else: sharedIndex = None
+                    analyzer0 = Analyzer()
+                    analyzer1 = Analyzer()
+                    sharedLegBool = LegDetected() 
+                    sharedSyncronizer = ProcessWaiting()
+                    # First id device assumed as right leg, is related with data0, so with analyzer_process0
+                    # Second id device assumed as left leg is related with data1, so with analyzer_process1
+                    analyzer_process0 = mp.Process(target=analyzer0, name="analyzer0", args=(shared_data.data0, shared_data.index0, 0, sharedIndex, samples, exType, sensitivityLev, auto_detectLegs, selectedLeg, sharedLegBool, sharedSyncronizer.start, interestingPoints0, betweenStepsTimes0, calculateBpm, sound), daemon=True)
+                    analyzer_process1 = mp.Process(target=analyzer1, name="analyzer1", args=(shared_data.data1, shared_data.index1, 1, sharedIndex, samples, exType, sensitivityLev, auto_detectLegs, not selectedLeg, sharedLegBool, sharedSyncronizer.start, interestingPoints1, betweenStepsTimes1, calculateBpm, sound), daemon=True)
+                    analyzer_process0.start()
+                    analyzer_process1.start()
+                    #delete local version of samples 
+                    # del samples
+                    # gc.collect()
+                
+                time.sleep(1) #wait one second before starting orientation reset and to allow processes to properly start
+                time.sleep(2)
+                self.__resetOrientation()
+
+                try:
+                    if setStart is not None: setStart()
+                except:
+                    raise RuntimeError("Impossible to call setStart function")
+                
+                print("Recording started..." + str(time.time()))
+                os = platform.system()
+
+                startTime = xda.XsTimeStamp_nowMs()
+                prev_data_time = time.time()
+                prev_data = None
+                while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
+                    if self.__recordingStopped:
+                        self.__recordingStopped = False 
+                        if analyze:
+                            if analyzer_process0.is_alive(): analyzer_process0.terminate()
+                            if analyzer_process1.is_alive(): analyzer_process1.terminate()
+                        if plot and plotter_process.is_alive(): plotter_process.terminate()
+                        return None
+                    avail = self.__getEuler()
+
+                    # if there are the same data related of a sensor for 2 seconds, the sensor is unavailable, raise exception
+                    if time.time()-prev_data_time >= 2:
+                        prev_data_time = time.time()
+                        if prev_data is not None:
+                            coords = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
+                            if prev_data[0] == coords[0] or prev_data[1] == coords[1]:
+                                raise Exception("Error: Unable to record both sensors data, one of the sensors failed. Pleare reboot the sensors.")
+                        prev_data = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
+
+                    if any(avail):
+                        # print("new data available at time: " + str(time.time()))
+                        coords = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
+                        coords = [a*b for a,b in zip(coords,avail)] #send only new data
+                        write_shared(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1, coords)
+                    #allow other processes to run
+                    #sleep 3ms (a new packet is received roughly every 8.33ms)
+                    
+                    xda.msleep(0) if os =="Windows" else xda.msleep(3)
+
+                write_shared(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1, None, terminate=True)
+                
+                if plot:
+                    plotter_process.join()
+                    
+                if analyze:
+                    analyzer_process0.join()
+                    analyzer_process1.join()
+                    #result of step counting is written into shared memory
+                    print("Total number of steps: {:d}".format(int(shared_data.data0[shared_data.index0.value-1]) + int(shared_data.data1[shared_data.index1.value-1])))
+
+            else:
+                #record the data and return it without analisys
+                startTime = xda.XsTimeStamp_nowMs()
+                while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
+                    _ = self.__getEuler() #fills object buffer with data from Mtw devices
+
+            # clean raw arrays from data after termination value
+            def extractData(rawArray):
+                array = []
+                for data in rawArray:
+                    if data != (-2000):  # end value
+                        array.append(data)
+                    else:
+                        break
+                return np.array(array)
+            
+            def removeOutliers(np_arr):
+                # Z score method
+                if np_arr.size == 0: return np_arr
+
+                print(np_arr)
+                mean_elapsed_time = np.mean(np_arr) # mean
+                std_dev_elapsed_time = np.std(np_arr)   # standard deviation
+                if std_dev_elapsed_time == 0 or np.isnan(std_dev_elapsed_time): return np_arr
+
+                z_scores = [(time - mean_elapsed_time) / std_dev_elapsed_time for time in np_arr]
+                z_score_threshold = 3
+                outliers_indices = [i for i, z_score in enumerate(z_scores) if abs(z_score) > z_score_threshold]
+                filtered_elapsed_times = np.delete(np_arr, outliers_indices)
+                print(filtered_elapsed_times)
+                if filtered_elapsed_times.size == 0: return np_arr
+
+                return filtered_elapsed_times
+
+            if analyze:
+                # create bidimentional array of interesting points
+                points0 = extractData(interestingPoints0)
+                points1 = extractData(interestingPoints1)
+                interestingPoints = [points0, points1]      
+
+                if calculateBpm:
+                    # convert timestamps to bpm value
+                    times0 = np.concatenate((extractData(betweenStepsTimes0), extractData(betweenStepsTimes1)))
+                    if times0.size != 0:
+                        elapsed_times = removeOutliers(np.diff(np.sort(times0))) # sort, calculate differences, remove outliers by z-score
+                        if elapsed_times.size != 0:
+                            mediumTimeValue = np.mean(elapsed_times) / 60 # Mean in minutes
+                            bpmTimeValue = 1 / mediumTimeValue if mediumTimeValue != 0 else False   # Calculate bpm
+                        else: bpmTimeValue = False
                     else: bpmTimeValue = False
                 else: bpmTimeValue = False
-            else: bpmTimeValue = False
 
-            return (self.__eulerData, self.__index, interestingPoints, bpmTimeValue)
-        return (self.__eulerData, self.__index, [[],[]], False)
+                return (self.__eulerData, self.__index, interestingPoints, bpmTimeValue)
+            return (self.__eulerData, self.__index, [[],[]], False)
+    
+        except (RuntimeError, Exception) as error:
+            print(error)
+            self.__clean()
+            raise error
+            # sys.exit(1)
     
     def __clean(self):
+        if self.__cleanCalled: return
+        print("CLEAN CALLED")
         try:
             print("Setting config mode..")
             if not self.masterDevice.gotoConfig():
@@ -596,10 +597,12 @@ class MtwAwinda(object):
             raise error
         else:
             print("Successful clean")
+            self.__cleanCalled = True
 
     def stopRecording(self):
         self.__recordingStopped = True
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
+        print("EXIT CALLED")
         self.__clean()
              

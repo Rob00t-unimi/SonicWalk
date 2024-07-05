@@ -111,6 +111,8 @@ Only for windows:
 
 Go to [dist folder](https://github.com/Rob00t-unimi/SonicWalk/tree/master/dist), download and run SonicWalk_app-installer.exe
 
+If you do not find the file SonicWalk_app-installer.exe in the dist folder, you can download it from this link: [SonicWalk_app-installer.exe](https://drive.google.com/file/d/1G9776gC1ApdkP-RRJCeb2Vk0KTFDaHDu/view?usp=sharing)
+
 ## Detailed Installation (Python Environment Setup)
 ### Requires and dependencies installation
 Python version 3.9 is required, (it is recommended to create a conda virtual environment using the python version 3.9)\

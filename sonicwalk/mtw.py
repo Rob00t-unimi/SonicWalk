@@ -475,13 +475,13 @@ class MtwAwinda(object):
                         return None
                     avail = self.__getEuler()
 
-                    # if there are the same data related of a sensor for 2 seconds, the sensor is unavailable, raise exception
-                    if time.time()-prev_data_time >= 2:
+                    # if there are the same data related of a sensor for 6 seconds, the sensor is unavailable, raise exception
+                    if time.time()-prev_data_time >= 6:
                         prev_data_time = time.time()
                         if prev_data is not None:
                             coords = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
                             if prev_data[0] == coords[0] or prev_data[1] == coords[1]:
-                                raise Exception("Error: Unable to record both sensors data, one of the sensors failed. Pleare reboot the sensors.")
+                                raise Exception("Error: Unable to record both sensors data, one of the sensors failed. Please retry and if necessary reboot the sensors.")
                         prev_data = [self.__eulerData[0][self.__index[0]-1], self.__eulerData[1][self.__index[1]-1]]
 
                     if any(avail):

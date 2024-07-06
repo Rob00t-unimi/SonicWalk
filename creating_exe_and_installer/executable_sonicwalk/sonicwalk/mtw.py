@@ -158,6 +158,11 @@ class WirelessMasterCallback(xda.XsCallback):
         if error != False:
             self.stop_recording()
 
+class NoDongleException(RuntimeError):
+    """No dongle avaiable exception"""
+    def __init__(self, msg):
+        super().__init__(msg)
+
 class MtwAwinda(object):
     """Class that allows mtwAwinda devices handling
     
@@ -200,7 +205,7 @@ class MtwAwinda(object):
                     break
 
             if self.mtPort.empty():
-                raise RuntimeError("No wireless Master found. Aborting.")
+                raise NoDongleException("No wireless Master found. Aborting.")
 
             self.did = self.mtPort.deviceId()
             print("Found wireless master :")
@@ -210,7 +215,7 @@ class MtwAwinda(object):
             #OPEN DEVICE OF INTEREST
             print("Opening port...")
             if not self.control.openPort(self.mtPort.portName(), self.mtPort.baudrate()):
-                raise RuntimeError("Could not open port. Aborting.")
+                raise NoDongleException("Could not open port. Aborting.")
 
             #GET XSDEVICE INSTANCE WITH XSCONTROL::DEVICE()
             # Get the device object
@@ -222,7 +227,7 @@ class MtwAwinda(object):
             # Put the device into configuration mode before configuring the device
             print("Putting device into configuration mode...")
             if not self.masterDevice.gotoConfig(): 
-                raise RuntimeError("Could not put device into configuration mode. Aborting.")
+                raise NoDongleException("Could not put device into configuration mode. Aborting.")
 
             # Create and attach callback handler to device
             self.masterCallback = WirelessMasterCallback(self.stopRecording) #create callback
@@ -245,7 +250,7 @@ class MtwAwinda(object):
             
             print("Setting radio channel to %d and enabling radio..." % self.__radioChannel)
             if not self.masterDevice.enableRadio(self.__radioChannel):
-                raise RuntimeError("Failed to set radio channel. Aborting")
+                raise NoDongleException("Failed to set radio channel. Aborting")
             
             print("Waiting for MTWs to wirelessly connect...")
             time0 = time.time()
@@ -291,9 +296,9 @@ class MtwAwinda(object):
 
             return self
 
-        except (RuntimeError, Exception) as error:
+        except (Exception) as error:
             print(error)
-            self.__clean()
+            self.__clean(error)
             raise error
             # sys.exit(1)
             
@@ -326,7 +331,7 @@ class MtwAwinda(object):
 
             return avail
     
-        except (RuntimeError, Exception) as error:
+        except (Exception) as error:
             print(error)
             self.__clean()
             raise error
@@ -369,7 +374,7 @@ class MtwAwinda(object):
             print("Scheduling Orientation reset...")
             for i in range(len(self.mtwDevices)):
                 self.mtwDevices[i].resetOrientation(xda.XRM_Inclination)
-        except (RuntimeError, Exception) as error:
+        except (Exception) as error:
             print(error)
             self.__clean()
             raise error
@@ -560,13 +565,13 @@ class MtwAwinda(object):
                 return (self.__eulerData, self.__index, interestingPoints, bpmTimeValue)
             return (self.__eulerData, self.__index, [[],[]], False)
     
-        except (RuntimeError, Exception) as error:
+        except (Exception) as error:
             print(error)
             self.__clean()
             raise error
             # sys.exit(1)
     
-    def __clean(self):
+    def __clean(self, exception = None):
         if self.__cleanCalled: return
         print("CLEAN CALLED")
         try:
@@ -587,14 +592,12 @@ class MtwAwinda(object):
             print("Closing XsControl...")
             self.control.close()
 
-        except RuntimeError as error:
-            print(error)
-            # sys.exit(1)
-            raise error
-        except Exception as error:
-            print(error)
-            # sys.exit(1)
-            raise error
+        except (Exception) as error:
+            if exception is not None and isinstance(exception, NoDongleException): return
+            else:
+                print(error)
+                raise error
+                # sys.exit(1)
         else:
             print("Successful clean")
             self.__cleanCalled = True

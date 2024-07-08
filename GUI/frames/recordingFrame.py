@@ -297,6 +297,24 @@ class RecordingFrame(QWidget):
         """
         
         if self.record_thread.is_alive():
+
+            if self.startTime is not None and time.time() - self.startTime >= self.exerciseTime + 5: 
+                error_msg = QMessageBox()
+                error_msg.setIcon(QMessageBox.Critical)
+                error_msg.setWindowTitle("Error")
+                error_msg.setWindowIcon(QIcon('GUI/icons/SonicWalk_logo.png'))
+                error_msg.setText("We apologize, but it is not possible to save the record due to an internal error. Please try again later. ")
+                response = error_msg.exec_()
+                try:
+                    self.record_thread.clean()
+                    self.record_thread.interrupt_recording()
+                except Exception as e:
+                    error_msg = QMessageBox()
+                    error_msg.setIcon(QMessageBox.Critical)
+                    error_msg.setWindowTitle("Error")
+                    error_msg.setWindowIcon(QIcon('GUI/icons/SonicWalk_logo.png'))
+                    error_msg.setText(f"We apologize, but there has been an internal error:{e}. Application restart is suggested.")
+                    response = error_msg.exec_()
                 
             if not pygame.mixer.get_busy():
                 indication = pygame.mixer.Sound(self.indication_sounds[self.indications_index])
@@ -481,8 +499,10 @@ class RecordingFrame(QWidget):
             self.playingMusic = False
             self.changeEnabledAll()
             self.record_thread.interrupt_recording(lambda: self.setSaved(None)) # safety stop recording
+            # result= self.record_thread.get_results()
+            # self.signals, self.Fs, self.bpm = result
+            # self.saveRecording()
 
-    
     def saveRecording(self):
         """
         MODIFIES:   

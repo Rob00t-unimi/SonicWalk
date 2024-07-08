@@ -739,35 +739,40 @@ class Analyzer():
         # 3 --> Swing
         # 4 --> Double step
 
-        # WALKING
-    
-        if exType == 0: 
-            self.__threshold = self.__parameters["walk"][f"sensitivity_{self.__sensitivity}"]["min_threshold"]
-            print("Step Analyzer")
-            print('...analyzer daemon {:d} started'.format(num))
-            self.runAnalysis(method=self.__detectStep)
+        try:
 
-        # MARCHING
+            # WALKING
+        
+            if exType == 0: 
+                self.__threshold = self.__parameters["walk"][f"sensitivity_{self.__sensitivity}"]["min_threshold"]
+                print("Step Analyzer")
+                print('...analyzer daemon {:d} started'.format(num))
+                self.runAnalysis(method=self.__detectStep)
 
-        elif exType == 1 or exType == 2: 
-            self.__threshold = self.__parameters["march"][f"sensitivity_{self.__sensitivity}"]["threshold"]
-            print("Marching Analyzer")
-            print('...analyzer daemon {:d} started'.format(num))
-            self.runAnalysis(method=self.__detectMarch)
+            # MARCHING
 
-        # SWING
+            elif exType == 1 or exType == 2: 
+                self.__threshold = self.__parameters["march"][f"sensitivity_{self.__sensitivity}"]["threshold"]
+                print("Marching Analyzer")
+                print('...analyzer daemon {:d} started'.format(num))
+                self.runAnalysis(method=self.__detectMarch)
 
-        elif exType == 3:
-            self.__gradientThreshold = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
-            print("Swing Analyzer")
-            print('...analyzer daemon {:d} started'.format(num))
-            self.runAnalysis(method=self.__detectSwing)
+            # SWING
 
-        # DOUBLE STEP
+            elif exType == 3:
+                self.__gradientThreshold = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
+                print("Swing Analyzer")
+                print('...analyzer daemon {:d} started'.format(num))
+                self.runAnalysis(method=self.__detectSwing)
 
-        elif exType == 4: 
-            self.__threshold = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["min_peak_threshold"]
-            self.__gradientThreshold = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
-            print("Double Step Analyzer")
-            print('...analyzer daemon {:d} started'.format(num))
-            self.runAnalysis(method=self.__detectDoubleStep)
+            # DOUBLE STEP
+
+            elif exType == 4: 
+                self.__threshold = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["min_peak_threshold"]
+                self.__gradientThreshold = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
+                print("Double Step Analyzer")
+                print('...analyzer daemon {:d} started'.format(num))
+                self.runAnalysis(method=self.__detectDoubleStep)
+
+        except Exception as e:
+            print(e)

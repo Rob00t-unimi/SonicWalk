@@ -472,11 +472,13 @@ class MtwAwinda(object):
                 prev_data = None
                 while xda.XsTimeStamp_nowMs() - startTime <= 1000*duration:
                     if self.__recordingStopped:
-                        self.__recordingStopped = False 
+                        # self.__recordingStopped = False 
                         if analyze:
                             if analyzer_process0.is_alive(): analyzer_process0.terminate()
                             if analyzer_process1.is_alive(): analyzer_process1.terminate()
                         if plot and plotter_process.is_alive(): plotter_process.terminate()
+                        # self.__clean()
+                        # break
                         return None
                     avail = self.__getEuler()
 
@@ -501,9 +503,9 @@ class MtwAwinda(object):
 
                 write_shared(shared_data.data0, shared_data.data1, shared_data.index0, shared_data.index1, None, terminate=True)
                 
+                # if not self.__recordingStopped:
                 if plot:
                     plotter_process.join()
-                    
                 if analyze:
                     analyzer_process0.join()
                     analyzer_process1.join()
@@ -604,6 +606,9 @@ class MtwAwinda(object):
 
     def stopRecording(self):
         self.__recordingStopped = True
+
+    def clean(self):
+        self.__clean()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         print("EXIT CALLED")

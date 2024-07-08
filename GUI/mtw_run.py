@@ -83,8 +83,6 @@ class MtwThread(threading.Thread):
                 if self.stop_plotter is not None: self.stop_plotter()   # stop and clean the plotter
                 return
 
-        except RuntimeError as e:
-            self.result = e
         except Exception as e:
             self.result = e
         except:
@@ -107,5 +105,8 @@ class MtwThread(threading.Thread):
         """
         self.stop_plotter = stop_plotter    # stop and clean the plotter
         self.mtw.stopRecording()    # stop mtw recording
+
+    def clean(self):
+        self.mtw.clean()
 
 

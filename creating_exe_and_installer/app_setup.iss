@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "SonicWalk"
-#define MyAppVersion "1.2.1"
+#define MyAppVersion "1.2.2"
 #define MyAppPublisher "UNIMI - Roberto Tallarini"
 #define MyAppURL "https://github.com/Rob00t-unimi/SonicWalk"
 #define MyAppExeName "SonicWalk.exe"

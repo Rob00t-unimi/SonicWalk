@@ -9,6 +9,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import numpy as np
 from GUI.windows.patientModifier import PatientModifier
+import csv
 
 class ArchivePage(QWidget):
     """
@@ -249,7 +250,7 @@ class ArchivePage(QWidget):
         # File model
         self.file_model = QFileSystemModel()
         self.file_model.setFilter(QDir.Files | QDir.NoDotAndDotDot)
-        self.file_model.setNameFilters(["*.npy"])
+        self.file_model.setNameFilters(["*.csv"])
 
         self.listView_files.clicked.connect(self.load_selected_file)
 
@@ -695,31 +696,54 @@ class ArchivePage(QWidget):
             - shows the matplotlib navigation toolbar
         """
         file_path = self.file_model.fileInfo(index).absoluteFilePath()
+        
         try:
-            loaded_data = np.load(file_path, allow_pickle=True)
-            signals = loaded_data.item().get("signals")
-            Fs = loaded_data.item().get("Fs")
-            if loaded_data.item().get("comment") is not None:
-                comment = loaded_data.item().get("comment") 
-                self.comment_text_label.setText(comment)
-            time = np.arange(len(signals[0])) / Fs
+            with open(file_path, 'r') as file:
+                reader = csv.reader(file)
+                lines = list(reader)
+            
+            # Extract Fs and Comment from the first 2 lines
+            Fs = float(lines[0][1])
+            comment = lines[1][1]
+            
+            # Extract signals (in columns)
+            signals = []
+            for row in lines[3:]:
+                row_data = []
+                for item in row:
+                    try:
+                        row_data.append(float(item))
+                    except ValueError:
+                        pass  # Ignore non-convertible values (like empty strings)
+                signals.append(row_data)
+            
+            signals = np.array(signals).T 
+            
+            # Set the comment
+            self.comment_text_label.setText(comment)
+            
+            # Calculate time
+            time = np.arange(signals.shape[1]) / Fs
+            
+            # Plot
             self.ax.clear()
             colors = ["b", "c"]
-            i = 0
-            for signal in signals:
-                self.ax.plot(time, signal, color=colors[i])  
-                i += 1
+            for i, signal in enumerate(signals):
+                self.ax.plot(time, signal, color=colors[i % len(colors)])
+            
             self.ax.set_xlabel('Time (s)')
             self.ax.set_ylabel('Angle (Deg)')
             self.ax.grid(True, color="#FFE6E6")
-
+            
             self.canvas.draw()
-            if self.navigation_toolbar is None: self.navigation_toolbar = NavigationToolbar(self.canvas, self)
-            else: self.navigation_toolbar.setVisible(True)
+            if self.navigation_toolbar is None:
+                self.navigation_toolbar = NavigationToolbar(self.canvas, self)
+            else:
+                self.navigation_toolbar.setVisible(True)
             self.central_top_layout.addWidget(self.navigation_toolbar)
-
+        
         except Exception as e:
-            QMessageBox.warning(None, "Errore", f"Impossibile caricare il file: {str(e)}")
+            QMessageBox.warning(None, "Error", f"Impossible to load file: {str(e)}")
 
 
     def load_patients_from_json(self):

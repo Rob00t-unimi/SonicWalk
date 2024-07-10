@@ -1,3 +1,4 @@
+import csv
 import threading
 import time
 from PyQt5.QtWidgets import *
@@ -11,7 +12,6 @@ from GUI.mtw_run import MtwThread
 import sys
 sys.path.append("../sonicwalk/")
 sys.path.append("sonicwalk")
-
 
 class RecordingFrame(QWidget):
     """
@@ -579,7 +579,7 @@ class RecordingFrame(QWidget):
                 # verify if id is Empty
                 if patient_id.strip() == "":
                     raise ValueError("Patient ID is empty")
-                
+
                 if self.selectedExercise == 0:
                     exName = "walk" 
                 elif self.selectedExercise == 1:
@@ -603,17 +603,35 @@ class RecordingFrame(QWidget):
                 parent_dir = os.path.dirname(os.path.abspath(__file__))
                 if "_internal" in parent_dir:
                     parent_dir = parent_dir.split("_internal")[0] + "GUI/"
-                else: parent_dir = parent_dir.replace("frames","")
+                else:
+                    parent_dir = parent_dir.replace("frames","")
                 directory_path = os.path.join(parent_dir, f"data/archive/{patient_id}")
                 os.makedirs(directory_path, exist_ok=True)  # create directory if it doesn't exist
                 session_number_str = str(session_number).zfill(2)
                 session_dir = os.path.join(directory_path, f"{today_date}_session_{session_number_str}")
                 os.makedirs(session_dir, exist_ok=True)
                 current_time = datetime.now().strftime("%H%M%S")
-                filename = os.path.join(session_dir, f"{exName}_{musicMode}_{patient_id}_session_{session_number_str}_{today_date}_{current_time}.npy")
-
-                # save datas into the file npy
-                np.save(filename, {"signals": self.signals, "Fs": self.Fs, "comment": comment})
+                filename = os.path.join(session_dir, f"{exName}_{musicMode}_{patient_id}_session_{session_number_str}_{today_date}_{current_time}.csv")
+                
+                if comment is None or comment=="": comment = " "
+                # Prepare data for CSV writing
+                header = ['Fs', 'Comment']
+                data_initial = [
+                    [header[0], str(self.Fs)],
+                    [header[1], comment]
+                ]
+                
+                # Convert signals to list of lists
+                signals_data = self.signals.T.tolist()
+                
+                # Concatenate initial data with signals data
+                data_final = data_initial + signals_data
+                
+                # Write data to CSV
+                with open(filename, 'w', newline='') as file:
+                    writer = csv.writer(file)
+                    writer.writerows(data_final)
+                print(f"File salvato: {filename}")
 
                 self.setSaved(self.signals)
 
@@ -624,7 +642,7 @@ class RecordingFrame(QWidget):
                 msg.setWindowIcon(QIcon('GUI/icons/SonicWalk_logo.png'))
                 msg.setText("Your recording has been saved successfully.")
                 msg.setStandardButtons(QMessageBox.Ok)
-        
+
                 ok_button = msg.button(QMessageBox.Ok)
                 ok_button.setMinimumWidth(100)
                 ok_button.setMinimumHeight(40)

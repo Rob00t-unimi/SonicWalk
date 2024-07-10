@@ -149,7 +149,6 @@ pip install xsense_wheels/xsensdeviceapi-2022.0.0-cp39-none-linux_x86_64.whl
 - scipy
 - PyQt5
 - qt_material
-- pandas
 
     ```
     pip install PyQt5 matplotlib pygame qt_material scipy

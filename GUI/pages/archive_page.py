@@ -962,6 +962,7 @@ class ArchivePage(QWidget):
             - reset the comment
         """
         if self.navigation_toolbar is not None: self.navigation_toolbar.setVisible(False)
+        self.file_model.setRootPath(None)
         self.ax.clear()
         self.ax.grid(True, color="#FFE6E6")
         self.canvas.draw()

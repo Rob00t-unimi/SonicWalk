@@ -1,7 +1,7 @@
 # SonicWalk
 ## Introduction    
 
-SonicWalk is an innovative healthcare application designed to simplify and engage patients during rehabilitative exercises using real-time sonification. Developed in **Python** and **PyQT5** to ensure cross-platform compatibility, the application allows medical staff to manage patient records, monitor exercise sessions, and visualize results. It utilizes **Movella MTw Awinda** motion trackers and their respective APIs to gather necessary data.
+SonicWalk is an innovative healthcare application designed to simplify and engage patients during rehabilitative exercises using real-time sonification. For more Medical informations [click here](https://clinicaltrials.gov/study/NCT04876339?term=alfredo%20raglio&rank=1) Developed in **Python** and **PyQT5** to ensure cross-platform compatibility, the application allows medical staff to manage patient records, monitor exercise sessions, and visualize results. It utilizes **Movella MTw Awinda** motion trackers and their respective APIs to gather necessary data.
 
 ### Features
 - **Real-time Sonification**: SonicWalk employs sonification techniques to provide auditory feedback during rehabilitative exercises, enhancing patient engagement, motivation, and ultimately, improving results.

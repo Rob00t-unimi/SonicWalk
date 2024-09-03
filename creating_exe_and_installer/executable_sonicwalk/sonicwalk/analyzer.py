@@ -435,11 +435,11 @@ class Analyzer():
     ################################ DOUBLE STEP DETECTION ======================================================== && Rob ========
 
 
-    def __detectDoubleStep(self):
+    def __detectSwing(self):
 
         # The two legs have different signals that therefore need to be distinguished and analyzed differently.
 
-        displacement = self.__parameters["double_step"]["leg_detection"][f"sensitivity_{self.__sensitivity}"]["displacement"]
+        displacement = self.__parameters["swing"]["leg_detection"][f"sensitivity_{self.__sensitivity}"]["displacement"]
 
         if self.__auto_detectLegs:
             print("AUTO DETECTION...")
@@ -510,9 +510,9 @@ class Analyzer():
 
         max_time_wait = 0.4 if not self.__pos else 0.3  # max wait time before play sound
         displacement = 5 # Only when searching for negative peaks and positive troughs
-        time_threshold = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["time_threshold"]   # time threshold between peaks
-        min_peak_threshold = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["min_peak_threshold"]    # Absolute value for positive peaks and negative troughs
-        validRange = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["validRange"]
+        time_threshold = self.__parameters["swing"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["time_threshold"]   # time threshold between peaks
+        min_peak_threshold = self.__parameters["swing"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["min_peak_threshold"]    # Absolute value for positive peaks and negative troughs
+        validRange = self.__parameters["swing"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["validRange"]
 
         if time.time() - self.__timestamp >= max_time_wait and self.__firstpeak and not self.__foundedPeak:
             # sound here after a delay
@@ -601,12 +601,12 @@ class Analyzer():
         # especially by knee bending, I use an adaptive threshold on the gradient (slope) of the zero crossings.
         # When the slope exceeds the threshold, the zero crossing is not valid.
 
-        displacement1 = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["displacement"]
+        displacement1 = self.__parameters["swing"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["displacement"]
         displacement0 = - displacement1
-        valid_gradient_range = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["valid_gradient_range"] # per permettere alla soglia anche di salire
-        time_threshold = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["time_threshold"] # seconds   # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
-        min_gradient_threshold = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
-        alpha = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["alpha"]
+        valid_gradient_range = self.__parameters["swing"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["valid_gradient_range"] # per permettere alla soglia anche di salire
+        time_threshold = self.__parameters["swing"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["time_threshold"] # seconds   # con una threshold temporale alta evitiamo di registrare Zc dovuti al piegamento del ginocchio
+        min_gradient_threshold = self.__parameters["swing"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
+        alpha = self.__parameters["swing"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["alpha"]
 
         pitch = (self.__pitch + displacement0) if not self.__pos else (self.__pitch + displacement1)
         # pitch = (self.__pitch - 1) if not self.__pos else (self.__pitch + 2)      # da positivo a negativo è più veloce quindi non anticipo, da negativo a positivo è più lento e anticipo
@@ -633,15 +633,15 @@ class Analyzer():
     ################################ SWING DETECTION ======================================================== && Rob ========
 
 
-    def __detectSwing(self):
+    def __detectTandem(self):
     
         # The two legs perform different but similar actions.
         # One leg mostly produces negative angles, and we are interested in detecting when it approaches zero (or positive zero crossings).
         # The other leg mostly produces positive angles, and we are interested in detecting when it approaches zero (or negative zero crossings).
         # Whether starting with the leg moving forward or backward, the forward leg is the first to reach a positive zero crossing.
-        # Therefore, I use the same method as the doubleStepAnalyzer for recognition.
+        # Therefore, I use the same method as the swing for recognition.
 
-        displacement = self.__parameters["swing"]["leg_detection"][f"sensitivity_{self.__sensitivity}"]["displacement"]
+        displacement = self.__parameters["tandem"]["leg_detection"][f"sensitivity_{self.__sensitivity}"]["displacement"]
 
         if self.__auto_detectLegs:
             print("AUTO DETECTION...")
@@ -651,13 +651,13 @@ class Analyzer():
 
             if self.__sharedLegDetected.get() == True : 
                 if self.__legDetected == False:
-                    self.swingFunction(forward=False)
+                    self.tandemFunction(forward=False)
                 else:
-                    self.swingFunction(forward=True)
+                    self.tandemFunction(forward=True)
         else:
             if self.__selectedLeg is not None:
                 # self.__selectedLeg = True if the front leg is the right one, False if it's the left one
-                self.swingFunction(forward=self.__selectedLeg)
+                self.tandemFunction(forward=self.__selectedLeg)
     
 
     # Negative angles might proportionally be lower than positive ones, so different shifts should be adopted.
@@ -666,7 +666,7 @@ class Analyzer():
                 
     # The problem of knee bending remains can be addressed with the gradient threshold.
 
-    def swingFunction(self, forward = True):
+    def tandemFunction(self, forward = True):
 
         # Backward leg:
         # Peaks are almost always above -10 (15) and troughs almost always below -10 (15).
@@ -676,12 +676,12 @@ class Analyzer():
         # This allows me to shift the signals by 10° and -10° respectively.
 
         # standard values
-        displacement0 = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["displacement0"]  # -10 for the front leg since it makes positive angles that descend to 0
-        displacement1 = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["displacement1"]  # 15 for the back leg since it makes negative angles that rise close to -5
-        valid_gradient_range = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["valid_gradient_range"]  # to allow the threshold to rise as well
-        time_threshold = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["time_threshold"]  # seconds   # with a high time threshold, we avoid registering Zc due to knee bending
-        min_gradient_threshold = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
-        alpha = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["alpha"]
+        displacement0 = self.__parameters["tandem"][f"sensitivity_{self.__sensitivity}"]["displacement0"]  # -10 for the front leg since it makes positive angles that descend to 0
+        displacement1 = self.__parameters["tandem"][f"sensitivity_{self.__sensitivity}"]["displacement1"]  # 15 for the back leg since it makes negative angles that rise close to -5
+        valid_gradient_range = self.__parameters["tandem"][f"sensitivity_{self.__sensitivity}"]["valid_gradient_range"]  # to allow the threshold to rise as well
+        time_threshold = self.__parameters["tandem"][f"sensitivity_{self.__sensitivity}"]["time_threshold"]  # seconds   # with a high time threshold, we avoid registering Zc due to knee bending
+        min_gradient_threshold = self.__parameters["tandem"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
+        alpha = self.__parameters["tandem"][f"sensitivity_{self.__sensitivity}"]["alpha"]
 
         pitch = (self.__pitch + displacement0) if forward else (self.__pitch + displacement1)
 
@@ -737,7 +737,7 @@ class Analyzer():
         # 1 --> Walking in place and Marching
         # 2 --> Walking in place (with sensors on the thighs)
         # 3 --> Swing
-        # 4 --> Double step
+        # 4 --> Load shift in tandem position
 
         try:
 
@@ -757,22 +757,22 @@ class Analyzer():
                 print('...analyzer daemon {:d} started'.format(num))
                 self.runAnalysis(method=self.__detectMarch)
 
+            # LOAD SHIFT in TANDEM
+
+            elif exType == 4:
+                self.__gradientThreshold = self.__parameters["tandem"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
+                print("Load shift in tandem position Analyzer")
+                print('...analyzer daemon {:d} started'.format(num))
+                self.runAnalysis(method=self.__detectTandem)
+
             # SWING
 
-            elif exType == 3:
-                self.__gradientThreshold = self.__parameters["swing"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
+            elif exType == 3: 
+                self.__threshold = self.__parameters["swing"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["min_peak_threshold"]
+                self.__gradientThreshold = self.__parameters["swing"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
                 print("Swing Analyzer")
                 print('...analyzer daemon {:d} started'.format(num))
                 self.runAnalysis(method=self.__detectSwing)
-
-            # DOUBLE STEP
-
-            elif exType == 4: 
-                self.__threshold = self.__parameters["double_step"]["step_leg"][f"sensitivity_{self.__sensitivity}"]["min_peak_threshold"]
-                self.__gradientThreshold = self.__parameters["double_step"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
-                print("Double Step Analyzer")
-                print('...analyzer daemon {:d} started'.format(num))
-                self.runAnalysis(method=self.__detectDoubleStep)
 
         except Exception as e:
             print(e)

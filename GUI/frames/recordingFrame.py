@@ -589,7 +589,7 @@ class RecordingFrame(QWidget):
                 elif self.selectedExercise == 3:
                     exName = "swing"
                 elif self.selectedExercise == 4:
-                    exName = "doubleStep"
+                    exName = "loadShift_tandem"
 
                 if self.modality == 0:
                     musicMode ="noMusic"

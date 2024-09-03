@@ -19,7 +19,7 @@ SonicWalk originated as part of a final internship project for a bachelor's degr
 
 ### Contributions
 Roberto Tallarini's Contribution:
-- Expanded the original Gabriele's interface to include additional rehabilitative exercises, such as high-knee marching, backward step marching, swing, and double step.
+- Expanded the original Gabriele's interface to include additional rehabilitative exercises, such as high-knee marching, backward step marching, swing, and Anteroposterior load shift in tandem position.
 - Implemented real-time signals analysis methods for each exercise, including automatic leg detection and audio feedback using the Pygame library (which provides stability and is less susceptible to interference from threads or drivers compared to Simpleaudio).
 - Implemented a bpm estimator to calculate the medium bpm of the patient.
 - Ideated, Designed and developed a comprehensive graphical user interface for managing patients informations, records, exercise sessions, and music libraries.

@@ -1,7 +1,7 @@
 # SonicWalk
 ## Introduction    
 
-SonicWalk is an innovative healthcare application designed to simplify and engage patients during rehabilitative exercises using real-time sonification. Developed in **Python** and **PyQT5** to ensure cross-platform compatibility, the application allows medical staff to manage patient records, monitor exercise sessions, and visualize results. It utilizes **Movella MTw Awinda** motion trackers and their respective APIs to gather necessary data.
+SonicWalk is an innovative healthcare application designed to simplify and engage patients during rehabilitative exercises using real-time sonification. For more Medical informations [click here](https://clinicaltrials.gov/study/NCT04876339?term=alfredo%20raglio&rank=1). Developed in **Python** and **PyQT5** to ensure cross-platform compatibility, the application allows medical staff to manage patient records, monitor exercise sessions, and visualize results. It utilizes **Movella MTw Awinda** motion trackers and their respective APIs to gather necessary data.
 
 ### Features
 - **Real-time Sonification**: SonicWalk employs sonification techniques to provide auditory feedback during rehabilitative exercises, enhancing patient engagement, motivation, and ultimately, improving results.
@@ -19,7 +19,7 @@ SonicWalk originated as part of a final internship project for a bachelor's degr
 
 ### Contributions
 Roberto Tallarini's Contribution:
-- Expanded the original Gabriele's interface to include additional rehabilitative exercises, such as high-knee marching, backward step marching, swing, and double step.
+- Expanded the original Gabriele's interface to include additional rehabilitative exercises, such as high-knee marching, backward step marching, swing, and Anteroposterior load shift in tandem position.
 - Implemented real-time signals analysis methods for each exercise, including automatic leg detection and audio feedback using the Pygame library (which provides stability and is less susceptible to interference from threads or drivers compared to Simpleaudio).
 - Implemented a bpm estimator to calculate the medium bpm of the patient.
 - Ideated, Designed and developed a comprehensive graphical user interface for managing patients informations, records, exercise sessions, and music libraries.

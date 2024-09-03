@@ -54,7 +54,7 @@
             "threshold" : 3
         }
     },
-    "double_step" : {
+    "swing" : {
         "leg_detection" : {
             // not tested
             "sensitivity_1" : {
@@ -153,7 +153,7 @@
             }
         }
     },
-    "swing" : {
+    "tandem" : {
         "leg_detection" : {
             // not tested
             "sensitivity_1" : {

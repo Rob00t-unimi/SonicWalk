@@ -10,7 +10,7 @@ class MtwThread(threading.Thread):
         REQUIRES:
             - Duration (int): Duration of the recording in seconds. Defaults to 90.
             - MusicSamplesPath (str): Path to the music samples directory. Defaults to "../sonicwalk/audio_samples/cammino_1_fase_2".
-            - Exercise (int): Type of exercise: 0 for walking, 1 for walking in place (High Knees, Butt Kicks), 2 for walking in place (High Knees with sensors on the thighs), 3 for the swing, 4 for the double step. Defaults to 0 (walking).
+            - Exercise (int): Type of exercise: 0 for walking, 1 for walking in place (High Knees, Butt Kicks), 2 for walking in place (High Knees with sensors on the thighs), 3 for the swing, 4 for the Anteroposterior load shift in tandem position. Defaults to 0 (walking).
             - auto_detectLegs (bool): true for auto detect legs, false otherwise. Defaults to True
             - selectedLeg (bool): true if right leg forward, false if left leg forward. Defaults to None.
             - Analyze (bool): Indicates whether real-time analysis of the exercise will be performed. Defaults to True.

@@ -32,7 +32,7 @@ class ExerciseFrame(QFrame):
                 # 1 --> Walking in place (High Knees, Butt Kicks)
                 # 2 --> Walking in place (High Knees con sensori sulle cosce)
                 # 3 --> Swing
-                # 4 --> Double Step
+                # 4 --> Load Shift in tandem
             self.selected_front_leg = True # True if right leg, False if left leg
             self.musicModality = 0
             self.light = light
@@ -65,7 +65,7 @@ class ExerciseFrame(QFrame):
             label_selected_exercise = QLabel("Selected Exercise:")
             self.layout_selection.addWidget(label_selected_exercise)
             self.exercise_selector = QComboBox()
-            self.exercise_selector.addItems(["Walk", "March in place", "Swing - Right leg front", "Swing - Left leg front", "Double Step - Right leg front", "Double Step - Left leg front"])
+            self.exercise_selector.addItems(["Walk", "March in place", "Swing - Right leg front", "Swing - Left leg front", "Load Shift in tandem position - Right leg front", "Load Shift in tandem position - Left leg front"])
             self.exercise_selector.currentTextChanged.connect(self.selectExercise)
             self.layout_selection.addWidget(self.exercise_selector)
 
@@ -191,8 +191,8 @@ class ExerciseFrame(QFrame):
         elif "March" in text: exercise = "march"
         elif "Swing" in text and "Left" in text: exercise = "swing_left"
         elif "Swing" in text and "Right" in text: exercise = "swing_right"
-        elif "Double Step" in text and "Left" in text: exercise = "double_step_left"
-        elif "Double Step" in text and "Right" in text: exercise = "double_step_right"
+        elif "Load Shift in tandem position" in text and "Left" in text: exercise = "tandem_left"
+        elif "Load Shift in tandem position" in text and "Right" in text: exercise = "tandem_right"
 
         self.sensitivity = self.patient_info[exercise + "_sensitivity"]
         self.sensitivity_slider.setValue(self.sensitivity) 
@@ -207,8 +207,8 @@ class ExerciseFrame(QFrame):
             elif "March" in text: exercise = "march"
             elif "Swing" in text and "Left" in text: exercise = "swing_left"
             elif "Swing" in text and "Right" in text: exercise = "swing_right"
-            elif "Double Step" in text and "Left" in text: exercise = "double_step_left"
-            elif "Double Step" in text and "Right" in text: exercise = "double_step_right"
+            elif "Load Shift in tandem position" in text and "Left" in text: exercise = "tandem_left"
+            elif "Load Shift in tandem position" in text and "Right" in text: exercise = "tandem_right"
             self.patient_info[exercise + "_sensitivity"] = self.sensitivity
 
             try:
@@ -323,7 +323,7 @@ class ExerciseFrame(QFrame):
     def selectExercise(self, text):
         """
             REQUIRES:   
-                - text (str): the selected exercise option from (Walk, March in place (Hight Knees), March in place (Butt Kicks), Swing, Double Step)
+                - text (str): the selected exercise option from (Walk, March in place (Hight Knees), March in place (Butt Kicks), Swing, Load Shift in tandem position)
            
             EFFECTS:    
                 - Sets the selected exercise number based on the chosen option.
@@ -331,7 +331,7 @@ class ExerciseFrame(QFrame):
         if text == "Walk": self.selectedExercise = 0 
         elif "March" in text: self.selectedExercise = 1
         elif "Swing" in text: self.selectedExercise = 3
-        elif "Double Step" in text: self.selectedExercise = 4
+        elif "Load Shift in tandem position" in text: self.selectedExercise = 4
         print(f"Selected Exercise: {text}, Exercise Number: {self.selectedExercise}")
         if "Left" in text: self.selected_front_leg=False
         elif "Right" in text: self.selected_front_leg=True

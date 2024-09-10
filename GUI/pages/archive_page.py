@@ -729,11 +729,12 @@ class ArchivePage(QWidget):
             self.ax.clear()
             colors = ["b", "c"]
             for i, signal in enumerate(signals):
-                self.ax.plot(time, signal, color=colors[i % len(colors)])
+                self.ax.plot(time, signal, color=colors[i % len(colors)], label= "Right Leg" if i==0 else "Left Leg")
             
             self.ax.set_xlabel('Time (s)')
             self.ax.set_ylabel('Angle (Deg)')
             self.ax.grid(True, color="#FFE6E6")
+            self.ax.legend(loc='lower right')
             
             self.canvas.draw()
             if self.navigation_toolbar is None:

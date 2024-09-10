@@ -190,10 +190,11 @@ class AnalysisPage(QWidget):
         #     return
 
         self.ax.clear()
-        self.ax.plot(data0, 'b')
-        self.ax.plot(data1, 'c')
+        self.ax.plot(data0, 'b', label = "Right Leg")
+        self.ax.plot(data1, 'c', label = "Left Leg")
         self.ax.set_xticks([])
         self.ax.grid(True, color="#FFE6E6")
+        self.ax.legend(loc='lower right')
         self.fig.patch.set_facecolor('none')
         self.fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1, wspace=0.1, hspace=0)
         self.canvas.draw()
@@ -212,8 +213,9 @@ class AnalysisPage(QWidget):
         self.ax.grid(True, color="#FFE6E6")
         self.fig.patch.set_facecolor('none')
         if data is not None:
-            self.ax.plot(data[0], 'b')
-            self.ax.plot(data[1], 'c')
+            self.ax.plot(data[0], 'b', label = "Right Leg")
+            self.ax.plot(data[1], 'c', label = "Left Leg")
+            self.ax.legend(loc='lower right')
         self.fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1, wspace=0.1, hspace=0)
         self.canvas.draw()
         self.reset_shared_data()

@@ -1,2 +1,2 @@
 *.exe filter=lfs diff=lfs merge=lfs -text
-creating_exe_and_installer/executable_sonicwalk/SonicWalk_1.3.1.exe filter=lfs diff=lfs merge=lfs -text
+creating_exe_and_installer/executable_sonicwalk/SonicWalk_1.3.2.exe filter=lfs diff=lfs merge=lfs -text

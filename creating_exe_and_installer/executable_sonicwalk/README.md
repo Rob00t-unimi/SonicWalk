@@ -159,3 +159,8 @@ Install the Complete GUI application Dependencies, then run:
 ```
 python SonicWalk.py
 ```
+#### Technical Documentation
+For the complete Technical Documentation [click here](https://github.com/Rob00t-unimi/SonicWalk/blob/master/interface_report/doc_analysis.pdf)
+
+#### GUI - User Guide
+For the complete GUI - User Guide [click here](https://github.com/Rob00t-unimi/SonicWalk/blob/master/GUI/UserGuide_SonicWalk.pdf)

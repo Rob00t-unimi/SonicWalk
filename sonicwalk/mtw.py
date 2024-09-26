@@ -554,6 +554,8 @@ class MtwAwinda(object):
 
                 if calculateBpm:
                     # convert timestamps to bpm value
+                    print(len(extractData(betweenStepsTimes0)))
+                    print(len(extractData(betweenStepsTimes1)))
                     times0 = np.concatenate((extractData(betweenStepsTimes0), extractData(betweenStepsTimes1)))
                     if times0.size != 0:
                         elapsed_times = removeOutliers(np.diff(np.sort(times0))) # sort, calculate differences, remove outliers by z-score

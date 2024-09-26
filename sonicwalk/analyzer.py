@@ -47,7 +47,7 @@ class Analyzer():
         self.__legDetected = False
         self.__foundedPeak = False
         self.__pos = True
-        self.__findMininmum = False
+        self.__findMininmum = True
         self.__firstpeak = False
 
         self.__gradientThreshold = 0.3
@@ -61,6 +61,8 @@ class Analyzer():
         self.__prevIndex = -1
 
         self.__betweenStepTimes = []
+
+        self.search_zc = False
 
     ################################ START & END =================================================================
         
@@ -465,7 +467,7 @@ class Analyzer():
         self.__window = self.__pitch
         
     def stepLeg(self):
-            
+        return
         # OLD:
         # The moving leg generates a double positive peak followed by a double negative trough, and so on.
         # We are only interested when the foot touches the ground, so for each pair, only the first of the two peaks (or troughs) matters.
@@ -608,26 +610,82 @@ class Analyzer():
         min_gradient_threshold = self.__parameters["swing"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["min_gradient_threshold"]
         alpha = self.__parameters["swing"]["other_leg"][f"sensitivity_{self.__sensitivity}"]["alpha"]
 
-        pitch = (self.__pitch + displacement0) if not self.__pos else (self.__pitch + displacement1)
-        # pitch = (self.__pitch - 1) if not self.__pos else (self.__pitch + 2)      # da positivo a negativo è più veloce quindi non anticipo, da negativo a positivo è più lento e anticipo
+        if self.search_zc:
+                
+            pitch = (self.__pitch + displacement0) if not self.__pos else (self.__pitch + displacement1)
+            # pitch = (self.__pitch - 1) if not self.__pos else (self.__pitch + 2)      # da positivo a negativo è più veloce quindi non anticipo, da negativo a positivo è più lento e anticipo
 
-        # Search for positive or negative zero crossing within the threshold
-        positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+valid_gradient_range)     # + 0.3 per permettere alla soglia anche di salire
-        if positiveZc is not None and ((positiveZc.founded and self.__pos) or (not positiveZc.founded and not self.__pos)):
-            elapsed_time = time.time() - self.__timestamp
-            if elapsed_time > time_threshold:    # If self.__pos is True, I have already found a peak, so the zero crossing is valid
-                self.__interestingPoints.append(self.__currentGlobalIndex)
-                self.__pos = not self.__pos     # switch research of zero crossing type
-                self.__timestamp = time.time()  # update time stamp
-                # play sound and increment the movement counter
-                if self.__sound: self._playSample()
-                # set time for bpm estimator
-                if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
-                # play sound and increment step count
+            # Search for positive or negative zero crossing within the threshold
+            positiveZc = self.zeroCrossingDetector(window = pitch, positive = True, maxAbsGradient = self.__gradientThreshold+valid_gradient_range)     # + 0.3 per permettere alla soglia anche di salire
+            if positiveZc is not None and ((positiveZc.founded and self.__pos) or (not positiveZc.founded and not self.__pos)):
+                elapsed_time = time.time() - self.__timestamp
+                if elapsed_time > time_threshold:    # If self.__pos is True, I have already found a peak, so the zero crossing is valid
+                    self.__interestingPoints.append(self.__currentGlobalIndex)
+                    self.__pos = not self.__pos
+                    self.__timestamp = time.time()  # update time stamp
+                    # play sound and increment the movement counter
+                    if self.__sound: self._playSample()
+                    # set time for bpm estimator
+                    if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
+                    # play sound and increment step count
+                    # switch search zc to false
+                    self.search_zc = False
+                    # threshold update
+                    self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=alpha, min_value=min_gradient_threshold)
+                    print("gradient: " + str(self.__gradientThreshold))
+            
+        else: 
+            def control_if_newWindow():
+                # If the new window is not completely new then add the new part into self.__window and do nothing.
+                for i, item in enumerate(self.__window):
+                    for i2, item2 in enumerate(self.__pitch):
+                        if item == item2:
+                            if np.array_equal(self.__window[i:], self.__pitch[:len(self.__window)-i]): 
+                                self.__pitch = self.__pitch[len(self.__window)-i:]
+                                return
+            
+            # If the first 2 windows haven't arrived yet    
+            if self.__previousWindow is None and self.__window is None: 
+                self._updateWindows() 
+                return
+            elif self.__previousWindow is None:
+                self.__previousWindow = self.__window
+                control_if_newWindow()
+                if self.__pitch.size == 0: return
+                self.__window = self.__pitch
+                return
+            
+            # control if new window contains new informations else return
+            control_if_newWindow()
+            if self.__pitch.size == 0: return
 
-                # threshold update
-                self._setNewGradientThreshold(newGradient=positiveZc.absGradient, alpha=alpha, min_value=min_gradient_threshold)
-                print("gradient: " + str(self.__gradientThreshold))
+
+            # initialize the windows
+            pitch = self.__pitch
+            previous = self.__previousWindow
+            window = self.__window
+
+            findedPeak = self.peakFinder(previous_window=previous, window=window, current_window=pitch, minimum = self.__findMininmum, positive = not self.__findMininmum) # if findMininmum is true search mininmum else search peaks, positive indicates if search is on positive or negative part of the plan
+            peak = abs(np.max(window)) if not self.__findMininmum else (abs(np.min(window)))
+            thresh =(9 if self.__findMininmum else 6)
+            if findedPeak and peak > thresh:
+                print(str(time.time()))
+                elapsed_time = time.time() - self.__timestamp
+                if elapsed_time > (0.2 if not self.__findMininmum else 0.3):
+                    self.__interestingPoints.append(self.__currentGlobalIndex)
+                    self.__findMininmum = not self.__findMininmum
+                    self.search_zc = True
+                    self.__timestamp = time.time()  # update time stamp
+                    # play sound and increment the movement counter
+                    if self.__sound: self._playSample()
+                    # set time for bpm estimator
+                    if self.__calculateBpm: self.__betweenStepTimes.append(self.__timestamp)
+
+
+        self._updateWindows() 
+
+
+
 
 
     ################################ SWING DETECTION ======================================================== && Rob ========
@@ -776,3 +834,4 @@ class Analyzer():
 
         except Exception as e:
             print(e)
+
